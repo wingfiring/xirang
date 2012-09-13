@@ -1,0 +1,15 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+
+#project name
+PROJECT(common)
+
+INCLUDE_DIRECTORIES(${AIO_ROOT})
+INCLUDE_DIRECTORIES(${BOOST_INCLUDE})
+#source directory
+AUX_SOURCE_DIRECTORY(${AIO_ROOT}/src/common DIR_SRCS)
+AUX_SOURCE_DIRECTORY(${AIO_ROOT}/src/common/archive DIR_SRCS)
+
+#add library file
+ADD_LIBRARY(aio_common STATIC ${DIR_SRCS})
+
+

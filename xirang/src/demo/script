@@ -1,0 +1,55 @@
+vfs
+mount local / /home/finger/tmp
+mount zip /zip/ /home/finger/tmp/assetlibrary_base2.zip /home/finger/tmp/cache
+
+cat /zip/core.xml
+
+ls /zip/fbx
+
+..
+xirang
+init
+ls .
+
+
+vfs
+mount local / /home/finger/tmp
+mount zip /zip/ /home/finger/tmp/assetlibrary_base2.zip /home/finger/tmp/cache
+..
+xirang
+init
+load /type
+
+
+unmount /zip/
+
+
+
+typefile: 
+	type*
+type: 
+	"type" id body
+
+body:
+	{  items }
+items: 
+	models? args? bases? members?
+
+models:
+	"model:" type-name;
+
+args:
+	"arg:" arg-def+
+bases:
+	"base:" base-def
+members:
+	"member:" member-def+;
+
+
+args-def:
+	arg-name type-name? ;
+base-def:
+	(type-name 
+        | type-name, base-def);
+member-def:
+	member-name type-name;

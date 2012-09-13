@@ -1,0 +1,47 @@
+//this file can only be included from src/common/assert.cpp
+#ifndef LINUX_OS_
+#error this file only intends to be used under win32 os
+#endif
+
+#include <cstddef>	//for std::size_t
+#include <cstdlib>
+#include <cstdio>
+namespace
+{
+void convert(const wchar_t* wstr, std::string& result)
+{
+	if (wstr)
+	{
+		std::size_t len = wcslen(wstr);
+		result.resize(len * 6 + 1);
+		std::size_t size = wcstombs(const_cast<char*>(result.data()), wstr, result.size());
+		result.resize(size);
+	}
+	else
+		result.clear();
+}
+
+}
+namespace aio{ 
+
+//the declaration is in <aio/common/assert.h>
+
+void wassert(const wchar_t* expr, const wchar_t* sourcefile, 
+		const wchar_t* function, int line, const wchar_t* message) 
+    {
+		try
+		{
+			std::string sexpr, sfile, sfun, smsg;
+			convert(expr, sexpr);
+			convert(sourcefile, sfile);
+			convert(function, sfun);
+			convert(message, smsg);
+
+			fprintf(stderr, "%s:%d %s:%s %s\n", sfile.c_str(), line, sfun.c_str(), sexpr.c_str(), smsg.c_str());
+		}
+		catch(...)
+		{
+		}
+		std::abort();
+	}
+}

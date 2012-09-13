@@ -1,0 +1,84 @@
+#! /bin/sh
+
+set -e
+
+dir_name=`dirname $0`
+build_dir="$dir_name/../build_dir"
+build_dir_debug="$dir_name/../build_dir/debug"
+build_dir_release="$dir_name/../build_dir/release"
+build_dir_relWithDebInfo="$dir_name/../build_dir/relWithDebInfo"
+build_dir_minSizeRel="$dir_name/../build_dir/minSizeRel"
+
+
+cmake_path="../../build/cmakefiles"
+
+
+test -x $build_dir || mkdir $build_dir
+test -x $build_dir_debug || mkdir $build_dir_debug
+test -x $build_dir_release || mkdir $build_dir_release
+test -x $build_dir_relWithDebInfo || mkdir $build_dir_relWithDebInfo
+test -x $build_dir_minSizeRel || mkdir $build_dir_minSizeRel
+
+case "$1" in
+  clean)
+    rm -rf $build_dir
+	exit 0
+	;;
+  
+  debug)
+	cd $build_dir_debug
+	cmake_flag=$cmake_flag" -DCMAKE_BUILD_TYPE:STRING=Debug"
+	;;
+
+  release)
+	cd $build_dir_release
+	cmake_flag=$cmake_flag" -DCMAKE_BUILD_TYPE:STRING=Release"
+	;;
+
+  relwithdbg)
+	cd $build_dir_relWithDebInfo
+	cmake_flag=$cmake_flag" -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo"
+	;;
+
+  minrel)
+	cd $build_dir_minSizeRel
+	cmake_flag=$cmake_flag" -DCMAKE_BUILD_TYPE:STRING=MinSizeRel"
+	;;
+
+  help)
+	echo "Usage: $0 <clean|debug|release|relwithdbg|minrel> [generate|build|test]"
+	echo "Default: $0 debug build\n"
+	exit 1
+	;;
+
+  *)
+	cd $build_dir_debug
+	cmake_flag=$cmake_flag" -DCMAKE_BUILD_TYPE:STRING=Debug"
+	;;
+esac
+
+project_root=`pwd`
+project_root=`dirname $project_root`
+project_root=`dirname $project_root`
+cmake_flag=$cmake_flag" -DPROJECT_ROOT:STRING=$project_root -DDYNAMIC_BOOST=ON"
+
+cmake $cmake_flag $cmake_path
+
+case "$2" in
+	generate)
+		;;
+
+	build)
+		make
+		;;
+
+	test)
+		echo "not implemented"
+		exit 1
+		;;
+	*)
+		make
+esac
+
+
+exit 0

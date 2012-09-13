@@ -1,0 +1,33 @@
+request server list (first time or connect login server failed):
+1. client -->(send <encrypt>{{client info},client_uuid } ) --> deamon server
+2. daemon server --> ( reply server lits {login server } )
+3. store received server list.
+
+login:
+1. client--> (send { user name, <encrypt>{ {client info}, login type <player>, user name, password, timestamp, [recent n service ids]} } --> login server
+2. login server -> (reply token <encrypt>{token id, alive time, user id, [service server list]} )
+
+
+login game:
+1. client --> (send <e>{ service id, token id } ) -->sp server
+2. sp server --> (reply {OK} )
+
+start game:
+1. client --> (send { services id, token id, [ requirements ]}) --> sp server
+2. client wait
+3. sp server -> (reply {game id, judgment servers, players ids, rules} )
+
+
+Judgment:
+
+request server list:
+<same as client>
+
+login & register
+1. judgment--> (send { user name, <encrypt>{ {client info}, login type <judgment>, user name, password, timestamp, [recent sp id and address} } --> login server
+2. login server -> (reply token <encrypt>{token id, alive time, user id,  sp server}) --> judgment
+3. judgment -->( send {token id, hello} ) --> sp server
+4. sp server --> ( send {token id, judgment, register} ) --> login server
+5. login server -> {reply {ok} ) --> sp server
+6. sp server -> (reply {ok} ) --> judgment
+

@@ -1,0 +1,2 @@
+//#define AIO_DERIVED_FROM_STD_EXCEPTION
+

@@ -1,0 +1,38 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+
+PROJECT(main)
+
+
+SET(BOOST_INCLUDE /usr/local/include)
+SET(AIO_ROOT ${PROJECT_ROOT})
+SET(EXECUTABLE_OUTPUT_PATH ../bin)
+SET(LIBRARY_OUTPUT_PATH ../lib)
+
+SET(BOOST_TEST boost_unit_test_framework)
+SET(BOOST_FILESYSTEM boost_filesystem)
+SET(BOOST_SYSTEM boost_system)
+SET(PTHREAD  pthread)
+SET(ZLIB  z)
+
+option(DYNAMIC_BOOST "Use boost.test .so" OFF)
+if (DYNAMIC_BOOST)
+	add_definitions(-DUSE_BOOST_TEST_DYN_LINK)
+endif(DYNAMIC_BOOST)
+
+
+SET(CMAKE_CXX_FLAGS			"$ENV{CXXFLAGS} -Wall -std=c++11 -L/usr/local/lib")
+SET(CMAKE_CXX_FLAGS_DEBUG	"$ENV{CXXFLAGS} -O0 -g -ggdb")
+SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 ")
+
+ADD_SUBDIRECTORY(common)
+ADD_SUBDIRECTORY(common_test)
+
+ADD_SUBDIRECTORY(xirang)
+ADD_SUBDIRECTORY(xirang_test)
+
+
+ADD_SUBDIRECTORY(utility1)
+ADD_SUBDIRECTORY(utility1_test)
+
+#ADD_SUBDIRECTORY(demo)
+

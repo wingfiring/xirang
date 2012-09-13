@@ -1,0 +1,12 @@
+#define AIO_FUNCTION __PRETTY_FUNCTION__ 
+
+#define AIO_DLL_EXPORT 
+#define AIO_DLL_IMPORT 
+
+#define AIO_INTERFACE
+
+#ifdef EXPLICIT_OPERATOR
+#undef EXPLICIT_OPERATOR
+#endif
+#define EXPLICIT_OPERATOR 
+

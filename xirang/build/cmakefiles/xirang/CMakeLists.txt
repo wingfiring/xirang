@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 2.6)
+
+#project name
+PROJECT(xirang)
+
+INCLUDE_DIRECTORIES(${AIO_ROOT})
+INCLUDE_DIRECTORIES(${BOOST_INCLUDE})
+#source directory
+AUX_SOURCE_DIRECTORY(${AIO_ROOT}/src/xirang DIR_SRCS)
+AUX_SOURCE_DIRECTORY(${AIO_ROOT}/src/xirang/vfs DIR_SRCS)
+
+#add library file
+ADD_LIBRARY(xirang STATIC ${DIR_SRCS})
+
+
