@@ -1,3 +1,5 @@
+//XIRANG_LICENSE_PLACE_HOLDER
+
 #ifndef AIO_ASSERT_H
 #define AIO_ASSERT_H
 
@@ -23,7 +25,7 @@ namespace aio
 		@see http://en.wikipedia.org/wiki/Design_by_contract
 		@see http://www.artima.com/intv/contracts.html
 	*/
-	enum contract_category
+	enum class contract_category
 	{				
 		pre= 0,
 		post,
@@ -159,22 +161,22 @@ namespace aio
 #endif //end NDEBUG
 
 #define AIO_PRE_CONDITION_EX(expr, msg)\
-	AIO_AIO_INVARIANT_COMM_EX(aio::pre, expr, msg)
+	AIO_AIO_INVARIANT_COMM_EX(aio::contract_category::pre, expr, msg)
 
 #define AIO_POST_CONDITION_EX(expr, msg)\
-	AIO_AIO_INVARIANT_COMM_EX(aio::post, expr, msg)
+	AIO_AIO_INVARIANT_COMM_EX(aio::contract_category::post, expr, msg)
 
 #define AIO_INVARIANT_EX(expr, msg)\
-	AIO_AIO_INVARIANT_COMM_EX(aio::invariant, expr, msg)
+	AIO_AIO_INVARIANT_COMM_EX(aio::contract_category::invariant, expr, msg)
 
 #define AIO_PRE_CONDITION(expr)\
-	AIO_AIO_INVARIANT_COMM(aio::pre, expr)
+	AIO_AIO_INVARIANT_COMM(aio::contract_category::pre, expr)
 
 #define AIO_POST_CONDITION(expr)\
-	AIO_AIO_INVARIANT_COMM(aio::post, expr)
+	AIO_AIO_INVARIANT_COMM(aio::contract_category::post, expr)
 
 #define AIO_INVARIANT(expr)\
-	AIO_AIO_INVARIANT_COMM(aio::invariant, expr)
+	AIO_AIO_INVARIANT_COMM(aio::contract_category::invariant, expr)
 
 #include <aio/common/config/abi_suffix.h>
 #endif // end AIO_ASSERT_H

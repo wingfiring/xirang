@@ -1,3 +1,5 @@
+//XIRANG_LICENSE_PLACE_HOLDER
+
 #ifndef AIO_CONTEXT_EXCEPTION_H
 #define AIO_CONTEXT_EXCEPTION_H
 #include <aio/common/config.h>

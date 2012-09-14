@@ -25,9 +25,9 @@ namespace aio
 		/* ensure precondition <= cat <= invariant */
 		contract_category ensure_valid_contract_category(contract_category cat)
 		{
-			return cat > aio::invariant 
-				? aio::invariant 
-				: (cat < aio::pre? aio::pre: cat);
+			return cat > aio::contract_category::invariant 
+				? aio::contract_category::invariant 
+				: (cat < aio::contract_category::pre? aio::contract_category::pre: cat);
 		}
 	}
 
@@ -81,7 +81,7 @@ namespace aio
 		{
 			return os << "\n" << ensure_not_null(sourcefile) << "(" << line << ") : [" 
 				<< ensure_not_null(function) << "]\n"
-				   << category_name[ensure_valid_contract_category(type)] 
+				   << category_name[int(ensure_valid_contract_category(type))] 
 				   << ensure_not_null(message) << ":" << ensure_not_null(expr);
 		}
 	}
@@ -102,13 +102,13 @@ namespace aio
 
 		switch(type)
 		{
-			case aio::pre:
+			case aio::contract_category::pre:
 				AIO_THROW(pre_exception)(sstr.str().c_str());
 				break;
-			case aio::post:
+			case aio::contract_category::post:
 				AIO_THROW(post_exception)(sstr.str().c_str());
 				break;
-			case aio::invariant:
+			case aio::contract_category::invariant:
 				AIO_THROW(invariant_exception)(sstr.str().c_str());
 				break;
 		}

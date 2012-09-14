@@ -1,3 +1,5 @@
+//XIRANG_LICENSE_PLACE_HOLDER
+
 #ifndef AIO_MEMORY_H
 #define AIO_MEMORY_H
 #include <aio/common/config.h>

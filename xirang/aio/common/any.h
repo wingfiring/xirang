@@ -1,3 +1,5 @@
+//XIRANG_LICENSE_PLACE_HOLDER
+
 #ifndef AIO_COMMON_ANY_H
 #define AIO_COMMON_ANY_H
 
@@ -6,6 +8,7 @@
 #include <aio/common/exception.h>
 
 namespace aio {
+
     class any
     {
     public: // structors
@@ -21,13 +24,13 @@ namespace aio {
         any(const any & other)
           : content(other.content ? other.content->clone() : 0)
         {}
-#ifdef WIN32
+
         any(any && other)
           : content(other.content)
         {
             other.content = 0;
         }
-#endif
+
         ~any()
         {
             delete content;
@@ -53,13 +56,11 @@ namespace aio {
             any(rhs).swap(*this);
             return *this;
         }
-#ifdef WIN32
         any & operator=(any&& rhs)
         {
             rhs.swap(*this);
             return *this;
         }
-#endif
 
     public: // queries
 
