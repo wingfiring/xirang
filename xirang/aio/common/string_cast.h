@@ -8,10 +8,8 @@
 #include <aio/common/range.h>
 
 //STL
-#include <string>
-#include <cstring>
-#include <cwchar>
-#include <sstream>
+#include <cstring>	//for strlen
+#include <sstream>	//for stringstream wstringstream
 
 namespace aio { namespace private_ {
 

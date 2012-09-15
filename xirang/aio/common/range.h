@@ -4,7 +4,6 @@
 #define AIO_COMMON_RANGE_H
 
 #include <aio/common/config.h>
-#include <aio/common/iterator_category.h>
 
 //STL
 #include <algorithm>

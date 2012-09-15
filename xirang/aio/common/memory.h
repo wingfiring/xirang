@@ -95,7 +95,6 @@ namespace aio
 	{
 		typedef aio::unique_ptr<T, heap_deletor<T> > pointer_type;
 		explicit heap_creator(heap& h) : m_heap(&h){}
-#if 0
 		template<typename ... Args>
 		pointer_type create(Args && ... args)
 		{
@@ -103,7 +102,6 @@ namespace aio
 			new (p.get()) T(args ...);
 			return pointer_type(p.release(), heap_deletor<T>(*m_heap));
 		}
-#endif
 		private:
 		heap* m_heap;
 	};
@@ -285,7 +283,7 @@ namespace aio
 
 		pointer allocate(size_type n, const void * hint = 0)
 		{	
-			return reinterpret_cast<pointer>( get_heap().malloc(n * sizeof (value_type), 0, hint));
+			return reinterpret_cast<pointer>( get_heap().malloc(n * sizeof (value_type), alignof(T), hint));
 		}
 
 		void construct(pointer p, const_reference val)

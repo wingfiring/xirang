@@ -930,7 +930,7 @@ namespace aio
 			, m_size(0)
 			, m_data(0)
 		{}
-#ifdef WIN32
+
 		basic_string_builder(basic_string_builder&& rhs)
 			: m_heap(rhs.m_heap)
 			, m_capacity(rhs.m_capacity)
@@ -941,7 +941,7 @@ namespace aio
 			rhs.m_size = 0;
 			rhs.m_data = 0;
 		}
-#endif
+
 		basic_string_builder(const basic_string_builder& rhs)
 			: m_heap(rhs.m_heap)
 			, m_capacity(0)
@@ -1087,13 +1087,11 @@ namespace aio
 			basic_string_builder<CharT>(rhs, *m_heap).swap(*this);
 			return *this;
 		}
-#ifdef WIN32
 		basic_string_builder& operator=(basic_string_builder&& rhs)
 		{
 			basic_string_builder<CharT>(rhs, *m_heap).swap(*this);
 			return *this;
 		}
-#endif
 		basic_string_builder& operator=(const basic_string_builder<CharT>& rhs)
 		{
 			if (this != &rhs)

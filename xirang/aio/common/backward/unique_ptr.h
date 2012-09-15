@@ -14,7 +14,7 @@ namespace aio
 
         void operator()(T* ptr_) const
         {
-            // static_assert(sizeof(T)>0, "can't delete pointer to incomplete type");
+            static_assert(sizeof(T)>0, "can't delete pointer to incomplete type");
             delete ptr_;
         }
     };
@@ -25,7 +25,7 @@ namespace aio
     { 
       void operator()(T* ptr_) const
       {
-        // static_assert(sizeof(T)>0,                      "can't delete pointer to incomplete type");
+        static_assert(sizeof(T)>0,                      "can't delete pointer to incomplete type");
         delete [] ptr_;
       }
 
