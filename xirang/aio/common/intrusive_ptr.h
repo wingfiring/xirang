@@ -1,11 +1,23 @@
 //XIRANG_LICENSE_PLACE_HOLDER
 
+//
+//  intrusive_ptr.hpp
+//
+//  Copyright (c) 2001, 2002 Peter Dimov
+//
+//  Distributed under the Boost Software License, Version 1.0.
+//  See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt                                                                                                                                       
+//
+//  See http://www.boost.org/libs/smart_ptr/intrusive_ptr.html for documentation.
+//
+
 #ifndef AIO_COMMON_INTRUSIVE_PTR_H
 #define AIO_COMMON_INTRUSIVE_PTR_H
 
 #include <aio/common/config.h>
 #include <aio/common/assert.h>
-#include <aio/common/backward/unique_ptr.h> //for aio::rv
+#include <type_traits>
 
 namespace aio{
 
@@ -44,7 +56,7 @@ public:
 
     template<class U>
     intrusive_ptr( intrusive_ptr<U> const & rhs, 
-        typename aio::enable_if<STDTR1::is_convertible<U, T>::value, void*>::type = 0)
+        typename std::enable_if<std::is_convertible<U, T>::value, void*>::type = 0)
         : px( rhs.get() )
     {
         if( px != 0 ) intrusive_ptr_add_ref(*px );
@@ -67,19 +79,14 @@ public:
         return *this;
     }
 
-// Move support
-    rv<intrusive_ptr>& move()
-    {
-        return *reinterpret_cast< rv<intrusive_ptr>* >(this);  
-    }
-    intrusive_ptr(rv<intrusive_ptr>& rhs): px( rhs.px )
+    intrusive_ptr(intrusive_ptr&& rhs): px( rhs.px )
     {
         rhs.px = 0;
     }
     
-    intrusive_ptr & operator=(rv<intrusive_ptr>& rhs)
+    intrusive_ptr & operator=(intrusive_ptr&& rhs)
     {
-        this_type(  rhs.move() ).swap(*this);
+        this_type(std::move(rhs)).swap(*this);
         return *this;
     }
 
@@ -122,9 +129,8 @@ public:
         return px;
     }
 
-    typedef T * this_type::*unspecified_bool_type;
 
-    operator unspecified_bool_type() const // never throws
+    EXPLICIT_OPERATOR operator bool() const // never throws
     {
         return px == 0? 0: &this_type::px;
     }

@@ -25,11 +25,11 @@ namespace xirang{ namespace fs{
 
 	fs_error copyFile(const VfsNode& from, const VfsNode& to)
 	{
-		aio::unique_ptr<iarchive, archive_deletor> src ( from.owner_fs->create(from.path, aio::archive::mt_read, aio::archive::of_open).move());
+		aio::unique_ptr<iarchive, archive_deletor> src ( from.owner_fs->create(from.path, aio::archive::mt_read, aio::archive::of_open));
 		if (!src)
 			return aiofs::er_open_failed;
 
-		aio::unique_ptr<iarchive, archive_deletor> dest ( to.owner_fs->create(to.path, aio::archive::mt_write, aio::archive::of_create_or_open).move());
+		aio::unique_ptr<iarchive, archive_deletor> dest ( to.owner_fs->create(to.path, aio::archive::mt_write, aio::archive::of_create_or_open));
 		if (!dest )
 			return aiofs::er_open_failed;
 

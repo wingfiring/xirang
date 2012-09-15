@@ -7,20 +7,6 @@
 #include <assert.h>
 namespace xirang
 {
-	template<> struct serializer<UnitsValue> {
-		static aio::archive::writer& apply(aio::archive::writer& wt, ConstCommonObject obj){
-			const UnitsValue& var = uncheckBind<UnitsValue>(obj);
-			return wt & var.units & var.value;
-		}
-	};
-
-	template<> struct deserializer<UnitsValue>{
-		static aio::archive::reader& apply(aio::archive::reader& rd, CommonObject obj, heap& inner, ext_heap& ext){
-			UnitsValue& var = uncheckBind<UnitsValue>(obj);
-			return rd & var.units & var.value;
-		}
-	};
-
 	namespace {
 	    template<typename T>
         TypeMethods* getPrimitiveMethods()
@@ -66,12 +52,6 @@ namespace xirang
 
 			{"string",	getPrimitiveMethods<string>()},
 
-            {"matrix44", getPrimitiveMethods<Matrix44>()},
-            {"color3", getPrimitiveMethods<Color3>()},
-            {"color4", getPrimitiveMethods<Color4>()},
-            {"units_value", getPrimitiveMethods<UnitsValue>()},
-            {"vector3", getPrimitiveMethods<Vector3>()},
-            {"vector4", getPrimitiveMethods<Vector4>()},
             {"byte_buffer", getPrimitiveMethods<aio::byte_buffer>()},
             {0,0}
 		};

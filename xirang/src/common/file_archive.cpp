@@ -167,7 +167,7 @@ namespace aio{ namespace archive
 			if (m_file_size < numeric_cast<long_size_t>(h.end))
 				truncate(h.end);
 
-			return view(new file_view_imp(m_file, m_mode, h.begin, numeric_cast<std::size_t>(h.size()))).move();
+			return view(new file_view_imp(m_file, m_mode, h.begin, numeric_cast<std::size_t>(h.size())));
 		}
 
 		const_view view_rd(ext_heap::handle h)
@@ -178,7 +178,7 @@ namespace aio{ namespace archive
 				h.end = m_file_size;
 			AIO_PRE_CONDITION(h.valid());
 
-			return const_view(new file_view_imp(m_file, m_mode, h.begin, numeric_cast<std::size_t>(h.size()))).move();
+			return const_view(new file_view_imp(m_file, m_mode, h.begin, numeric_cast<std::size_t>(h.size())));
 		}
 
 		long_size_t offset() const { return m_pos; }
@@ -255,7 +255,7 @@ namespace aio{ namespace archive
 	}
 	bool file_read_archive::readable() const { return m_imp->readable();}
 	bool file_read_archive::viewable() const{ return m_imp->viewable(); }
-	const_view file_read_archive::view_rd(ext_heap::handle h) const { return m_imp->view_rd(h).move();}
+	const_view file_read_archive::view_rd(ext_heap::handle h) const { return m_imp->view_rd(h);}
 
 	long_size_t file_read_archive::offset() const { return m_imp->offset();}
 	long_size_t file_read_archive::size() const	{ return m_imp->size();}
@@ -279,7 +279,7 @@ namespace aio{ namespace archive
 	bool file_write_archive::writable() const	{ return m_imp->writable(); }
 	bool file_write_archive::viewable() const{ return m_imp->viewable(); }
 	void file_write_archive::sync() 	{ m_imp->sync(); }
-	view file_write_archive::view_wr(ext_heap::handle h){ return m_imp->view_wr(h).move();}
+	view file_write_archive::view_wr(ext_heap::handle h){ return m_imp->view_wr(h);}
 
 	long_size_t file_write_archive::offset() const	{ return m_imp->offset(); }
 	long_size_t file_write_archive::size() const		{ return m_imp->size(); }
@@ -297,7 +297,7 @@ namespace aio{ namespace archive
 	{	return m_imp->read(buf);	}
 
 	bool file_read_write_archive::readable() const	{ return m_imp->readable(); }
-	const_view file_read_write_archive::view_rd(ext_heap::handle h) const { return m_imp->view_rd(h).move();}
+	const_view file_read_write_archive::view_rd(ext_heap::handle h) const { return m_imp->view_rd(h);}
 	file_read_write_archive::const_iterator file_read_write_archive::write(
 			const range<file_read_write_archive::const_iterator>& r)
 	{ return m_imp->write(r); }
@@ -306,7 +306,7 @@ namespace aio{ namespace archive
 	bool file_read_write_archive::writable() const	{ return m_imp->writable(); }
 	bool file_read_write_archive::viewable() const{ return m_imp->viewable(); }
 	void file_read_write_archive::sync() { m_imp->sync();}
-	view file_read_write_archive::view_wr(ext_heap::handle h){ return m_imp->view_wr(h).move();}
+	view file_read_write_archive::view_wr(ext_heap::handle h){ return m_imp->view_wr(h);}
 
 	long_size_t file_read_write_archive::offset() const	{ return m_imp->offset(); }
 	long_size_t file_read_write_archive::size() const	{ return m_imp->size();}

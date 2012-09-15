@@ -17,9 +17,16 @@
 template<typename T>
 inline void unuse(const T&) {}
 
-
 namespace aio{
-    template<typename Base> struct identity_base0 : Base{};
+	template<typename T> constexpr T const& const_max(T const& a, T const& b) {
+		return a < b ? b : a;
+	}
+	template<typename T> constexpr T const& const_min(T const& a, T const& b) {
+		return a < b ? a : b;
+	}
+
+
+	template<typename Base> struct identity_base0 : Base{};
     template<typename Base> struct identity_base1 : Base{};
     template<typename Base> struct identity_base2 : Base{};
     template<typename Base> struct identity_base3 : Base{};

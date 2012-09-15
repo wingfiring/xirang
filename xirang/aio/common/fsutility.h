@@ -20,9 +20,9 @@ namespace aio{ namespace fs{
 //********************** begin core fs functions
     enum fs_error
     {
-        er_ok,
-		er_invalid, 
-		er_busy_mounted,
+        er_ok,		///< no error
+		er_invalid, 	///< invalid parameter
+		er_busy_mounted,	
 		er_not_found,
 		er_exist,
 		er_used_mount_point,
@@ -54,8 +54,10 @@ namespace aio{ namespace fs{
 
     fs_error remove(const string& path);
     fs_error create_dir(const  string& path);
+	//it'll return null if failed.
     archive::archive_ptr create(const string& path, int mode, int flag);
     fs_error copy(const string& from, const string& to);
+    fs_error move(const string& from, const string& to);
 
     fs_error truncate(const string& path, long_size_t s);
 
@@ -74,10 +76,10 @@ namespace aio{ namespace fs{
 // temp file related 
 
     // \throw aio::archive::create_failed
-    archive::archive_ptr temp_file(const_range_string template_ = "tmpf", int flag = archive::of_remove_on_close, string* path = 0);
+    archive::archive_ptr temp_file(const_range_string template_ = "tmpf", int flag = archive::of_remove_on_close, string* result_path = 0);
 
     // \throw aio::archive::create_failed
-    archive::archive_ptr temp_file(const_range_string template_, const_range_string parent_dir, int flag = archive::of_remove_on_close, string* path = 0);
+    archive::archive_ptr temp_file(const_range_string template_, const_range_string parent_dir, int flag = archive::of_remove_on_close, string* result_path = 0);
 
     // \throw aio::archive::create_failed
     string temp_dir(const_range_string template_ = "tmpd");

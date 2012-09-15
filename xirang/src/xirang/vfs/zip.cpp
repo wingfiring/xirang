@@ -119,7 +119,7 @@ namespace xirang{ namespace fs{
 					|| (!pos && flag == of_open)
                     || (pos && pos->type != aiofs::st_regular)
                     )
-				return archive_ptr().move();
+				return archive_ptr();
 
 			if (!pos)
 			{
@@ -140,7 +140,7 @@ namespace xirang{ namespace fs{
 					}
 				}
 				else 
-					return archive_ptr().move();
+					return archive_ptr();
 			}
 			AIO_PRE_CONDITION(pos);
 
@@ -149,20 +149,20 @@ namespace xirang{ namespace fs{
 				if ((mode & aio::archive::mt_write) == 0)
 				{
 					AIO_PRE_CONDITION(flag == of_open);
-					return archive_ptr(new zip_read_archive(pos->data->cache(no_edit).move())).move();
+					return archive_ptr(new zip_read_archive(pos->data->cache(no_edit)));
 				}
 				else
                 {
                     pos->data->mod_time = -1;
-					return archive_ptr(new zip_read_write_archive(pos->data->cache(will_edit).move())).move();
+					return archive_ptr(new zip_read_write_archive(pos->data->cache(will_edit)));
                 }
 			}
 			else if (mode & aio::archive::mt_write)	//write only
 			{
                 pos->data->mod_time = -1;
-				return archive_ptr(new zip_write_archive(pos->data->cache(will_edit).move())).move();
+				return archive_ptr(new zip_write_archive(pos->data->cache(will_edit)));
 			}
-			return archive_ptr().move();
+			return archive_ptr();
 
 		}
 
@@ -201,7 +201,7 @@ namespace xirang{ namespace fs{
 			AIO_PRE_CONDITION(pos->data);
 
 			//TODO:optimization for s == 0
-			zip_write_archive(pos->data->cache(will_edit).move()).truncate(s);
+			zip_write_archive(pos->data->cache(will_edit)).truncate(s);
 			return aiofs::er_ok;
 		}
 
@@ -352,7 +352,7 @@ namespace xirang{ namespace fs{
 		{
             AIO_PRE_CONDITION(!m_readonly);
 
-			archive_ptr tmpzip = temp_file(*m_cache, "TMP", "").move();
+			archive_ptr tmpzip = temp_file(*m_cache, "TMP", "");
 			writer* wr = tmpzip->query_writer();
             AIO_PRE_CONDITION(wr);
 
@@ -425,7 +425,7 @@ namespace xirang{ namespace fs{
 	// file operations
 	archive_ptr ZipFs::create(const string& path, int mode, int flag)
 	{
-		return m_imp->create(path, mode, flag).move();
+		return m_imp->create(path, mode, flag);
 	}
 
 	// \pre !is_absolute(to)

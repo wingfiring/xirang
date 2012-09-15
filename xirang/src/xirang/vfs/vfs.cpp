@@ -280,10 +280,10 @@ namespace xirang{ namespace fs{
 
             try
             {
-                aio::archive::archive_ptr ret = vfs.create(string(file_path), aio::archive::mt_read | aio::archive::mt_write | aio::archive::mt_random, flag).move();
+                aio::archive::archive_ptr ret = vfs.create(string(file_path), aio::archive::mt_read | aio::archive::mt_write | aio::archive::mt_random, flag);
                 if (ret){
                     if (path) *path = file_path;
-                    return ret.move();
+                    return std::move(ret);
                 }
             }
             catch(...){}
@@ -370,9 +370,9 @@ namespace xirang{ namespace fs{
     {
         fs_error err = recursive_create_dir(vfs, dir_filename(path));
         if (err != aio::fs::er_ok && err != aio::fs::er_exist)
-            return archive_ptr().move();
+            return archive_ptr();
 
-        return vfs.create(path, mode, flag).move();
+        return vfs.create(path, mode, flag);
     }
 
 }	//fs

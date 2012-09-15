@@ -16,7 +16,7 @@ namespace aio
 		protected:
 		virtual ~ideletor(){}
 	};
-#if 0
+
 	template<typename Deletor, typename ... Base>
 	struct ideletorT : ideletor, Base...
 	{
@@ -49,7 +49,7 @@ namespace aio
 		{
 		}
 	};
-
+#if 0 // for  MSVC_COMPILER_
     template<typename Deletor, _CLASS_ARG0_DEF_MAX>
 	struct ideletorT : ideletor, _ARG0_ARG1_MAX
 	{
@@ -61,43 +61,7 @@ namespace aio
 	private:
 		Deletor m_deletor;
 	};
-#else
-    template<typename Base>
-	struct default_deletorT : ideletor, Base
-	{
-        default_deletorT() : Base(){}
-
-		template<typename T0>
-		default_deletorT(const T0& t0) 
-            : Base(t0) {}
-		template<typename T0>
-		default_deletorT(T0& t0) 
-            : Base(t0) {}
-        template<typename T0, typename T1>
-		default_deletorT(const T0& t0, const T1& t1) 
-            : Base(t0, t1) {}
-		virtual void destroy()
-		{
-			delete this;
-		}        
-	};
-
-	template<typename Base>
-	struct no_action_deletorT : ideletor, Base
-	{
-        no_action_deletorT() : Base(){}
-		template<typename T0>
-		no_action_deletorT(const T0& t0) : Base(t0) {}
-
-        template<typename T0, typename T1>
-		no_action_deletorT(const T0& t0, const T1& t1) 
-            : Base(t0, t1) {}
-
-		virtual void destroy()
-		{		}
-	};
 #endif
-	
 
 }
 #endif //end AIO_COMMON_IDELETOR_H

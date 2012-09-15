@@ -343,12 +343,11 @@ namespace xirang
     class ScopedObjectCreator
     {
     public:
-		aio::rv<ScopedObjectCreator>& move();
         /// move construct
-        ScopedObjectCreator(aio::rv<ScopedObjectCreator>& rhs);
+        ScopedObjectCreator(ScopedObjectCreator&& rhs);
         
         /// move assignment
-        ScopedObjectCreator& operator=(aio::rv<ScopedObjectCreator>& rhs);
+        ScopedObjectCreator& operator=(ScopedObjectCreator&& rhs);
         
         ///ctor 
         ScopedObjectCreator(Type t, const Xirang& xi);

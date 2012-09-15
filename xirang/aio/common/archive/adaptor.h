@@ -14,14 +14,8 @@ namespace aio{ namespace archive{
 		}
 	};
 
-#if 0
 	template<typename ... Base>
 		struct proxy_base : archiveT<Base...>
-#else
-	template<class T0 = null_type, class T1 = null_type, class T2 = null_type, class T3 = null_type
-            , class T4 = null_type, class T5 = null_type>
-		struct proxy_base : archiveT<T0,T1,T2,T3,T4,T5>
-#endif
 	{
 		explicit proxy_base(iarchive* par = 0) : m_ar(par){}
 
@@ -164,20 +158,14 @@ namespace aio{ namespace archive{
     struct multiplex_owner : Base
     {
         archive_ptr m_ar;
-        explicit multiplex_owner(archive_ptr& par) : Base(par.get())
+        explicit multiplex_owner(archive_ptr&& par) : Base(par.get())
         {
-            m_ar = par.move();
+            m_ar = std::move(par);
         }
     };
 
-#if 0
 	template<typename ... Base>
 		struct multiplex_base : archiveT<Base...>
-#else
-	template<class T0 = null_type, class T1 = null_type, class T2 = null_type, class T3 = null_type
-            , class T4 = null_type, class T5 = null_type>
-		struct multiplex_base : archiveT<T0,T1,T2,T3,T4,T5>
-#endif
 	{
 		explicit multiplex_base(iarchive* par) : m_ar(par), m_random(0), m_offset(0)
         {
@@ -230,7 +218,7 @@ namespace aio{ namespace archive{
 
 		virtual const_view view_rd(ext_heap::handle h) const {
             TieOffset holder(*Base::m_random, Base::m_offset);
-			return Base::reader_().view_rd(h).move();
+			return Base::reader_().view_rd(h);
 		}
 
 		virtual bool viewable() const{
@@ -266,7 +254,7 @@ namespace aio{ namespace archive{
 
 		virtual view view_wr(ext_heap::handle h) {
             TieOffset holder(*Base::m_random, Base::m_offset);
-			return Base::writer_().view_wr(h).move();
+			return Base::writer_().view_wr(h);
 		}
 
 		virtual bool viewable() const{

@@ -2,25 +2,10 @@
 #define AIO_UNIQUE_PTR_H
 
 #include <aio/common/assert.h>
-
-#ifdef MSVC_COMPILER_
-
 #include <type_traits>
-#else
-#include <tr1/type_traits>
-#endif
 
 namespace aio
 {
-    template <class T>
-    class rv : public T
-    {
-        rv();
-        ~rv();
-        rv(rv const&);
-        void operator=(rv const&);
-    };
-
     /// Primary template, default_delete.
     template<typename T>
     struct default_delete
@@ -67,18 +52,7 @@ namespace aio
         unique_ptr(pointer p_, const deleter_type& d_)
             : ptr(p_), dp(d_) { }
 
-        rv<unique_ptr>& move() {
-            return *reinterpret_cast< rv<unique_ptr>* >(this);  
-        }
-
-        operator rv<unique_ptr>&(){  
-            return *reinterpret_cast< rv<unique_ptr>* >(this);  
-        }
-        operator const rv<unique_ptr>&() const{  
-            return *reinterpret_cast<rv<unique_ptr>* >(this);  
-        }
-
-        unique_ptr(rv<unique_ptr>& u)
+        unique_ptr(unique_ptr&& u)
             : ptr(u.ptr), dp(u.dp)
         {
             u.ptr = 0;
@@ -88,7 +62,7 @@ namespace aio
         ~unique_ptr()  { reset(); }
 
         // Assignment.
-        unique_ptr& operator=(rv<unique_ptr>& u_) 
+        unique_ptr& operator=(unique_ptr&& u_) 
         {
             reset(u_.release());
             get_deleter() = u_.get_deleter();

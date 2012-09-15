@@ -93,7 +93,7 @@ namespace xirang{ namespace fs{
 	archive_ptr LocalFs::create(const string& path, int mode, int flag) {
         AIO_PRE_CONDITION(!is_absolute(path));
         string real_path = m_resource + path;
-        return aio::fs::create(m_resource + path, mode, flag).move();
+        return aio::fs::create(m_resource + path, mode, flag);
 	}
 
 	// \pre !absolute(to)

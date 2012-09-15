@@ -7,10 +7,25 @@
 
 namespace aio{ namespace atomic{
 
-	struct atomic_flag{ int value;};
+	struct atomic_flag{ 
+#ifdef GNUC_COMPILER_	
+	 __attribute__((aligned(sizeof(int))))
+#elif defined(MSVC_COMPILER_)
+	 __declspec(align(4))
+#else
+	 alignas(int)
+#endif	
+		int value;
+	};
 
-	template<typename T> struct atomic_t
-	{
+	template<typename T> struct atomic_t {
+#ifdef GNUC_COMPILER_	
+	 __attribute__((aligned(sizeof(int))))
+#elif defined(MSVC_COMPILER_)
+	 __declspec(align(4))
+# else
+	 alignas(const_max(alignof(int), alignof(T)))
+#endif	
 		T value;
 	};
 }}
@@ -102,14 +117,7 @@ namespace aio{ namespace atomic{ namespace private_{
     
 	template<typename T> inline bool cas_( atomic_t<T>& target, T expect, T update)
 	{
-        if (target.value == expect)
-        {
-            target.value = update;
-            return true;
-        }
-        return false;
-        // InterlockedCompareExchange failed due to alignment issue, it must be 32-bits aligned
-        //return InterlockedCompareExchange((LONG volatile*)&target.value, (LONG)update, (LONG)expect) == (LONG)expect;
+        return InterlockedCompareExchange((LONG volatile*)&target.value, (LONG)update, (LONG)expect) == (LONG)expect;
 	}
 
 	inline void sync_fence_()
@@ -119,13 +127,11 @@ namespace aio{ namespace atomic{ namespace private_{
 
     template<typename T> inline T sync_fetch_(atomic_t<T>& target)
     {
-        return target.value;
-        //return (T) InterlockedCompareExchange((LONG volatile*)&target.value, (LONG)0, (LONG)0);
+        return (T) InterlockedCompareExchange((LONG volatile*)&target.value, (LONG)0, (LONG)0);
     }
     inline bool sync_fetch_(atomic_t<bool>& target)
     {
-        return target.value;
-        //return InterlockedCompareExchange((LONG volatile*)&target.value, (LONG)0, (LONG)0) != 0;
+        return InterlockedCompareExchange((LONG volatile*)&target.value, (LONG)0, (LONG)0) != 0;
     }
 
 	inline bool sync_acquire_(atomic_flag& target)
@@ -145,8 +151,8 @@ namespace aio{ namespace atomic{ namespace private_{
         {
             expect = sync_fetch_(target);
             update = expect + value;
-        }
-        while(!cas_(target, expect, update));
+        } while(!cas_(target, expect, update));
+
         return update;
 	}
 	template<typename T> inline T sync_sub_fetch_(atomic_t<T>& target, T value)

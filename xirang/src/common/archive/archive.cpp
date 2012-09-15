@@ -23,30 +23,30 @@ namespace aio{ namespace archive
 
 	const_view::const_view(view_imp* imp) : m_imp(imp) {}
 
-	const_view::const_view(rv<const_view>& other)
+	const_view::const_view(const_view&& other)
 		:m_imp(other.m_imp)
 	{
 		other.m_imp = 0;
 	}
-	rv<const_view>& const_view::move()
-	{
-		return *reinterpret_cast< rv<const_view>* >(this);  
-	}
-
 	const_view::~const_view(){
 		if (valid())
 			m_imp->destroy();
 	}
+	const_view& const_view::operator=(const_view&& rhs){
+		const_view(std::move(rhs)).swap(*this);
+		return *this;
+	}
 
 	view::view(view_imp* imp) : const_view(imp) {}
-	view::view(rv<view>& mr)
+	view::view(view&& mr)
 		:const_view(mr.m_imp)
 	{
 		mr.m_imp = 0;
 	}
-	rv<view>& view::move()
-	{
-		return *reinterpret_cast< rv<view>* >(this);  
+
+	view& view::operator=(view&& rhs){
+		view(std::move(rhs)).swap(*this);
+		return *this;
 	}
 
 	void* view::address() const{

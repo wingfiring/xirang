@@ -95,7 +95,7 @@ namespace xirang{ namespace fs{
 
         aio::archive::archive_ptr par = recursive_create(*fh->cache_fs, fh->name
             , aio::archive::mt_random | aio::archive::mt_read | aio::archive::mt_write
-			, aio::archive::of_create_or_open).move();
+			, aio::archive::of_create_or_open);
 
 		if (!par)
 			AIO_THROW(vfs_runtime_error)("failed to create cached file.");
@@ -119,7 +119,7 @@ namespace xirang{ namespace fs{
 		{
             zip_inflater().do_inflate(fh->compressed_size, *rd, *wr);
 		}
-        return par.move();
+        return std::move(par);
 	}
 
 	int load_cd(iarchive& file, aio::buffer<byte>& buf)
@@ -337,7 +337,7 @@ namespace xirang{ namespace fs{
 		{
             zip_defalter defalter;
 
-            aio::archive::archive_ptr hcache = h.cache(no_edit).move();
+            aio::archive::archive_ptr hcache = h.cache(no_edit);
 			aio::archive::reader* rd = hcache->query_reader();
             h.in_crc32 = defalter.do_deflate(*rd, wr);
             h.compressed_size = defalter.zstream.total_out;

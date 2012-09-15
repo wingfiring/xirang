@@ -26,7 +26,7 @@ namespace xirang{ namespace fs{
 	// file operations
 	archive_ptr SubVfs::create(const string& path, int mode, int flag) {
         AIO_PRE_CONDITION(!is_absolute(path));
-        return parent.create(m_resource + path,  mode, flag).move();
+        return parent.create(m_resource + path,  mode, flag);
 	}
 
 	// \pre !absolute(to)

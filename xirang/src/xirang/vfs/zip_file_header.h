@@ -51,9 +51,9 @@ namespace xirang{ namespace fs{
 			AIO_PRE_CONDITION(!name.empty());
             if (!cached && this->relative_offset_data != uint32_t(-1))
             {
-                aio::archive::archive_ptr ret = inflate_header(this).move();
+                aio::archive::archive_ptr ret = inflate_header(this);
                 cached = true;
-                return ret.move();
+                return ret;
             }
             cached = true;
 
@@ -63,12 +63,12 @@ namespace xirang{ namespace fs{
             {
                 return recursive_create(*cache_fs, name
                     , aio::archive::mt_random | aio::archive::mt_read | aio::archive::mt_write
-                    , aio::archive::of_create_or_open).move();
+                    , aio::archive::of_create_or_open);
             }
 
             return cache_fs->create(name
                 , aio::archive::mt_random | aio::archive::mt_read | aio::archive::mt_write
-                , aio::archive::of_open).move();
+                , aio::archive::of_open);
 		}
 	};
 

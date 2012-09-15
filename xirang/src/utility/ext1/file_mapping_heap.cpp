@@ -8,6 +8,7 @@
 #include <set>
 #include <unordered_map>
 #include <vector>
+#include <cstring>	//for memcpy
 
 #ifndef MSVC_COMPILER_
 #include <unistd.h>
@@ -32,6 +33,8 @@ const uint32_t sig_ext_heap = 0x48545845; //"EXTH"
 
 namespace aio
 {
+	using std::memcpy;
+
 	AIO_EXCEPTION_TYPE(bad_ext_heap_format);
 
 	using boost::numeric_cast;
@@ -442,7 +445,7 @@ namespace aio
 				writer_().truncate(h.end);
 				info.map_file_size = h.end;
 			}
-			aio::unique_ptr<archive::view> region ( new archive::view(writer_().view_wr(h).move()));
+			aio::unique_ptr<archive::view> region ( new archive::view(writer_().view_wr(h)));
 			view_regions[h.begin] = region.get();
 			void * addr = region->address();
 			region.release();

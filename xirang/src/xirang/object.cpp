@@ -484,11 +484,7 @@ namespace xirang
     {
         return *m_alloc;
     }
-	aio::rv<ScopedObjectCreator>& ScopedObjectCreator::move()
-	{
-		 return *reinterpret_cast< aio::rv<ScopedObjectCreator>* >(this);  
-	}
-    ScopedObjectCreator::ScopedObjectCreator(aio::rv<ScopedObjectCreator>&  rhs)
+    ScopedObjectCreator::ScopedObjectCreator(ScopedObjectCreator&&  rhs)
         : m_type(rhs.m_type), m_al(rhs.m_al)
         , m_ext_al(rhs.m_ext_al), m_data(rhs.m_data)
     {
@@ -496,9 +492,9 @@ namespace xirang
     }
 
     /// move assignment
-    ScopedObjectCreator& ScopedObjectCreator::operator=(aio::rv<ScopedObjectCreator>&  rhs)
+    ScopedObjectCreator& ScopedObjectCreator::operator=(ScopedObjectCreator&&  rhs)
     {
-        ScopedObjectCreator(rhs).swap(*this);
+        ScopedObjectCreator(std::move(rhs)).swap(*this);
         return *this;
     }
 

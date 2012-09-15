@@ -34,7 +34,7 @@ struct as_string
 	const CharT* c_str() const { return str.c_str();}
 
 	///append result
-	std::basic_string<CharT> str;
+	aio::basic_string_builder<CharT> str;
 };
 
 }

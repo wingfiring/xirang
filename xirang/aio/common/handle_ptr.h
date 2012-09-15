@@ -70,7 +70,7 @@ namespace aio
 		///
 		bool is_null() const { return get() == 0;}
 
-		/* explicit */operator bool() const { return get() != 0;}
+		EXPLICIT_OPERATOR operator bool() const { return get() != 0;}
     private:        
         T* m_ptr;
     };

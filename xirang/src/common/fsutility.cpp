@@ -46,7 +46,31 @@ namespace aio {namespace fs{
             return string(name);
         }
     }
-#ifndef MSVC_COMPILER_
+#ifdef GNUC_COMPILER_
+    fs_error move(const string& from, const string& to)
+    {
+		int res = link(from.c_str(), to.c_str());
+		if (res == 0){
+			unlink(from.c_str());
+			return er_ok;
+		}
+
+		auto err = errno;
+		if(EXDEV == err){
+			auto ret = copy(from, to);
+			if (ret == er_ok)
+				unlink(from.c_str());
+			else return ret;
+		}
+		switch(err){
+			case EFAULT:
+			case EACCES: return er_permission_denied;
+			case EEXIST: return er_exist;
+			default:
+						 return er_system_error;
+		}
+    }
+
     fs_error remove(const string& path)
     {
         if (state(path).state == st_dir)
@@ -102,7 +126,15 @@ namespace aio {namespace fs{
         int ret = ::truncate(path.c_str(), s);
         return ret == 0 ? er_ok : er_system_error;
     }
-#else
+#elif defined(MSVC_COMPILER_)
+    fs_error move(const string& from, const string& to)
+    {
+        aio::wstring wfrom = aio::utf8::decode_string(to_native_path(from));
+        aio::wstring wto = aio::utf8::decode_string(to_native_path(to));
+		return MoveFileW(wfrom.c_str(), wto.c_str()) ? er_ok : er_system_error;
+
+    }
+
     fs_error remove(const string& path)
     {
         aio::wstring wpath = aio::utf8::decode_string(to_native_path(path));
@@ -209,31 +241,32 @@ namespace aio {namespace fs{
                 if ((mode & archive::mt_write) == 0)
                 {
                     AIO_PRE_CONDITION(flag == archive::of_open);
-                    return archive::archive_ptr(new file_read_archive(path)).move();
+                    return archive::archive_ptr(new file_read_archive(path));
                 }
                 else
-                    return archive::archive_ptr(new file_read_write_archive(path, flag)).move();
+                    return archive::archive_ptr(new file_read_write_archive(path, flag));
             }
             else if (mode & archive::mt_write)	//write only
             {
-                return archive::archive_ptr(new file_write_archive(path, flag)).move();
+                return archive::archive_ptr(new file_write_archive(path, flag));
             }
         } catch(...){}
 
-        return archive::archive_ptr().move();
+        return archive::archive_ptr();
     }
 
     fs_error copy(const string& from, const string& to)
     {
-        aio::archive::archive_ptr src = create(from, archive::mt_read|archive::mt_sequence, archive::of_open).move();
+        aio::archive::archive_ptr src = create(from, archive::mt_read|archive::mt_sequence, archive::of_open);
         if (!src)
             return er_open_failed;
-        aio::archive::archive_ptr dst = create(to, archive::mt_write|archive::mt_sequence, archive::of_create_or_open).move();
+        aio::archive::archive_ptr dst = create(to, archive::mt_write|archive::mt_sequence, archive::of_create_or_open);
         if (!dst)
             return er_open_failed;
        long_size_t n = archive::copy_archive(*src, *dst);
         return n == src->query_sequence()->size() ? er_ok : er_system_error;
     }
+
 
     class file_iterator
 	{
@@ -293,7 +326,7 @@ namespace aio {namespace fs{
             tmpdir = getenv("TMP");
 
         aio::string prefix = (tmpdir == 0) ? P_tmpdir : tmpdir;
-        return temp_file(template_, to_aio_path(prefix), flag, path).move();
+        return temp_file(template_, to_aio_path(prefix), flag, path);
     }
     
     archive::archive_ptr temp_file(const_range_string template_, const_range_string parent_dir, int flag /*= archive::of_create | archive::of_remove_on_close*/, string* path/* = 0*/)
@@ -317,7 +350,7 @@ namespace aio {namespace fs{
                 typedef aio::default_deletorT<aio::archive::file_read_write_archive> file_read_write_archive;
                 if (path)
                     *path = file_path;
-                return archive::archive_ptr(new file_read_write_archive(string(file_path), archive::open_flag(flag))).move();
+                return archive::archive_ptr(new file_read_write_archive(string(file_path), archive::open_flag(flag)));
             }
             catch(...){}
         }
@@ -513,9 +546,9 @@ namespace aio {namespace fs{
         fs_error err = recursive_create_dir(dir_filename(path));
         if (err != er_ok && err != er_exist)
         {
-            return archive::archive_ptr().move();
+            return archive::archive_ptr();
         }
-        return create(path, mode, flag).move();
+        return create(path, mode, flag);
     }
 
     string dir_filename(const string& path, string* file/* = 0*/)

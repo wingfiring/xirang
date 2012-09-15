@@ -4,12 +4,10 @@
 #define AIO_STRING_CAST_H
 #include <aio/common/config.h>
 #include <aio/common/macro_helper.h>
-
-//BOOST
-//#include <boost/lexical_cast.hpp>
+#include <aio/common/string_algo/utf8.h>
+#include <aio/common/range.h>
 
 //STL
-#include <cstdlib>	//for std::mbstowcs, std::wcstombs
 #include <string>
 #include <cstring>
 #include <cwchar>
@@ -24,44 +22,33 @@ template<>
 struct string_converter<char>
 {
 	template<typename T>
-	static std::string convert(const T& value)
+	static string convert(const T& value)
 	{
 		return convert_(value);
 	}
 
 private:
-	static std::string convert_(wchar_t value)
+	static string convert_(wchar_t value)
 	{
 		wchar_t arr[] = {value, 0};
 		return convert_((const wchar_t*)arr);
 	}
 
-	static std::string convert_(const wchar_t* value)
+	static string convert_(const wchar_t* value)
 	{
-		if (value == 0)
-			return convert_((void*)0);
+		if (value == 0) return "(null)";
 		
-		std::string result;
-		std::size_t length = std::wcslen(value);
-		result.resize(length * sizeof (wchar_t));
-		std::size_t size = std::wcstombs(const_cast<char*>(result.data()), value, length);
-		if (size == std::size_t(-1))
-			result.clear();
-		else
-			result.resize(size);
-		return result;
+		return utf8::encode_string(make_range(value, value + std::wcslen(value)));
 	}	
 
-	static std::string convert_(const char* value)
+	static string convert_(const char* value)
 	{
-		if (value == 0)
-			return convert((void*)0);
-	
+		if (value == 0) return "(null)";
 		return value;
 	}
 
 	template<std::size_t N>
-	static std::string convert_(const wchar_t (&value)[N])
+	static string convert_(const wchar_t (&value)[N])
 	{
 		return convert_((const wchar_t*)value);
 	}	
@@ -69,17 +56,16 @@ private:
 	/// append runtime info, char type (char, string ect) should use as<char> method
 	/// @param value 
 	template< typename T>
-	static std::string convert_(const T& value)
+	static string convert_(const T& value)
 	{
-        std::stringstream sstr;
-        sstr <<value;
-        return sstr.str();
-		//return boost::lexical_cast<std::string>(value);
+		std::stringstream sstr;
+        sstr << value;
+        return sstr.str().c_str();
 	}
 
-	static std::string convert_(const std::wstring& value)
+	static string convert_(const wstring& value)
 	{
-		return convert_(value.c_str());
+		return utf8::encode_string(value);
 	}
 };
 
@@ -87,42 +73,33 @@ template<>
 struct string_converter<wchar_t>
 {
 	template<typename T>
-	static std::wstring convert(const T& value)
+	static wstring convert(const T& value)
 	{
 		return convert_(value);
 	}
 
 private:
-	static std::wstring convert_(char value)
+	static wstring convert_(char value)
 	{
-		return std::wstring(1, wchar_t(value));
+		return wstring_builder(1, wchar_t(value)).str();
 	}
 
-	static std::wstring convert_(const char* value)
+	static wstring convert_(const char* value)
 	{
-		if (value == 0)
-			return convert_((void*)0);
+		if (value == 0) return L"(null)";
 		
-		std::wstring result;
-		result.resize(std::strlen(value));
-		std::size_t size = std::mbstowcs(const_cast<wchar_t*>(result.data()), value, result.size());
-		if (size == std::size_t(-1))
-			result.clear();
-		else
-			result.resize(size);
-		return result;
+		return utf8::decode_string(make_range(value, value + std::strlen(value)));
 	}	
 
-	static std::wstring convert_(const wchar_t* value)
+	static wstring convert_(const wchar_t* value)
 	{
-		if (value == 0)
-			return convert((void*)0);
+		if (value == 0) return L"(null)";
 
 		return value;
 	}
 
 	template<std::size_t N>
-	static std::wstring convert_(const char (&value)[N])
+	static wstring convert_(const char (&value)[N])
 	{
 		return convert_((const char*)value);
 	}
@@ -130,16 +107,14 @@ private:
 	/// append runtime info, char type (char, string ect) should use as<char> method
 	/// @param value 
 	template< typename T>
-	static std::wstring convert_(const T& value)
+	static wstring convert_(const T& value)
 	{
-        std::wstringstream sstr;
+		std::wstringstream sstr;
         sstr <<value;
         return sstr.str();
-
-		//return boost::lexical_cast<std::wstring>(value);
 	}
 
-	static std::wstring convert_(const std::string& value)
+	static wstring convert_(const string& value)
 	{
 		return convert_(value.c_str());
 	}
@@ -147,7 +122,7 @@ private:
 }	//namespace private_
 
 template<typename CharT, typename T>
-std::basic_string<CharT> string_cast(const T& value)
+basic_string<CharT> string_cast(const T& value)
 {
 	return private_::string_converter<CharT>::convert(value);
 }

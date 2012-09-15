@@ -5,15 +5,12 @@
 #include <aio/common/config.h>
 #include <aio/common/macro_helper.h>
 #include <aio/common/utf8char.h>
-
 #include <aio/common/string.h>
-//STL
-//#include <string>
-#include <aio/common/as_string.h>
 
 #include <aio/common/config/abi_prefix.h>
 namespace aio
 {
+	extern basic_string<char_utf8> line2string(unsigned line);
 	//used to collect exception point runtime information
 	// @param base usually, user just need to define a empty exception class
 	// with or without base class. all aio exception class should derived from ::aio::exception
@@ -21,6 +18,13 @@ namespace aio
 	class context_exception : public Base
 	{
 	public:
+		explicit context_exception(const char_utf8* file, unsigned lineno)
+			: m_msg(file)
+		{
+			m_msg.push_back('(');
+			m_msg += line2string(lineno);
+			m_msg.push_back(')');
+		}
 		/// just for nothow compatible
 		virtual ~context_exception() AIO_COMPATIBLE_NOTHROW() {}
 
@@ -54,7 +58,7 @@ namespace aio
 	};
 }
 
-#define AIO_THROW(ex) throw ::aio::context_exception<ex>()(__FILE__)("(")(aio::as_string<aio::char_utf8>(__LINE__).c_str())(")")
+#define AIO_THROW(ex) throw ::aio::context_exception<ex>(__FILE__, __LINE__)
 
 #include <aio/common/config/abi_suffix.h>
 #endif //end AIO_CONTEXT_EXCEPTION_H

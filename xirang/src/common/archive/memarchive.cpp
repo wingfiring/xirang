@@ -32,7 +32,7 @@ namespace aio{ namespace archive {
 	}
 
 	const_view buffer_in::view_rd(ext_heap::handle) const {
-		return const_view().move();
+		return const_view();
 	}
 
 	long_size_t buffer_in::offset() const { return m_pos;}
@@ -92,7 +92,7 @@ namespace aio{ namespace archive {
 	}
 
 	view buffer_out::view_wr(ext_heap::handle) {
-		return view().move();
+		return view();
 	}
 
 
@@ -140,11 +140,11 @@ namespace aio{ namespace archive {
 	}
 
 	const_view buffer_io::view_rd(ext_heap::handle) const {
-		return const_view().move();
+		return const_view();
 	}
 
 	view buffer_io::view_wr(ext_heap::handle) {
-		return view().move();
+		return view();
 	}
 
 	buffer_io::const_iterator buffer_io::write(const range<buffer_io::const_iterator>& r)

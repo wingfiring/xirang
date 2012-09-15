@@ -62,7 +62,11 @@ namespace aio { namespace archive{
 	class const_view
 	{
 		public:
-			friend class move_ref;
+			const_view(const_view && rhs);
+			const_view(view_imp* imp = 0);
+			~const_view();
+			const_view& operator=(const_view&& rhs);
+
 			EXPLICIT_OPERATOR  operator bool() const;
 			bool valid() const;
 			const void* address() const;
@@ -70,10 +74,6 @@ namespace aio { namespace archive{
 
 			void swap(const_view& rhs);
 
-			const_view(rv<const_view>& other);
-			rv<const_view>& move();
-			const_view(view_imp* imp = 0);
-			~const_view();
 
 		protected:
 			const_view(const const_view& );/* = delete;*/
@@ -84,11 +84,9 @@ namespace aio { namespace archive{
 	class view : public const_view
 	{
 		public:
-			friend class move_ref;
-
-			rv<view>& move();
 			view(view_imp* imp = 0);
-			view(rv<view>& other);
+			view(view&& other);
+			view& operator=(view&& other);
 			void* address() const;
 			void swap(view& rhs);
 		private:
@@ -167,16 +165,9 @@ namespace aio { namespace archive{
 		protected:
 		virtual ~iarchive()= 0;
 	};
-#if 0
+
 	template <typename ... Base>
 		struct archiveT : iarchive, Base...
-#else
-    template <class T0 = null_type, class T1 = null_type, class T2 = null_type, class T3 = null_type
-            , class T4 = null_type, class T5 = null_type>
-		struct archiveT : iarchive
-            , identity_base0<T0>, identity_base1<T1>, identity_base2<T2>, identity_base3<T3>
-            , identity_base4<T4>, identity_base5<T5>
-#endif
 	{
 		virtual reader* query_reader() { return cast_<reader>();}
 		virtual writer* query_writer() { return cast_<writer>();}

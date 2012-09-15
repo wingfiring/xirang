@@ -18,7 +18,7 @@ BOOST_AUTO_TEST_CASE(tempfile_case)
 
     aio::string tmppath;
     {   
-        aio::archive::archive_ptr file = temp_file(prefix, aio::archive::of_remove_on_close, &tmppath).move();
+        aio::archive::archive_ptr file = temp_file(prefix, aio::archive::of_remove_on_close, &tmppath);
         BOOST_CHECK(file);
         BOOST_CHECK(!tmppath.empty());
         BOOST_CHECK(state(tmppath).state == aio::fs::st_regular);
@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(tempfile_case)
     {
         tmppath  = temp_dir(prefix);
         BOOST_CHECK(!tmppath.empty());
-        BOOST_CHECK(temp_file("test", tmppath).move());
+        BOOST_CHECK(temp_file("test", tmppath));
         BOOST_CHECK(state(tmppath).state == aio::fs::st_dir);
 
         temp_file("test", tmppath, 0, &tmpfilepath2);
@@ -56,9 +56,9 @@ BOOST_AUTO_TEST_CASE(create_case)
 
     BOOST_CHECK(!create(tmpfile, aio::archive::mt_write | aio::archive::mt_random, aio::archive::of_open));
 
-    BOOST_CHECK(create(tmpfile, aio::archive::mt_write | aio::archive::mt_random, aio::archive::of_create).move());
+    BOOST_CHECK(create(tmpfile, aio::archive::mt_write | aio::archive::mt_random, aio::archive::of_create));
 
-    aio::archive::archive_ptr file = create(tmpfile, aio::archive::mt_write | aio::archive::mt_random, aio::archive::of_create_or_open).move();
+    aio::archive::archive_ptr file = create(tmpfile, aio::archive::mt_write | aio::archive::mt_random, aio::archive::of_create_or_open);
     BOOST_CHECK(file);
     BOOST_CHECK(file->query_writer());
     BOOST_CHECK(file->query_random());
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(create_case)
     file.reset();
 
     aio::fs::copy(tmpfile, tmpfile2);
-    aio::archive::archive_ptr file2 = create(tmpfile2, aio::archive::mt_read | aio::archive::mt_random, aio::archive::of_open).move();
+    aio::archive::archive_ptr file2 = create(tmpfile2, aio::archive::mt_read | aio::archive::mt_random, aio::archive::of_open);
     BOOST_REQUIRE(file2);
 
     aio::buffer<aio::byte> buf2;
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(recursive_create_dir_case)
     aio::string tmpdir  = temp_dir("tmp");
     BOOST_CHECK(recursive_create_dir(tmpdir + "/a/b/c") == aio::fs::er_ok);
 
-    BOOST_CHECK(recursive_create(tmpdir + "/x/y/z", aio::archive::mt_write | aio::archive::mt_random, aio::archive::of_create).move());
+    BOOST_CHECK(recursive_create(tmpdir + "/x/y/z", aio::archive::mt_write | aio::archive::mt_random, aio::archive::of_create));
     recursive_remove(tmpdir);
 }
 
@@ -197,17 +197,17 @@ BOOST_AUTO_TEST_CASE(ext_filename_case)
 BOOST_AUTO_TEST_CASE(recreate_file_case)
 {
     aio::string tmppath;
-    aio::archive::archive_ptr file = temp_file("test", 0, &tmppath).move();
+    aio::archive::archive_ptr file = temp_file("test", 0, &tmppath);
     aio::buffer<aio::byte> data;
     data.resize(100);
     file->query_writer()->write(to_range(data));
 
-    aio::archive::archive_ptr file2 = create(tmppath, aio::archive::mt_read |aio::archive::mt_random, aio::archive::of_open).move();
+    aio::archive::archive_ptr file2 = create(tmppath, aio::archive::mt_read |aio::archive::mt_random, aio::archive::of_open);
     BOOST_CHECK(file2);
     BOOST_CHECK(file2->query_writer() == 0);
 
     file.reset();
-    aio::archive::archive_ptr file3 = create(tmppath, aio::archive::mt_write | aio::archive::mt_read |aio::archive::mt_random, aio::archive::of_open).move();
+    aio::archive::archive_ptr file3 = create(tmppath, aio::archive::mt_write | aio::archive::mt_read |aio::archive::mt_random, aio::archive::of_open);
     BOOST_CHECK(file3);
     BOOST_CHECK(file3->query_writer() );
 

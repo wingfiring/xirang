@@ -86,7 +86,7 @@ typedef multiplex_deletor<multiplex_reader<multiplex_writer<multiplex_random<mul
                 || (pos && flag == of_create)
 					|| (!pos && flag == of_open)
                  || pos == &m_root_node)                    
-				return archive_ptr().move();
+				return archive_ptr();
 
 			if (!pos)
 			{
@@ -97,7 +97,7 @@ typedef multiplex_deletor<multiplex_reader<multiplex_writer<multiplex_random<mul
 						pos->data = new archive_type;
 				}
 				else 
-					return archive_ptr().move();
+					return archive_ptr();
 			}
 
             if (mode & aio::archive::mt_read)
@@ -105,18 +105,18 @@ typedef multiplex_deletor<multiplex_reader<multiplex_writer<multiplex_random<mul
 				if ((mode & aio::archive::mt_write) == 0)
 				{
 					AIO_PRE_CONDITION(flag == of_open);
-					return archive_ptr(new inmem_read_archive(pos->data)).move();
+					return archive_ptr(new inmem_read_archive(pos->data));
 				}
 				else
                 {
-					return archive_ptr(new inmem_read_write_archive(pos->data)).move();
+					return archive_ptr(new inmem_read_write_archive(pos->data));
                 }
 			}
 			else if (mode & aio::archive::mt_write)	//write only
 			{
-				return archive_ptr(new inmem_write_archive(pos->data)).move();
+				return archive_ptr(new inmem_write_archive(pos->data));
 			}
-			return archive_ptr().move();
+			return archive_ptr();
 		}
 
 		// \pre !absolute(to)
@@ -265,7 +265,7 @@ fs_error InMemory::createDir(const  string& path) { return m_imp->createDir(path
 // file operations
 archive_ptr InMemory::create(const string& path, int mode, int flag)
 {
-	return m_imp->create(path, mode, flag).move();
+	return m_imp->create(path, mode, flag);
 }
 
 // \pre !absolute(to)

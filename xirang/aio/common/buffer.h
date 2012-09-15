@@ -32,14 +32,20 @@ namespace aio
 		typedef pointer iterator;
 		typedef const_pointer const_iterator;
 
-		explicit buffer(heap& h = memory::get_global_heap())
+		explicit buffer()
+			: m_heap(&memory::get_global_heap())
+			, m_capacity(0)
+			, m_size(0)
+			, m_data(0)
+		{}
+
+		explicit buffer(heap& h)
 			: m_heap(&h)
 			, m_capacity(0)
 			, m_size(0)
 			, m_data(0)
 		{}
 
-#ifdef WIN32
 		buffer(buffer&& rhs)
 			: m_heap(rhs.m_heap)
 			, m_capacity(rhs.m_capacity)
@@ -50,7 +56,6 @@ namespace aio
 			rhs.m_size = 0;
 			rhs.m_data = 0;
 		}
-#endif
 		buffer(const buffer& rhs)
 			: m_heap(rhs.m_heap)
 			, m_capacity(0)
@@ -118,12 +123,9 @@ namespace aio
 		}
 		
 		//dtor
-		~buffer()
-		{
+		~buffer() {
 			if (m_data)
-			{
 				free_(m_data, m_capacity);
-			}
 		}
 
 		//assignment
@@ -133,13 +135,11 @@ namespace aio
 				buffer(rhs).swap(*this);
 			return *this;
 		}
-#ifdef WIN32
 		buffer& operator=(buffer&& rhs)
 		{
-			buffer(rhs).swap(*this);
+			buffer(std::move(rhs)).swap(*this);
 			return *this;
 		}
-#endif
 		buffer& assign(size_type count, T ch)
 		{
 			buffer(count, ch, *m_heap).swap(*this);
@@ -461,3 +461,4 @@ namespace aio
 }
 
 #endif //end AIO_BUFFER_H
+
