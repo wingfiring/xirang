@@ -49,6 +49,7 @@ namespace aio
 			@param function in function name
 			@param line line number
 			@param message addtional message
+			@return if the impementation ignores a error, return true, else return false.
 			@note generally, process should print diagnosis info and then abort or active debuger.
 			if necessary, process can throw an exception instead of abort, such as in release version.
 			but be careful, use exceptions instead of invariants is almost always a bad practice.

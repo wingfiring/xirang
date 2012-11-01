@@ -1,5 +1,5 @@
 #include <aio/common/archive/file_archive.h>
-#include <aio/common/as_string.h>
+#include <aio/common/to_string.h>
 
 #include <boost/interprocess/file_mapping.hpp>
 #include <boost/interprocess/mapped_region.hpp>
@@ -146,7 +146,7 @@ namespace aio{ namespace archive
 #endif
 			long_size_t fsize = get_file_size_();
 			if (fsize != nsize)
-				AIO_THROW(archive_append_failed)(as_string<char>(nsize).c_str());
+				AIO_THROW(archive_append_failed)(to_string<char>(nsize).c_str());
 			m_file_size = nsize;
 			if (m_pos > m_file_size)
 				m_pos = m_file_size;
