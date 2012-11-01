@@ -359,8 +359,8 @@ namespace xirang
         if (!n.empty() && n[0] == dim)
             return parent().valid() ? parent().locateType(n, dim) : Type();
 
-        aio::char_separator sep(dim, 0, aio::keep_empty_tokens);
-        typedef boost::tokenizer<aio::char_separator, string::const_iterator, aio::const_range_string> tokenizer;
+        aio::char_separator<char> sep(dim, 0, aio::keep_empty_tokens);
+        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
         tokenizer tokens(n, sep);
 
         tokenizer::iterator itr = tokens.begin();

@@ -414,8 +414,8 @@ namespace aio {namespace fs{
         bool is_abs = !p.empty() && *p.begin() == '/';
 		bool end_slash = !p.empty() && *(p.end() - 1) == '/';
 
-		aio::char_separator sep('/');
-        typedef boost::tokenizer<aio::char_separator, string::const_iterator, const_range_string> tokenizer;
+		aio::char_separator<char> sep('/');
+        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, const_range_string> tokenizer;
         tokenizer tokens(p, sep);
 
 		std::deque<aio::string> stack;
@@ -457,8 +457,8 @@ namespace aio {namespace fs{
 
     bool is_normalized(const string& p)
 	{
-		aio::char_separator sep('/');
-        typedef boost::tokenizer<aio::char_separator, string::const_iterator, const_range_string> tokenizer;
+		aio::char_separator<char> sep('/');
+        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, const_range_string> tokenizer;
 		tokenizer tokens(p, sep);
 
         
@@ -507,8 +507,8 @@ namespace aio {namespace fs{
 
     fs_error recursive_create_dir(const string& path)
     {
-        aio::char_separator sep('/', 0, aio::keep_empty_tokens);
-        typedef boost::tokenizer<aio::char_separator, string::const_iterator, const_range_string> tokenizer;
+        aio::char_separator<char> sep('/', 0, aio::keep_empty_tokens);
+        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, const_range_string> tokenizer;
         aio::string normalized_path = normalize(path);
 		tokenizer tokens(normalized_path, sep);
 

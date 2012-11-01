@@ -46,8 +46,8 @@ namespace xirang{ namespace fs{ namespace private_{
 	template <typename T>
 	file_node<T>* locate_parent(file_node<T>& root, const string& path, string& base) 
 	{
-        aio::char_separator sep('/');
-        typedef boost::tokenizer<aio::char_separator, string::const_iterator, aio::const_range_string> tokenizer;
+        aio::char_separator<char> sep('/');
+        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
         tokenizer tokens(path, sep);
 
 
@@ -113,8 +113,8 @@ namespace xirang{ namespace fs{ namespace private_{
 	{
 		AIO_PRE_CONDITION(!path.empty());
 
-		aio::char_separator sep('/');
-        typedef boost::tokenizer<aio::char_separator, string::const_iterator, aio::const_range_string> tokenizer;
+		aio::char_separator<char> sep('/');
+        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
         tokenizer tokens(path, sep);
 
 		file_node<T>* pos = &root;

@@ -333,8 +333,8 @@ namespace xirang{ namespace fs{
     }
     fs_error recursive_create_dir(IVfs&vfs, const string& path)
     {
-        aio::char_separator sep('/');
-        typedef boost::tokenizer<aio::char_separator, string::const_iterator, aio::const_range_string> tokenizer;
+        aio::char_separator<char> sep('/');
+        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
 
         aio::string sp(normalize(path));
 		tokenizer tokens(sp, sep);

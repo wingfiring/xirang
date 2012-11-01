@@ -146,7 +146,7 @@ namespace aio{ namespace archive
 #endif
 			long_size_t fsize = get_file_size_();
 			if (fsize != nsize)
-				AIO_THROW(archive_append_failed)(to_string<char>(nsize).c_str());
+				AIO_THROW(archive_append_failed)(to_string(nsize).c_str());
 			m_file_size = nsize;
 			if (m_pos > m_file_size)
 				m_pos = m_file_size;

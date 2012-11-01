@@ -12,8 +12,8 @@ namespace aio{ namespace atomic{
 	 __attribute__((aligned(sizeof(int))))
 #elif defined(MSVC_COMPILER_)
 	 __declspec(align(4))
-#else
-	 alignas(int)
+#else		
+	 alignas(int)  // need C++11 support
 #endif	
 		int value;
 	};
@@ -24,7 +24,7 @@ namespace aio{ namespace atomic{
 #elif defined(MSVC_COMPILER_)
 	 __declspec(align(4))
 # else
-	 alignas(const_max(alignof(int), alignof(T)))
+	 alignas(const_max(alignof(int), alignof(T)))  // need C++11 support
 #endif	
 		T value;
 	};

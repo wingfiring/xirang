@@ -127,20 +127,20 @@ basic_string<CharT> string_cast(const T& value)
 
 /// use to convert and strore serials of data as string
 template<typename CharT>
-struct to_string
+struct basic_to_string
 {
 	///\ctor
-	to_string(){}
+	basic_to_string(){}
 
 	///\ctor template version
 	template<typename T>
-	explicit to_string(const T& value){
+	explicit basic_to_string(const T& value){
 		(*this)(value);
 	}
 
 	///convert the value to string, then append to the current str.
 	template<typename T>
-	to_string& operator()(const T& value){
+	basic_to_string& operator()(const T& value){
 		str += string_cast<CharT>(value);
 		return *this;
 	}
@@ -150,6 +150,9 @@ struct to_string
 	///append result
 	aio::basic_string_builder<CharT> str;
 };
+
+typedef basic_to_string<char>  to_string;
+typedef basic_to_string<char>  to_wstring;
 
 }
 

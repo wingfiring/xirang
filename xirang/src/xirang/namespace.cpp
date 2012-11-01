@@ -61,8 +61,8 @@ namespace xirang
 	{
 		AIO_PRE_CONDITION (valid ());
 
-        aio::char_separator sep(dim, 0, aio::keep_empty_tokens);
-        typedef boost::tokenizer<aio::char_separator, string::const_iterator, aio::const_range_string> tokenizer;
+        aio::char_separator<char> sep(dim, 0, aio::keep_empty_tokens);
+        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
         tokenizer tokens(n, sep);
 
         tokenizer::iterator itr = tokens.begin();
@@ -130,8 +130,8 @@ namespace xirang
 		if (n.size() == 1 && *n.begin() == dim)
 			return this->root();
 
-        aio::char_separator sep(dim, 0, aio::keep_empty_tokens);
-        typedef boost::tokenizer<aio::char_separator, string::const_iterator, aio::const_range_string> tokenizer;
+        aio::char_separator<char> sep(dim, 0, aio::keep_empty_tokens);
+        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
         tokenizer tokens(n, sep);
 
 		tokenizer::iterator itr = tokens.begin();
@@ -296,8 +296,8 @@ namespace xirang
 
     NamespaceBuilder& NamespaceBuilder::createChild(const string& path, char dim /* = '.' */)
     {
-        aio::char_separator sep(dim, 0, aio::keep_empty_tokens);
-        typedef boost::tokenizer<aio::char_separator, string::const_iterator, aio::const_range_string> tokenizer;
+        aio::char_separator<char> sep(dim, 0, aio::keep_empty_tokens);
+        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
         tokenizer tokens(path, sep);
 
         tokenizer::iterator itr = tokens.begin();

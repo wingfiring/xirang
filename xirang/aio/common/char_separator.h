@@ -9,10 +9,11 @@ namespace aio
 {
     enum empty_token_policy { drop_empty_tokens, keep_empty_tokens };
 
+	template<typename CharT>
     class char_separator
     {
         typedef const_range_string string_type;
-        typedef char char_type;
+        typedef CharT char_type;
     public:
         explicit  char_separator(char_type dropped_delims,
             char_type kept_delims = 0,

@@ -8,8 +8,9 @@
 #include <aio/common/range.h>
 
 //STL
-
 #include <algorithm>
+#include <type_traits>
+
 namespace aio
 {
 	template<typename T>
