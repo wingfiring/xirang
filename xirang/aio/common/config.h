@@ -24,16 +24,6 @@ namespace aio{
 	template<typename T> constexpr T const& const_min(T const& a, T const& b) {
 		return a < b ? a : b;
 	}
-
-
-	template<typename Base> struct identity_base0 : Base{};
-    template<typename Base> struct identity_base1 : Base{};
-    template<typename Base> struct identity_base2 : Base{};
-    template<typename Base> struct identity_base3 : Base{};
-    template<typename Base> struct identity_base4 : Base{};
-    template<typename Base> struct identity_base5 : Base{};
-
-    struct null_type{};
 }
 
 #endif //end AIO_COMMON_CONFIG_H

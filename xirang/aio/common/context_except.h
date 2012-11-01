@@ -11,6 +11,10 @@
 namespace aio
 {
 	extern basic_string<char_utf8> line2string(unsigned line);
+
+	struct stack_info_tag{};
+	const stack_info_tag stack_info;
+
 	//used to collect exception point runtime information
 	// @param base usually, user just need to define a empty exception class
 	// with or without base class. all aio exception class should derived from ::aio::exception
@@ -28,8 +32,8 @@ namespace aio
 		/// just for nothow compatible
 		virtual ~context_exception() AIO_COMPATIBLE_NOTHROW() {}
 
-		/// append runtime info, char type (char, string ect) should use as<char> method
-		/// @param t 
+		/// append runtime info, char type (char, string ect) 
+		/// @param value 
 		context_exception& operator()(const const_range_string& value)
 		{
 			this->m_msg += value;
@@ -37,11 +41,16 @@ namespace aio
 		}
 
 		/// append runtime info, char type (char, string ect) should use as<char> method
-		/// @param t 
+		/// @param value 
 		context_exception& operator()(const char_utf8* value)
 		{
 			if (value != 0)
 				this->m_msg += value;
+			return *this;
+		}
+
+		context_exception& operator()(stack_info_tag){
+			//TODO: imp
 			return *this;
 		}
 
@@ -51,6 +60,10 @@ namespace aio
 		}
 
 		virtual context_exception& append(const char_utf8* info) {
+			return (*this)(info);
+		}
+
+		virtual context_exception& append(stack_info_tag info) {
 			return (*this)(info);
 		}
 	private:
