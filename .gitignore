@@ -1,2 +1,17 @@
+<<<<<<< HEAD
 xirang/build_dir
 *.swp
+=======
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+>>>>>>> dc07c686ffd71eaa7abebe5e5366f3a241a18ebb
