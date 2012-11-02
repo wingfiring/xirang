@@ -10,105 +10,198 @@
 #include <iterator>     //for iterator_traits
 #include <functional> //for std:less
 
+#define AIO_ITERATOR_TRAITS_TYPEDEF(Traits)\
+			typedef typename Traits::iterator_category iterator_category;\
+            typedef typename Traits::value_type value_type;\
+            typedef typename Traits::difference_type difference_type;\
+            typedef typename Traits::distance_type distance_type;\
+            typedef typename Traits::pointer pointer;\
+            typedef typename Traits::reference reference;
+
 namespace aio
 {
 	const std::size_t IteratorSizeLimit = 5;
 
-	template<typename Traits> class IteratorImpBase
-	{
+	class iter_iface_base{
 		public:
-			typedef typename Traits::iterator_category iterator_category;
-            typedef typename Traits::value_type value_type;
-            typedef typename Traits::difference_type difference_type;
-            typedef typename Traits::distance_type distance_type;	// retained
-            typedef typename Traits::pointer pointer;
-            typedef typename Traits::reference reference;
-
-			virtual reference operator*() const = 0;
-			virtual void operator++() = 0;
-			virtual void operator--() = 0;
-			virtual IteratorImpBase<Traits>* clone(IteratorImpBase<Traits>** place) const = 0;
+			virtual iter_iface_base* clone(void* candidate_place) const = 0;
 			virtual void destroy() = 0;
-			virtual bool equals(const IteratorImpBase<Traits>& rhs) const = 0;
-			virtual void swap(IteratorImpBase<Traits>& rhs) = 0;
+			virtual bool equals(const iter_iface_base& rhs) const = 0;
+			virtual void swap(iter_iface_base& rhs) = 0;
 		protected:
-			virtual ~IteratorImpBase() {}
+			virtual ~iter_iface_base(){}
 	};
 
-	template<typename Traits, typename RealIterator> 
-		class IteratorImp : public IteratorImpBase<Traits>
+	template<typename Traits> class iter_iface_output : public iter_iface_base
 	{
 		public:
-			typedef IteratorImp<Traits, RealIterator> SelfType;
+			AIO_ITERATOR_TRAITS_TYPEDEF(Traits);
 
-			typedef typename Traits::iterator_category iterator_category;
-            typedef typename Traits::value_type value_type;
-            typedef typename Traits::difference_type difference_type;
-            typedef typename Traits::distance_type distance_type;	// retained
-            typedef typename Traits::pointer pointer;
-            typedef typename Traits::reference reference;
+			virtual reference deref() const = 0;
+			virtual void increase() = 0;
+	};
 
-			explicit IteratorImp(const RealIterator& p) : pos(p) {}
 
-			virtual reference operator*() const { return *pos; }
+	template<typename Traits> class iter_iface_input : public iter_iface_base
+	{
+		public:
+			AIO_ITERATOR_TRAITS_TYPEDEF(Traits);
 
-			virtual void operator++() { ++pos; }
+			virtual reference deref() const = 0;
+			virtual void increase() = 0;
+	};
 
-			virtual void operator--() { --pos; }
+	template<typename Traits> class iter_iface_forward : public iter_iface_input<Traits> 
+	{ };
 
-			virtual bool equals(const IteratorImpBase<Traits>& rhs) const
+
+	template<typename Traits> class iter_iface_bidirection : public iter_iface_forward<Traits>
+	{
+		public:
+			AIO_ITERATOR_TRAITS_TYPEDEF(Traits);
+
+			virtual void increase() = 0;
+			virtual void decrease() = 0;
+	};
+
+
+	template<typename Traits> class iter_iface_random : public iter_iface_bidirection<Traits>
+	{
+		public:
+			AIO_ITERATOR_TRAITS_TYPEDEF(Traits);
+
+			virtual void advance(distance_type n) = 0;
+			virtual distance_type distance(const iter_iface_base& rhs) = 0;
+	};
+
+	template<typename IteratorIFace, typename RealIterator> class iter_imp_base : public IteratorIFace
+	{
+		public:
+			typedef RealIterator real_iterator_type;
+
+			virtual real_iterator_type& get_real() = 0;
+			virtual const real_iterator_type& get_real() const = 0;
+	};
+
+	template<typename IteratorIFace, typename RealIterator> class iter_imp_in_or_output 
+		: public iter_imp_base<IteratorIFace, RealIterator>
+	{
+		public:
+			typedef iter_imp_base<IteratorIFace, RealIterator> base_type;
+			AIO_ITERATOR_TRAITS_TYPEDEF(base_type);
+
+			virtual reference deref() const { return *this->get_real(); }
+			virtual void increase() { ++this->get_real(); }
+	};
+
+	template<typename IteratorIFace, typename RealIterator> class iter_imp_forward 
+		: public iter_imp_in_or_output<IteratorIFace, RealIterator>
+	{ };
+
+	template<typename IteratorIFace, typename RealIterator> class iter_imp_bidirection 
+		: public iter_imp_forward<IteratorIFace, RealIterator>
+	{ 
+		public:
+			virtual void decrease() { --this->get_real(); }
+	};
+
+	template<typename IteratorIFace, typename RealIterator> class iter_imp_random 
+		: public iter_imp_bidirection<IteratorIFace, RealIterator>
+	{ 
+		public:
+			typedef iter_imp_bidirection<IteratorIFace, RealIterator> base_type;
+			AIO_ITERATOR_TRAITS_TYPEDEF(base_type);
+			typedef iter_imp_random<IteratorIFace, RealIterator> self_type;
+
+			virtual void advance(distance_type n){
+				return this->get_real() += n;
+			}
+			virtual distance_type distance(const iter_iface_base& rhs){
+				AIO_PRE_CONDITION(dynamic_cast<const self_type*>(&rhs) != 0);
+
+                const self_type* other = static_cast<const self_type*>(&rhs);
+				return  other->get_real() - this->get_real();
+			}
+	};
+
+	template<typename Base> class iter_imp_wrap : public Base
+	{
+		public:
+			typedef typename Base::real_iterator_type real_iterator_type;
+			AIO_ITERATOR_TRAITS_TYPEDEF(Base);
+
+			typedef iter_imp_wrap<Base> self_type;
+
+			explicit iter_imp_wrap(const real_iterator_type& p) : m_pos(p) {}
+
+			virtual real_iterator_type& get_real() { return m_pos;}
+			virtual const real_iterator_type& get_real() const { return m_pos;}
+
+			virtual bool equals(const iter_iface_base& rhs) const
 			{	
-				AIO_PRE_CONDITION(dynamic_cast<const SelfType*>(&rhs) != 0);
-                const SelfType* other = static_cast<const SelfType*>(&rhs);
-				return pos == other->pos;
+				AIO_PRE_CONDITION(dynamic_cast<const self_type*>(&rhs) != 0);
+                const self_type* other = static_cast<const self_type*>(&rhs);
+				return this->m_pos == other->m_pos;
 			}
 
-			virtual IteratorImpBase<Traits>* clone(IteratorImpBase<Traits>** place) const
+			virtual Base* clone(void* place) const
 			{
 				AIO_PRE_CONDITION(place != 0);
 
-				return create(place, pos);
+				return create(place, m_pos);
 			}
 
-			virtual void swap(IteratorImpBase<Traits>& rhs) 
+			virtual void swap(iter_iface_base& rhs) 
 			{
 				using std::swap;
-				AIO_PRE_CONDITION(dynamic_cast<SelfType*>(&rhs) != 0);
-                SelfType* other = static_cast<SelfType*>(&rhs);
-				swap(pos, other->pos);
+				AIO_PRE_CONDITION(dynamic_cast<self_type*>(&rhs) != 0);
+                self_type* other = static_cast<self_type*>(&rhs);
+				swap(m_pos, other->m_pos);
 			}
 
 			static bool canInplaceCreate() 
 			{
-				return sizeof(IteratorImp) <= IteratorSizeLimit * sizeof(IteratorImp*);
+				return sizeof(self_type) <= IteratorSizeLimit * sizeof(self_type*);
 			}
 
-			static IteratorImpBase<Traits>* create(IteratorImpBase<Traits>** place, const RealIterator& itr)
+			static Base* create(void* place, const real_iterator_type& itr)
 			{
 				AIO_PRE_CONDITION(place != 0);
 				if (canInplaceCreate())
 				{	
-					return new (place) SelfType(itr);
+					return new (place) self_type(itr);
 				}
 				else
 				{
-					SelfType* ptr = new SelfType(itr);
-					return (place[IteratorSizeLimit - 1] = ptr);
+					self_type* ptr = new self_type(itr);
+					return (((self_type**)place)[IteratorSizeLimit - 1] = ptr);
 				}
 			}
 
 			virtual void destroy() 
 			{
 				if (canInplaceCreate()) {
-					this->~IteratorImp();
+					this->~self_type();
 				}
 				else {
 					delete this;
 				}
 			}
 		private:
-			RealIterator pos;
+			real_iterator_type m_pos;
+
 	};
+
+	template<typename Traits> class output_iterator
+	{ };
+	template<typename Traits> class input_iterator
+	{ };
+	template<typename Traits> class forward_iterator : public input_iterator<Traits>
+	{ };
+	template<typename Traits> class bidir_iterator : public forward_iterator<Traits>
+	{ };
+	template<typename Traits> class random_iterator : public bidir_iterator<Traits>
+	{ };
 
 	template<typename Traits> class IteratorT
 	{
@@ -120,6 +213,8 @@ namespace aio
             typedef typename Traits::pointer pointer;
             typedef typename Traits::reference reference;
 
+			typedef iter_iface_bidirection<Traits> interface_type;
+
 			IteratorT () {
 				clear_();
 			}
@@ -128,7 +223,8 @@ namespace aio
 			explicit IteratorT (const OtherIter& itr)
 			{
                 clear_();
-				IteratorImp<Traits, OtherIter>::create(m_imp, itr);	
+				typedef iter_imp_wrap<iter_imp_bidirection<interface_type, OtherIter>> imp_type;
+				imp_type::create(m_imp, itr);	
 			}
 
 			IteratorT (const IteratorT & rhs)
@@ -151,7 +247,7 @@ namespace aio
 			IteratorT & operator++ () 
 			{
 				AIO_PRE_CONDITION(valid());
-				++(*get_imp_());
+				get_imp_()->increase();
 				return *this;
 			}
 
@@ -166,7 +262,7 @@ namespace aio
 			IteratorT & operator-- ()
 			{
 				AIO_PRE_CONDITION(valid());
-				--(*get_imp_());
+				get_imp_()->decrease();
 				return *this;
 			}
 
@@ -182,7 +278,7 @@ namespace aio
 			{
 				AIO_PRE_CONDITION(valid());
 
-				return **get_imp_();
+				return get_imp_()->deref();
 			}
 
 			pointer operator-> () const
@@ -203,8 +299,8 @@ namespace aio
 
 			void swap (IteratorT & rhs)
 			{
-				IteratorImpBase<Traits>* this_imp = get_imp_();
-				IteratorImpBase<Traits>* other_imp = rhs.get_imp_();
+				iter_iface_bidirection<Traits>* this_imp = get_imp_();
+				iter_iface_bidirection<Traits>* other_imp = rhs.get_imp_();
 				if (this_imp && other_imp)
 				{
 					this_imp->swap(*other_imp);
@@ -237,14 +333,15 @@ namespace aio
 				return m_imp[0] != 0;
 			}
 		private:
-			IteratorImpBase<Traits>* get_imp_() const {
-				return m_imp[0] == 0 ? m_imp[IteratorSizeLimit - 1] : const_cast<IteratorImpBase<Traits>*>(reinterpret_cast<const IteratorImpBase<Traits>*>(m_imp));
+			iter_iface_bidirection<Traits>* get_imp_() const {
+				return m_imp[0] == 0 ? m_imp[IteratorSizeLimit - 1] 
+					: const_cast<iter_iface_bidirection<Traits>*>(reinterpret_cast<const iter_iface_bidirection<Traits>*>(m_imp));
 			}
 			void clear_() {
 				for (size_t i = 0; i < IteratorSizeLimit; ++i)
 					m_imp[i] = 0;
 			}
-			IteratorImpBase<Traits>* m_imp[IteratorSizeLimit];			
+			interface_type* m_imp[IteratorSizeLimit];			
 	};
 
     template<typename T>
