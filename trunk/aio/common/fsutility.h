@@ -70,7 +70,7 @@ namespace aio{ namespace fs{
 
     fstate state(const string& path);
 
-    typedef range<IteratorT<const_itr_traits<string> > > file_range;
+    typedef range<bidir_iterator<const_itr_traits<string> > > file_range;
     file_range children(const string& path);
 
 // temp file related 

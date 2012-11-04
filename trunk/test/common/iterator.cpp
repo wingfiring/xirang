@@ -11,6 +11,129 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 BOOST_AUTO_TEST_SUITE(iterator_suite)
 
 using namespace aio;
+BOOST_AUTO_TEST_CASE(test_output)
+{
+	typedef std::vector<int>::iterator vec_iterator;
+	typedef output_iterator< default_itr_traits<int>> itr_type;
+	itr_type it;
+	BOOST_CHECK(!it.valid());
+
+	std::vector<int> vec;
+	auto oitr = std::back_inserter(vec);
+	itr_type itr(oitr);
+	*itr = 1;
+	BOOST_CHECK(vec.size() == 1 && vec[0] == 1);
+	++itr;
+	*itr = 2;
+	BOOST_CHECK(vec.size() == 2 && vec[1] == 2);
+}
+
+template<typename Iter> void test_input(Iter& itr){
+	Iter it;
+	BOOST_CHECK(!it.valid());
+	BOOST_CHECK(it == Iter());
+	
+	BOOST_REQUIRE(itr.valid());
+	BOOST_CHECK(itr != it);
+
+	BOOST_CHECK(*itr == 1);
+	BOOST_CHECK(*++itr == 2);
+	BOOST_CHECK(*(itr++) == 2);
+	BOOST_CHECK(*itr == 3);
+}
+BOOST_AUTO_TEST_CASE( input_iterator_case)
+{
+	std::vector<int> vec{1,2,3,4};
+	typedef input_iterator<default_itr_traits<int>> iterator;
+	iterator itr(vec.begin());
+	test_input(itr);
+}
+
+
+template<typename Iter> void test_forward(Iter& itr)
+{
+	Iter itr2 = itr;
+	test_input(itr);
+	test_input(itr2);
+}
+BOOST_AUTO_TEST_CASE(forward_iterator_case)
+{
+	std::vector<int> vec{1,2,3,4};
+	typedef forward_iterator<default_itr_traits<int>> iterator;
+	iterator itr(vec.begin());
+	test_forward(itr);
+}
+
+template<typename Iter> void test_bidirection(Iter& itr)
+{
+	test_forward(itr);
+	BOOST_CHECK(*--itr == 2);
+	BOOST_CHECK(*itr-- == 2);
+	BOOST_CHECK(*itr == 1);
+
+}
+BOOST_AUTO_TEST_CASE(bidirecton_iterator_case)
+{
+	std::vector<int> vec{1,2,3,4};
+	typedef bidir_iterator<default_itr_traits<int>> iterator;
+	iterator itr(vec.begin());
+	test_bidirection(itr);
+}
+template<typename Iter> void test_random(Iter& itr){
+	test_bidirection(itr);
+	itr += 2;
+	BOOST_CHECK(itr[0] == 3);
+	BOOST_CHECK(itr[-1] == 2);
+
+	auto itr2 = itr;
+	BOOST_CHECK(itr2 - itr == 0);
+	--itr;
+	BOOST_CHECK(itr2 - itr == 1);
+	BOOST_CHECK(itr2 - itr == std::distance(itr, itr2));
+	BOOST_CHECK(itr - itr2 == -1);
+	BOOST_CHECK(itr2 == itr + 1);
+	BOOST_CHECK(itr2 == 1+ itr);
+
+
+}
+BOOST_AUTO_TEST_CASE(random_iterator_case){
+	std::vector<int> vec{1,2,3,4};
+	typedef random_iterator<default_itr_traits<int>> iterator;
+	iterator itr(vec.begin());
+	test_random(itr);
+}
+
+BOOST_AUTO_TEST_CASE( iterator_case)
+{
+       std::vector<int> vec;
+       for (int i = 0; i < 10; ++i)
+               vec.push_back(i);
+
+	   typedef range<bidir_iterator<default_itr_traits<int>>> range_type;
+	   typedef range_type::iterator iterator_type;
+
+       range_type r (vec.begin(), vec.end());
+
+       iterator_type p;
+       BOOST_CHECK(!p.valid());
+       p = r.begin();
+       BOOST_REQUIRE(p.valid());
+
+       BOOST_CHECK(*(p++) == 0);
+       BOOST_CHECK(*++p == 2);
+       BOOST_CHECK(*--p == 1);
+       BOOST_CHECK(*(p--) == 1);
+       
+       iterator_type p2 = p++;
+       BOOST_CHECK(*p2 == 0 && *p == 1);
+       p2.swap(p);
+       BOOST_CHECK(*p2 == 1 && *p == 0);
+
+       BOOST_CHECK(!p2.equals(p));
+       --p2;
+       BOOST_CHECK(p2.equals(p));
+}
+
 
 
 struct filter_odd{
