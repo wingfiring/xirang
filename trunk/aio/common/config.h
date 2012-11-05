@@ -24,6 +24,9 @@ namespace aio{
 	template<typename T> constexpr T const& const_min(T const& a, T const& b) {
 		return a < b ? a : b;
 	}
+
+	struct null_type;
+	struct empty_type{};
 }
 
 #endif //end AIO_COMMON_CONFIG_H

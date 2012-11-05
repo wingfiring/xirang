@@ -394,13 +394,13 @@ template<typename Traits> class output_iterator : public itr_::iterator_base
 
 		output_iterator(){}
 		template <typename OtherIter> explicit output_iterator (const OtherIter& itr
-				, typename std::enable_if<!std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
+				, typename std::enable_if<!std::is_base_of<OtherIter&, itr_::iterator_base&>::value, null_type>::type *  = 0)
 		{
 			typedef itr_::imp_wrap<itr_::imp_output<interface_type, OtherIter>> imp_type;
 			imp_type::create(this->m_imp, itr);	
 		}
 		template <typename OtherIter> explicit output_iterator (const OtherIter& itr
-				, typename std::enable_if<std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
+				, typename std::enable_if<std::is_base_of<OtherIter&, itr_::iterator_base&>::value, null_type>::type *  = 0)
 		{
 			this->template init_<self_type>(itr);
 		}
@@ -427,13 +427,13 @@ template<typename Traits> class input_iterator : public itr_::iterator_base
 
 		input_iterator() {}
 		template <typename OtherIter> explicit input_iterator (const OtherIter& itr
-				, typename std::enable_if<!std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
+				, typename std::enable_if<!std::is_base_of<OtherIter&, itr_::iterator_base&>::value, null_type>::type *  = 0)
 		{
 			typedef itr_::imp_wrap<itr_::imp_input<interface_type, OtherIter>> imp_type;
 			imp_type::create(m_imp, itr);	
 		}
 		template <typename OtherIter> explicit input_iterator (const OtherIter& itr
-				, typename std::enable_if<std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
+				, typename std::enable_if<std::is_base_of<OtherIter&, itr_::iterator_base&>::value, null_type>::type *  = 0)
 		{
 			this->template init_<self_type>(itr);
 		}
@@ -463,13 +463,13 @@ template<typename Traits> class forward_iterator : public input_iterator<Traits>
 
 		forward_iterator(){}
 		template <typename OtherIter> explicit forward_iterator (const OtherIter& itr
-				, typename std::enable_if<!std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
+				, typename std::enable_if<!std::is_base_of<OtherIter&, itr_::iterator_base&>::value, null_type>::type *  = 0)
 		{
 			typedef itr_::imp_wrap<itr_::imp_forward<interface_type, OtherIter>> imp_type;
 			imp_type::create(this->m_imp, itr);	
 		}
 		template <typename OtherIter> explicit forward_iterator (const OtherIter& itr
-				, typename std::enable_if<std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
+				, typename std::enable_if<std::is_base_of<OtherIter&, itr_::iterator_base&>::value, null_type>::type *  = 0)
 		{
 			this->template init_<self_type>(itr);
 		}
@@ -490,13 +490,13 @@ template<typename Traits> class bidir_iterator : public forward_iterator<Traits>
 
 		bidir_iterator(){}
 		template <typename OtherIter> explicit bidir_iterator (const OtherIter& itr
-				, typename std::enable_if<!std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
+				, typename std::enable_if<!std::is_base_of<OtherIter&, itr_::iterator_base&>::value, null_type>::type *  = 0)
 		{
 			typedef itr_::imp_wrap<itr_::imp_bidir<interface_type, OtherIter>> imp_type;
 			imp_type::create(this->m_imp, itr);	
 		}
 		template <typename OtherIter> explicit bidir_iterator (const OtherIter& itr
-				, typename std::enable_if<std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
+				, typename std::enable_if<std::is_base_of<OtherIter&, itr_::iterator_base&>::value, null_type>::type *  = 0)
 		{
 			this->template init_<self_type>(itr);
 		}
@@ -519,13 +519,13 @@ template<typename Traits> class random_iterator : public bidir_iterator<Traits>
 
 		random_iterator(){}
 		template <typename OtherIter> explicit random_iterator (const OtherIter& itr
-				, typename std::enable_if<!std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
+				, typename std::enable_if<!std::is_base_of<OtherIter&, itr_::iterator_base&>::value, null_type>::type *  = 0)
 		{
 			typedef itr_::imp_wrap<itr_::imp_random<interface_type, OtherIter>> imp_type;
 			imp_type::create(this->m_imp, itr);	
 		}
 		template <typename OtherIter> explicit random_iterator (const OtherIter& itr
-				, typename std::enable_if<std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
+				, typename std::enable_if<std::is_base_of<OtherIter&, itr_::iterator_base&>::value, null_type>::type *  = 0)
 		{
 			this->template init_<self_type>(itr);
 		}
@@ -689,7 +689,7 @@ class filter_iterator
 			}
 
 		template<typename Rng> filter_iterator(Rng& rng, Pred pred = Pred (), 
-				typename std::enable_if<!std::is_same<Rng, filter_iterator>::value, void* >::type = 0) 
+				typename std::enable_if<!std::is_same<Rng, filter_iterator>::value, null_type>::type* = 0) 
 			: m_base(rng.begin()), m_last(rng.end()), m_pred(pred)
 			{
 				satisfy_predicate_();
