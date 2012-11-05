@@ -231,13 +231,12 @@ namespace aio { namespace itr_{
 					get_base_imp_()->destroy();
 			}
 
-			iterator_base (const iterator_base & rhs)
+			template<typename Iter>
+			void init_ (const Iter & rhs)
 			{
 				clear_();
 				if (rhs.get_base_imp_())
 					rhs.get_base_imp_()->clone_to(m_imp);
-				else
-					clear_();
 			}
 
 			template<typename Iter> Iter& assignment_(Iter& lhs, const Iter& rhs) {
@@ -348,6 +347,7 @@ namespace aio { namespace itr_{
 			ibase* m_imp[IteratorSizeLimit];			
 		private:
 			iterator_base & operator= (const iterator_base & rhs); //disable
+			iterator_base(const iterator_base& rhs);
 	};
 }
 
@@ -393,10 +393,19 @@ template<typename Traits> class output_iterator : public itr_::iterator_base
 		typedef output_iterator self_type;
 
 		output_iterator(){}
-		template <typename OtherIter> explicit output_iterator (const OtherIter& itr)
+		template <typename OtherIter> explicit output_iterator (const OtherIter& itr
+				, typename std::enable_if<!std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
 		{
 			typedef itr_::imp_wrap<itr_::imp_output<interface_type, OtherIter>> imp_type;
 			imp_type::create(this->m_imp, itr);	
+		}
+		template <typename OtherIter> explicit output_iterator (const OtherIter& itr
+				, typename std::enable_if<std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
+		{
+			this->template init_<self_type>(itr);
+		}
+		output_iterator(const output_iterator& rhs) { 
+			this->template init_<self_type>(rhs);
 		}
 
 		self_type& operator*() { return *this;}
@@ -417,10 +426,19 @@ template<typename Traits> class input_iterator : public itr_::iterator_base
 		typedef input_iterator self_type;
 
 		input_iterator() {}
-		template <typename OtherIter> explicit input_iterator (const OtherIter& itr)
+		template <typename OtherIter> explicit input_iterator (const OtherIter& itr
+				, typename std::enable_if<!std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
 		{
 			typedef itr_::imp_wrap<itr_::imp_input<interface_type, OtherIter>> imp_type;
 			imp_type::create(m_imp, itr);	
+		}
+		template <typename OtherIter> explicit input_iterator (const OtherIter& itr
+				, typename std::enable_if<std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
+		{
+			this->template init_<self_type>(itr);
+		}
+		input_iterator(const input_iterator& rhs) { 
+			this->template init_<self_type>(rhs);
 		}
 
 		AIO_ITERATOR_BASIC_METHOD_IMPS();
@@ -444,10 +462,19 @@ template<typename Traits> class forward_iterator : public input_iterator<Traits>
 		typedef forward_iterator self_type;
 
 		forward_iterator(){}
-		template <typename OtherIter> explicit forward_iterator (const OtherIter& itr)
+		template <typename OtherIter> explicit forward_iterator (const OtherIter& itr
+				, typename std::enable_if<!std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
 		{
 			typedef itr_::imp_wrap<itr_::imp_forward<interface_type, OtherIter>> imp_type;
 			imp_type::create(this->m_imp, itr);	
+		}
+		template <typename OtherIter> explicit forward_iterator (const OtherIter& itr
+				, typename std::enable_if<std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
+		{
+			this->template init_<self_type>(itr);
+		}
+		forward_iterator(const forward_iterator& rhs) { 
+			this->template init_<self_type>(rhs);
 		}
 
 		AIO_ITERATOR_BASIC_METHOD_IMPS();
@@ -462,12 +489,21 @@ template<typename Traits> class bidir_iterator : public forward_iterator<Traits>
 		typedef bidir_iterator self_type;
 
 		bidir_iterator(){}
-		template <typename OtherIter> explicit bidir_iterator (const OtherIter& itr)
+		template <typename OtherIter> explicit bidir_iterator (const OtherIter& itr
+				, typename std::enable_if<!std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
 		{
 			typedef itr_::imp_wrap<itr_::imp_bidir<interface_type, OtherIter>> imp_type;
 			imp_type::create(this->m_imp, itr);	
 		}
+		template <typename OtherIter> explicit bidir_iterator (const OtherIter& itr
+				, typename std::enable_if<std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
+		{
+			this->template init_<self_type>(itr);
+		}
 
+		bidir_iterator(const bidir_iterator& rhs) { 
+			this->template init_<self_type>(rhs);
+		}
 		AIO_ITERATOR_BASIC_METHOD_IMPS();
 		self_type & operator-- () { return this->decrease_(*this);}
 		self_type operator-- (int) { return this->post_decrease_(*this);}
@@ -482,12 +518,21 @@ template<typename Traits> class random_iterator : public bidir_iterator<Traits>
 		typedef random_iterator self_type;
 
 		random_iterator(){}
-		template <typename OtherIter> explicit random_iterator (const OtherIter& itr)
+		template <typename OtherIter> explicit random_iterator (const OtherIter& itr
+				, typename std::enable_if<!std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
 		{
 			typedef itr_::imp_wrap<itr_::imp_random<interface_type, OtherIter>> imp_type;
 			imp_type::create(this->m_imp, itr);	
 		}
+		template <typename OtherIter> explicit random_iterator (const OtherIter& itr
+				, typename std::enable_if<std::is_base_of<OtherIter&, itr_::iterator_base&>::value, void*>::type *  = 0)
+		{
+			this->template init_<self_type>(itr);
+		}
 
+		random_iterator(const random_iterator& rhs) { 
+			this->template init_<self_type>(rhs);
+		}
 		AIO_ITERATOR_BASIC_METHOD_IMPS();
 		self_type & operator-- () { return this->decrease_(*this);}
 		self_type operator-- (int) { return this->post_decrease_(*this);}
