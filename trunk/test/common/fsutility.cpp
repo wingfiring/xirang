@@ -7,6 +7,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 
 BOOST_AUTO_TEST_SUITE(tempfile_suite)
 using namespace aio::fs;
+using aio::byte;
 
 BOOST_AUTO_TEST_CASE(tempfile_case)
 {
@@ -64,8 +65,8 @@ BOOST_AUTO_TEST_CASE(create_case)
     BOOST_CHECK(file->query_random());
 
     aio::string tmpfile2 = tmpdir + "/file2";
-    const aio::byte txt[] = "quick fox jump over the lazy dog";
-    aio::buffer<aio::byte> buf (aio::make_range(txt, txt + sizeof(txt)-1));
+    const char txt[] = "quick fox jump over the lazy dog";
+    aio::buffer<byte> buf (aio::make_range((const byte*)txt, (const byte*)(txt + sizeof(txt)-1)));
     file->query_writer()->write(to_range(buf));
     file.reset();
 

@@ -56,10 +56,10 @@ namespace xirang{ namespace fs{
                 }
 
                 zstream.avail_in = uInt(rdin - bin.begin());
-                zstream.next_in = &bin[0];
+                zstream.next_in = (Bytef*)&bin[0];
                 do {
                     zstream.avail_out = uInt(bout.size());
-                    zstream.next_out = &bout[0];
+                    zstream.next_out = (Bytef*)&bout[0];
                     res = ::inflate(&zstream, Z_NO_FLUSH);
                     switch (res)
                     {
@@ -242,20 +242,20 @@ namespace xirang{ namespace fs{
 			bin.resize(64 * 1024);
 			bout.resize(64 * 1024);
 
-			zstream.next_out = bout.begin();
+			zstream.next_out = (Bytef*)bout.begin();
 			zstream.avail_out = uInt(bout.size());
             bool need_output = rd.readable();
 			while (rd.readable() || need_output)
 			{
 				//flush output buffer
-				if (zstream.next_out != bout.begin())	//avaliable output
+				if (zstream.next_out != (Bytef*)bout.begin())	//avaliable output
 				{
 					//h.in_crc32 = crc32(h.in_crc32, bout.begin(), zstream.next_out - bout.begin());
-                    aio::archive::writer::const_iterator witr = block_write(wr, aio::make_range(bout.begin(), zstream.next_out));
-					if (witr != zstream.next_out)
+                    aio::archive::writer::const_iterator witr = block_write(wr, aio::make_range(bout.begin(), (byte*)zstream.next_out));
+					if (witr != (byte*)zstream.next_out)
 						AIO_THROW(archive_io_fatal_error);
 
-					zstream.next_out = bout.begin();
+					zstream.next_out = (Bytef*)bout.begin();
 					zstream.avail_out = uInt(bout.size());
 				}
 
@@ -265,7 +265,7 @@ namespace xirang{ namespace fs{
 					if (rdin == bin.begin()) //read nothing, continue
 						continue;
 
-					zstream.next_in = bin.begin();
+					zstream.next_in = (Bytef*)bin.begin();
 					zstream.avail_in = uInt(rdin - bin.begin());
 					in_crc32 = crc32(in_crc32, zstream.next_in, zstream.avail_in);
 				}
@@ -281,8 +281,8 @@ namespace xirang{ namespace fs{
 
 					if (ret == Z_STREAM_END)
                     {
-                        aio::archive::writer::const_iterator witr = block_write(wr, aio::make_range(bout.begin(), zstream.next_out));                    
-                        if (witr != zstream.next_out)
+                        aio::archive::writer::const_iterator witr = block_write(wr, aio::make_range(bout.begin(), (byte*)zstream.next_out));                    
+                        if (witr != (byte*)zstream.next_out)
                             AIO_THROW(archive_io_fatal_error);                    
 						break;
                     }

@@ -456,7 +456,9 @@ namespace aio
 		T* m_data;
 	};
 
-	typedef unsigned char byte;
+	//typedef unsigned char byte;
+
+	enum class byte: unsigned char{};
 
     typedef buffer<byte> byte_buffer;
 }

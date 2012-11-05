@@ -11,7 +11,7 @@ using namespace aio;
 
 BOOST_AUTO_TEST_CASE(buffer_in_case)
 {
-	aio::buffer<aio::byte> buf(128, 'X');
+	aio::buffer<aio::byte> buf(128, byte('X'));
 
 	archive::buffer_in ar(buf);
 	ArchiveTester tester(ar);
@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE(buffer_in_case)
 
 BOOST_AUTO_TEST_CASE(buffer_out_case)
 {
-	aio::buffer<aio::byte> buf(128, 'X');
+	aio::buffer<aio::byte> buf(128, byte('X'));
 
 	archive::buffer_out ar(buf);
 	ArchiveTester tester(ar);
@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(buffer_out_case)
 
 BOOST_AUTO_TEST_CASE(buffer_io_case)
 {
-	aio::buffer<aio::byte> buf(128, 'X');
+	aio::buffer<aio::byte> buf(128, byte('X'));
 
 	archive::buffer_io ar(buf);
 	ArchiveTester tester(ar);
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(buffer_io_case)
 
 BOOST_AUTO_TEST_CASE(mem_read_archive_case)
 {
-	aio::buffer<aio::byte> buf(128, 'X');
+	aio::buffer<aio::byte> buf(128, byte('X'));
 
 	archive::mem_read_archive ar(buf);
 	ArchiveTester tester(ar);

@@ -105,7 +105,7 @@ namespace aio{ namespace archive
 				long_size_t view_size = std::min(buf_size, m_file_size - m_pos);
 				mapped_region reg(m_file, m_mode, numeric_cast<std::size_t>(m_pos), numeric_cast<std::size_t>(view_size));
 
-				const char* psrc = (const char*)reg.get_address();
+				const byte* psrc = (const byte*)reg.get_address();
 				std::copy(psrc, psrc + view_size, itr);
 
 				itr += view_size;
@@ -127,7 +127,7 @@ namespace aio{ namespace archive
 					truncate(new_pos);
 				}
 				mapped_region reg(m_file, m_mode, numeric_cast<std::size_t>(m_pos), numeric_cast<size_t>(buf_size));
-				char* pdest = (char*)reg.get_address();
+				byte* pdest = (byte*)reg.get_address();
 				std::copy(r.begin(), r.end(), pdest);
 				m_pos = new_pos;
 			}

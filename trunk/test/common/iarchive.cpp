@@ -60,7 +60,7 @@ ArchiveTester& ArchiveTester::check_writer()
 	BOOST_REQUIRE(wr);
 	BOOST_REQUIRE(wr->writable());
 
-	buffer<aio::byte> buf(128, 'X');
+	buffer<aio::byte> buf(128, aio::byte('X'));
 
 	archive::writer::const_iterator pos = block_write(*wr, to_range(buf));
 	BOOST_CHECK(pos == buf.end());

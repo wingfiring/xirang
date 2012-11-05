@@ -216,7 +216,7 @@ namespace xirang
 		Type t = type();
 		std::size_t idx = (pos - begin()) * t.payload();
 		//TODO:not safe if object hold a pointer to itself.
-		m_imp->data.insert(m_imp->data.begin() + idx, t.payload(), 0);
+		m_imp->data.insert(m_imp->data.begin() + idx, t.payload(), byte());
 		if (!type().isPod())
 			type().methods().construct(CommonObject(type(), m_imp->data.data() + idx), get_heap(), get_ext_heap());
 		type().methods().assign(obj, CommonObject(type(), m_imp->data.data() + idx) );

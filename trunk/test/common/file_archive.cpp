@@ -103,8 +103,8 @@ BOOST_AUTO_TEST_CASE(file_archive)
 
 		rd.seek(len1);
 		pos = rd.read(to_range(buf));
-		BOOST_CHECK(!std::lexicographical_compare(buf.begin(), pos, text.begin(), text.end()));
-		BOOST_CHECK(!std::lexicographical_compare(text.begin(), text.end(), buf.begin(), pos));
+		BOOST_CHECK(!std::lexicographical_compare(buf.begin(), pos, (const aio::byte*)text.begin(), (const aio::byte*)text.end()));
+		BOOST_CHECK(!std::lexicographical_compare((const aio::byte*)text.begin(), (const aio::byte*)text.end(), buf.begin(), pos));
 
 		ArchiveTester tester(rd);
 		rd.seek(0);
