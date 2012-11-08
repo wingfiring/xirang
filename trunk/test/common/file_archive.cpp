@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_SUITE(file_archive_suite)
 using namespace aio;
 using namespace aio::archive;
 
-using archive_suite::ArchiveTester;
+//using archive_suite::ArchiveTester;
 
 BOOST_AUTO_TEST_CASE(file_archive_wchar_case)
 {
@@ -106,10 +106,10 @@ BOOST_AUTO_TEST_CASE(file_archive)
 		BOOST_CHECK(!std::lexicographical_compare(buf.begin(), pos, (const aio::byte*)text.begin(), (const aio::byte*)text.end()));
 		BOOST_CHECK(!std::lexicographical_compare((const aio::byte*)text.begin(), (const aio::byte*)text.end(), buf.begin(), pos));
 
-		ArchiveTester tester(rd);
-		rd.seek(0);
-		tester.check_reader();
-		tester.check_random();
+		//ArchiveTester tester(rd);
+		//rd.seek(0);
+		//tester.check_reader();
+		//tester.check_random();
 	}
 
 	//reader & writer
@@ -147,11 +147,11 @@ BOOST_AUTO_TEST_CASE(file_archive)
 		rw.truncate(len2);
 		BOOST_CHECK(rw.offset() == len2);
 				
-		ArchiveTester tester(rw);
-		tester.check_writer();
-		rw.seek(0);
-		tester.check_reader();
-		tester.check_random();
+		//ArchiveTester tester(rw);
+		//tester.check_writer();
+		//rw.seek(0);
+		//tester.check_reader();
+		//tester.check_random();
 	}
 
     aio::fs::recursive_remove(temp_path);

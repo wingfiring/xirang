@@ -13,74 +13,76 @@ BOOST_AUTO_TEST_CASE(buffer_in_case)
 {
 	aio::buffer<aio::byte> buf(128, byte('X'));
 
-	archive::buffer_in ar(buf);
-	ArchiveTester tester(ar);
+	archive_new::buffer_in ar(buf);
+	ArchiveTester tester;
 
-	tester.check_reader();
-	tester.check_random();
+	tester.check_reader(ar);
+	tester.check_random(ar);
 }
 
 BOOST_AUTO_TEST_CASE(buffer_out_case)
 {
 	aio::buffer<aio::byte> buf(128, byte('X'));
 
-	archive::buffer_out ar(buf);
-	ArchiveTester tester(ar);
+	archive_new::buffer_out ar(buf);
+	ArchiveTester tester;
 
-	tester.check_writer();
-	tester.check_random();
+	tester.check_writer(ar);
+	tester.check_random(ar);
 }
 
 BOOST_AUTO_TEST_CASE(buffer_io_case)
 {
 	aio::buffer<aio::byte> buf(128, byte('X'));
 
-	archive::buffer_io ar(buf);
-	ArchiveTester tester(ar);
+	archive_new::buffer_io ar(buf);
+	ArchiveTester tester;
 
-	tester.check_reader();
-	tester.check_writer();
-	tester.check_random();
+	tester.check_reader(ar);
+	tester.check_writer(ar);
+	tester.check_random(ar);
 }
 
 BOOST_AUTO_TEST_CASE(mem_read_archive_case)
 {
 	aio::buffer<aio::byte> buf(128, byte('X'));
 
-	archive::mem_read_archive ar(buf);
-	ArchiveTester tester(ar);
+	archive_new::mem_read_archive ar(buf);
+	ArchiveTester tester;
 
-	tester.check_reader();
-	tester.check_random();
+	tester.check_reader(ar);
+	tester.check_random(ar);
 }
 
 BOOST_AUTO_TEST_CASE(mem_write_archive_case)
 {
-	archive::mem_write_archive ar;
-	ArchiveTester tester(ar);
+	archive_new::mem_write_archive ar;
+	ArchiveTester tester;
 
-	tester.check_writer();
-	tester.check_random();
+	tester.check_writer(ar);
+	tester.check_random(ar);
 }
 
 BOOST_AUTO_TEST_CASE(mem_read_write_archive_case)
 {
-	archive::mem_read_write_archive ar;
-	ArchiveTester tester(ar);
+	archive_new::mem_read_write_archive ar;
+	ArchiveTester tester;
 
-	tester.check_writer();
+	tester.check_writer(ar);
 	ar.seek(0);
-	tester.check_reader();
-	tester.check_random();
+	tester.check_reader(ar);
+	tester.check_random(ar);
 }
 
 
 BOOST_AUTO_TEST_CASE(mem_archive_case)
 {
-	archive::mem_read_write_archive ar;
+	archive_new::mem_read_write_archive ar;
+	interface_ref<archive_new::reader, archive_new::writer> iar(ar);
 
-	archive::writer& wr = ar;
-	archive::reader& rd = ar;
+	archive_new::writer& wr = iar.get<archive_new::writer>();
+	archive_new::reader& rd = iar.get<archive_new::reader>();
+	using namespace lio;
 
 	int i = 3;
 	wr & i;

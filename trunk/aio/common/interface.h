@@ -4,6 +4,7 @@
 #define AIO_COMMON_INTERFACE_H_
 
 #include <type_traits>
+#include <cstring>	//for memcpy
 
 namespace aio
 {

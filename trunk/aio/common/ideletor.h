@@ -17,6 +17,16 @@ namespace aio
 		virtual ~ideletor(){}
 	};
 
+	template<typename Derive> struct ideletor_co : public ideletor
+	{
+		virtual void destroy(){
+			return static_cast<const Derive*>(this)->get_target()->destroy();
+		}
+	};
+	template<typename Derive>
+	ideletor_co<Derive> get_interface_map(Derive*, ideletor*);
+
+
 	template<typename Deletor, typename ... Base>
 	struct ideletorT : ideletor, Base...
 	{

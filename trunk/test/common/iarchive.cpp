@@ -13,22 +13,34 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 BOOST_AUTO_TEST_SUITE(archive_suite)
 using namespace aio;
 
-ArchiveTester::ArchiveTester(aio::archive::iarchive& ar) : m_ar(&ar){}
 
-ArchiveTester& ArchiveTester::check_reader()
+ArchiveTester& ArchiveTester::check_reader(interface_ref<archive_new::reader> ar)
 {
-	archive::reader* rd = m_ar->query_reader();
-	BOOST_REQUIRE(rd);
+	archive_new::reader* rd = &ar.get<archive_new::reader>();
 
 	BOOST_REQUIRE(rd->readable());
 
 	buffer<aio::byte> buf;
 	buf.resize(128);
-	archive::reader::iterator pos = block_read(*rd, to_range(buf));
-	BOOST_CHECK( (pos == buf.end()) || !rd->readable());
-	BOOST_CHECK( !rd->readable() || (pos == buf.end()));
+	auto reset = block_read(*rd, to_range(buf));
+	BOOST_CHECK( reset.empty() || !rd->readable());
+	BOOST_CHECK( !rd->readable() || reset.empty());
 
-	archive::random* rnd = m_ar->query_random();
+	return *this;
+}
+ArchiveTester& ArchiveTester::check_reader_random(interface_ref<archive_new::reader, archive_new::random> ar)
+{
+	archive_new::reader* rd = &ar.get<archive_new::reader>();
+
+	BOOST_REQUIRE(rd->readable());
+
+	buffer<aio::byte> buf;
+	buf.resize(128);
+	auto reset = block_read(*rd, to_range(buf));
+	BOOST_CHECK( reset.empty() || !rd->readable());
+	BOOST_CHECK( !rd->readable() || reset.empty());
+
+	archive_new::random* rnd = &ar.get<archive_new::random>();
 	if (rnd)
 	{
 		size_t buf_size = std::min(buf.size(), (size_t)rnd->size());
@@ -38,35 +50,48 @@ ArchiveTester& ArchiveTester::check_reader()
 		buf.resize(buf_size/2);
 
 		rnd->seek(0);
-		pos = block_read(*rd, to_range(buf));
+		reset = block_read(*rd, to_range(buf));
 
-		BOOST_CHECK(pos == buf.end());
+		BOOST_CHECK(reset.empty());
 		BOOST_CHECK(rd->readable());
 		BOOST_CHECK(rnd->offset() == buf.size());
 
 		rnd->seek(rnd->size() - buf.size() + 1);
-		pos = block_read(*rd, to_range(buf));
+		reset = block_read(*rd, to_range(buf));
 
-		BOOST_CHECK(pos != buf.end());
+		BOOST_CHECK(reset.empty());
 		BOOST_CHECK(!rd->readable());
 	}
-
 	return *this;
+
 }
 
-ArchiveTester& ArchiveTester::check_writer()
+ArchiveTester& ArchiveTester::check_writer(interface_ref<archive_new::writer> ar)
 {
-	archive::writer* wr = m_ar->query_writer();
-	BOOST_REQUIRE(wr);
+	archive_new::writer* wr = &ar.get<archive_new::writer>();
 	BOOST_REQUIRE(wr->writable());
 
 	buffer<aio::byte> buf(128, aio::byte('X'));
 
-	archive::writer::const_iterator pos = block_write(*wr, to_range(buf));
-	BOOST_CHECK(pos == buf.end());
+	auto reset = block_write(*wr, to_range(buf));
+	BOOST_CHECK(reset.empty());
 	BOOST_REQUIRE(wr->writable());
 
-	archive::random* rnd = m_ar->query_random();
+	return *this;
+}
+
+ArchiveTester& ArchiveTester::check_writer_random(interface_ref<archive_new::writer, archive_new::random> ar)
+{
+	archive_new::writer* wr = &ar.get<archive_new::writer>();
+	BOOST_REQUIRE(wr->writable());
+
+	buffer<aio::byte> buf(128, aio::byte('X'));
+
+	auto reset = block_write(*wr, to_range(buf));
+	BOOST_CHECK(reset.empty());
+	BOOST_REQUIRE(wr->writable());
+
+	archive_new::random* rnd = &ar.get<archive_new::random>();
 	if (rnd)
 	{
 		size_t buf_size = std::min (buf.size(), (size_t)rnd->size());
@@ -76,9 +101,9 @@ ArchiveTester& ArchiveTester::check_writer()
 		buf.resize(buf_size/2);
 
 		rnd->seek(0);
-		pos = block_write(*wr, to_range(buf));
+		reset = block_write(*wr, to_range(buf));
 
-		BOOST_CHECK(pos == buf.end());
+		BOOST_CHECK(reset.empty());
 		BOOST_CHECK(wr->writable());
 		BOOST_CHECK(rnd->offset() == buf.size());
 
@@ -86,30 +111,28 @@ ArchiveTester& ArchiveTester::check_writer()
 
 		rnd->seek(rnd->size() - buf.size() + 1);
 
-		pos = block_write(*wr, to_range(buf));
+		reset = block_write(*wr, to_range(buf));
 
-		BOOST_CHECK(pos == buf.end());
+		BOOST_CHECK(reset.empty());
 		BOOST_CHECK(wr->writable());
 		BOOST_CHECK(old_size + 1 == rnd->size());
 	}
 	return *this;
+
 }
-
-ArchiveTester& ArchiveTester::check_sequence()
+ArchiveTester& ArchiveTester::check_sequence(interface_ref<archive_new::sequence> ar)
 {
-	archive::sequence* seq = m_ar->query_sequence();
-	BOOST_REQUIRE(seq);
+	archive_new::sequence* seq = &ar.get<archive_new::sequence>();
 
-	BOOST_CHECK(seq->size() == archive::sequence::unknow_size || seq->offset() <= seq->size());
+	BOOST_CHECK(seq->size() == archive_new::sequence::unknow_size || seq->offset() <= seq->size());
 	return *this;
 }
 
-ArchiveTester& ArchiveTester::check_forward()
+ArchiveTester& ArchiveTester::check_forward(interface_ref<archive_new::forward> ar)
 {
-	archive::forward* fwd = m_ar->query_forward();
-	BOOST_REQUIRE(fwd);
+	archive_new::forward* fwd = &ar.get<archive_new::forward>();
 
-	check_sequence();
+	check_sequence(ar);
 
 	aio::long_size_t size = fwd->size();
 
@@ -138,12 +161,10 @@ ArchiveTester& ArchiveTester::check_forward()
 	return *this;
 }
 
-ArchiveTester& ArchiveTester::check_random()
+ArchiveTester& ArchiveTester::check_random(interface_ref<archive_new::random> ar)
 {
-	archive::random* rnd = m_ar->query_random();
-	BOOST_REQUIRE(rnd);
-
-	check_forward();
+	archive_new::random* rnd = &ar.get<archive_new::random>();
+	check_forward(ar);
 
 	aio::long_size_t off = rnd->offset();
 	BOOST_REQUIRE(off > 1);
@@ -165,7 +186,6 @@ ArchiveTester& ArchiveTester::check_random()
 	BOOST_CHECK(size == rnd->offset());
 	return *this;
 }
-
 
 
 BOOST_AUTO_TEST_SUITE_END()

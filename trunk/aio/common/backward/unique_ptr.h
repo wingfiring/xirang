@@ -11,6 +11,9 @@ namespace aio
     struct default_delete
     {
         default_delete(){}
+		template<typename Up, typename = typename
+			std::enable_if<std::is_convertible<Up*, T*>::value>::type>
+			default_delete(const default_delete<Up>&) { }
 
         void operator()(T* ptr_) const
         {
@@ -58,122 +61,135 @@ namespace aio
             u.ptr = 0;
         }
 
-        // Destructor.
-        ~unique_ptr()  { reset(); }
+		template<typename Up, typename Ep, typename = typename
+			std::enable_if
+			<std::is_convertible<typename unique_ptr<Up, Ep>::pointer,
+			pointer>::value
+				&& ((std::is_reference<Dp>::value
+							&& std::is_same<Ep, Dp>::value)
+						|| (!std::is_reference<Dp>::value
+							&& std::is_convertible<Ep, Dp>::value))>
+				::type>
+				unique_ptr(unique_ptr<Up, Ep>&& u) 
+				: ptr(u.release()), dp(std::forward<Ep>(u.get_deleter()))
+				{ }
 
-        // Assignment.
-        unique_ptr& operator=(unique_ptr&& u_) 
-        {
-            reset(u_.release());
-            get_deleter() = u_.get_deleter();
-            return *this;
-        }
+		// Destructor.
+		~unique_ptr()  { reset(); }
 
-        // Observers.
-        T& operator*() const
-        {
-            AIO_PRE_CONDITION(get() != pointer());
-            return *get();
-        }
+		// Assignment.
+		unique_ptr& operator=(unique_ptr&& u_) 
+		{
+			reset(u_.release());
+			get_deleter() = u_.get_deleter();
+			return *this;
+		}
 
-        pointer operator->() const 
-        {
-            AIO_PRE_CONDITION(get() != pointer());
-            return get();
-        }
+		// Observers.
+		T& operator*() const
+		{
+			AIO_PRE_CONDITION(get() != pointer());
+			return *get();
+		}
 
-        pointer get() const 
-        { return ptr; }
+		pointer operator->() const 
+		{
+			AIO_PRE_CONDITION(get() != pointer());
+			return get();
+		}
 
-        deleter_type& get_deleter() 
-        { return dp; }
+		pointer get() const 
+		{ return ptr; }
 
-        const deleter_type& get_deleter() const 
-        { return dp; }
+		deleter_type& get_deleter() 
+		{ return dp; }
 
-        operator bool() const 
-        { return get() != pointer(); }
+		const deleter_type& get_deleter() const 
+		{ return dp; }
 
-        // Modifiers.
-        pointer release() 
-        {
-            pointer p_ = get();
-            ptr = pointer();
-            return p_;
-        }
+		operator bool() const 
+		{ return get() != pointer(); }
 
-        void reset(pointer p_ = pointer()) 
-        {
-            using std::swap;
-            if (ptr != pointer())
-                get_deleter()(ptr);
+		// Modifiers.
+		pointer release() 
+		{
+			pointer p_ = get();
+			ptr = pointer();
+			return p_;
+		}
 
-            swap(ptr, p_);
-        }
+		void reset(pointer p_ = pointer()) 
+		{
+			using std::swap;
+			if (ptr != pointer())
+				get_deleter()(ptr);
 
-        void swap(unique_ptr& u_) 
-        {
-            using std::swap;
-            swap(ptr, u_.ptr);
-        }
-        // Disable copy from lvalue.
-        private:
-        unique_ptr(const unique_ptr&);
-        unique_ptr& operator=(const unique_ptr&);
-    };
+			swap(ptr, p_);
+		}
 
-  //disable
-  template<typename T, typename Dp>
-    class unique_ptr<T[], Dp>;
+		void swap(unique_ptr& u_) 
+		{
+			using std::swap;
+			swap(ptr, u_.ptr);
+		}
+		// Disable copy from lvalue.
+	private:
+		unique_ptr(const unique_ptr&);
+		unique_ptr& operator=(const unique_ptr&);
+	};
 
-  template<typename T, typename Dp>
-    inline void swap(unique_ptr<T, Dp>& x_,
-         unique_ptr<T, Dp>& y_) 
-    { x_.swap(y_); }
+	//disable
+	template<typename T, typename Dp>
+		class unique_ptr<T[], Dp>;
 
-  template<typename T, typename Dp,
-           typename U, typename _Ep>
-    inline bool
-    operator==(const unique_ptr<T, Dp>& x_,
-               const unique_ptr<U, _Ep>& y_)
-    { return x_.get() == y_.get(); }
+	template<typename T, typename Dp>
+		inline void swap(unique_ptr<T, Dp>& x_,
+				unique_ptr<T, Dp>& y_) 
+		{ x_.swap(y_); }
 
-  template<typename T, typename Dp,
-           typename U, typename _Ep>
-    inline bool
-    operator!=(const unique_ptr<T, Dp>& x_,
-               const unique_ptr<U, _Ep>& y_)
-    { return x_.get() != y_.get(); }
+	template<typename T, typename Dp,
+		typename U, typename Ep>
+			inline bool
+			operator==(const unique_ptr<T, Dp>& x_,
+					const unique_ptr<U, Ep>& y_)
+			{ return x_.get() == y_.get(); }
 
-  template<typename T, typename Dp>
-    inline bool
-    operator<(const unique_ptr<T, Dp>& x_,
-              const unique_ptr<T, Dp>& y_)
-    {
-      return x_.get() < y_.get();
-    }
+	template<typename T, typename Dp,
+		typename U, typename Ep>
+			inline bool
+			operator!=(const unique_ptr<T, Dp>& x_,
+					const unique_ptr<U, Ep>& y_)
+			{ return x_.get() != y_.get(); }
 
-  template<typename T, typename Dp,
-           typename U, typename _Ep>
-    inline bool
-    operator<=(const unique_ptr<T, Dp>& x_,
-               const unique_ptr<U, _Ep>& y_)
-    { return !(y_ < x_); }
+	template<typename T, typename Dp>
+		inline bool
+		operator<(const unique_ptr<T, Dp>& x_,
+				const unique_ptr<T, Dp>& y_)
+		{
+			return x_.get() < y_.get();
+		}
 
- 
-  template<typename T, typename Dp>
-    inline bool
-    operator>(const unique_ptr<T, Dp>& x_,
-              const unique_ptr<T, Dp>& y_)
-    { return (y_ < x_); }
+	template<typename T, typename Dp,
+		typename U, typename Ep>
+			inline bool
+			operator<=(const unique_ptr<T, Dp>& x_,
+					const unique_ptr<U, Ep>& y_)
+			{ return !(y_ < x_); }
 
-  
-  template<typename T, typename Dp>
-    inline bool
-    operator>=(const unique_ptr<T, Dp>& x_,
-               const unique_ptr<T, Dp>& y_)
-    { return !(x_ < y_); }
-    
+
+	template<typename T, typename Dp>
+		inline bool
+		operator>(const unique_ptr<T, Dp>& x_,
+				const unique_ptr<T, Dp>& y_)
+		{ return (y_ < x_); }
+
+
+	template<typename T, typename Dp>
+		inline bool
+		operator>=(const unique_ptr<T, Dp>& x_,
+				const unique_ptr<T, Dp>& y_)
+		{ return !(x_ < y_); }
+
 }
 
 
