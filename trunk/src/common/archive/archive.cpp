@@ -145,7 +145,7 @@ namespace aio{ namespace archive
 		}
 	}
 }
-namespace archive_new{
+namespace io{
 
 	reader::~reader() {}
 	writer::~writer() {}

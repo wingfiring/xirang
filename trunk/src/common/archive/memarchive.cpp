@@ -198,7 +198,7 @@ namespace aio{ namespace archive {
 	mem_read_write_archive::mem_read_write_archive(const buffer<byte>& buf) : buffer_io(m_data) { m_data = buf; }
 
 }
-namespace archive_new{
+namespace io{
 	bool in_size_t_range(long_size_t n){
 		return (n & ~long_size_t(size_t(-1))) == 0;
 	}

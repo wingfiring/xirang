@@ -266,7 +266,37 @@ namespace aio { namespace archive{
     }
 
 }
-namespace archive_new{
+namespace io{
+	enum archive_mode 
+	{
+		mt_sequence = 0,
+		mt_forward = 1,
+		mt_random = 2,
+
+		mt_read = 4,
+		mt_write = 8,
+		mt_user = 1<<24
+	};
+
+	enum open_flag
+	{
+		of_open,
+		of_create,
+		of_create_or_open,
+
+        of_low_mask = 0xffff,
+
+        /// depends on implementation capability. intends to be used to create a tempfile
+        of_remove_on_close = 1 << 16        
+	};
+
+    enum archive_option
+    {
+        ao_default = 0,
+
+        ao_user = 1 << 16
+    };
+
 	struct AIO_INTERFACE reader
 	{
 		typedef byte* iterator;
@@ -473,7 +503,7 @@ namespace lio{
 			const byte* first = reinterpret_cast<const byte*>(&t);
 			const byte* last = reinterpret_cast<const byte*>(&t + 1);
 
-			archive_new::block_write(wt, make_range(first, last));
+			io::block_write(wt, make_range(first, last));
 
 			return wt;
 		}
@@ -485,8 +515,8 @@ namespace lio{
 			byte* first = reinterpret_cast<byte*>(&t);
 			byte* last = reinterpret_cast<byte*>(&t + 1);
 
-			if (!archive_new::block_read(rd, make_range(first, last)).empty() )
-				AIO_THROW(archive_new::read_failed);
+			if (!io::block_read(rd, make_range(first, last)).empty() )
+				AIO_THROW(io::read_failed);
 
 			return rd;
 		}
@@ -520,12 +550,12 @@ namespace lio{
 	}
 
 	template<typename Ar, typename T>  
-		typename std::enable_if<std::is_base_of<archive_new::reader, Ar>::value, Ar&>::type 
+		typename std::enable_if<std::is_base_of<io::reader, Ar>::value, Ar&>::type 
 		operator&(Ar& ar, T& t){	//load
 			return load(ar, t);
 		}
 	template<typename Ar, typename T>  
-		typename std::enable_if<std::is_base_of<archive_new::writer, Ar>::value, Ar&>::type 
+		typename std::enable_if<std::is_base_of<io::writer, Ar>::value, Ar&>::type 
 		operator&(Ar& ar, const T& t){	//load
 			return save(ar, t);
 		}

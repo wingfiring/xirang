@@ -90,7 +90,7 @@ namespace aio{ namespace archive {
 		buffer<byte> m_data;
 	};
 }
-namespace archive_new{
+namespace io{
 
 	struct buffer_rd_view : read_view
 	{

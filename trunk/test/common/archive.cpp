@@ -13,7 +13,7 @@ BOOST_AUTO_TEST_CASE(buffer_in_case)
 {
 	aio::buffer<aio::byte> buf(128, byte('X'));
 
-	archive_new::buffer_in ar(buf);
+	io::buffer_in ar(buf);
 	ArchiveTester tester;
 
 	tester.check_reader(ar);
@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_CASE(buffer_out_case)
 {
 	aio::buffer<aio::byte> buf(128, byte('X'));
 
-	archive_new::buffer_out ar(buf);
+	io::buffer_out ar(buf);
 	ArchiveTester tester;
 
 	tester.check_writer(ar);
@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(buffer_io_case)
 {
 	aio::buffer<aio::byte> buf(128, byte('X'));
 
-	archive_new::buffer_io ar(buf);
+	io::buffer_io ar(buf);
 	ArchiveTester tester;
 
 	tester.check_reader(ar);
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(mem_read_archive_case)
 {
 	aio::buffer<aio::byte> buf(128, byte('X'));
 
-	archive_new::mem_read_archive ar(buf);
+	io::mem_read_archive ar(buf);
 	ArchiveTester tester;
 
 	tester.check_reader(ar);
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(mem_read_archive_case)
 
 BOOST_AUTO_TEST_CASE(mem_write_archive_case)
 {
-	archive_new::mem_write_archive ar;
+	io::mem_write_archive ar;
 	ArchiveTester tester;
 
 	tester.check_writer(ar);
@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(mem_write_archive_case)
 
 BOOST_AUTO_TEST_CASE(mem_read_write_archive_case)
 {
-	archive_new::mem_read_write_archive ar;
+	io::mem_read_write_archive ar;
 	ArchiveTester tester;
 
 	tester.check_writer(ar);
@@ -77,11 +77,11 @@ BOOST_AUTO_TEST_CASE(mem_read_write_archive_case)
 
 BOOST_AUTO_TEST_CASE(mem_archive_case)
 {
-	archive_new::mem_read_write_archive ar;
-	interface_ref<archive_new::reader, archive_new::writer> iar(ar);
+	io::mem_read_write_archive ar;
+	interface_ref<io::reader, io::writer> iar(ar);
 
-	archive_new::writer& wr = iar.get<archive_new::writer>();
-	archive_new::reader& rd = iar.get<archive_new::reader>();
+	io::writer& wr = iar.get<io::writer>();
+	io::reader& rd = iar.get<io::reader>();
 	using namespace lio;
 
 	int i = 3;

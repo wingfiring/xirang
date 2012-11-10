@@ -14,9 +14,9 @@ BOOST_AUTO_TEST_SUITE(archive_suite)
 using namespace aio;
 
 
-ArchiveTester& ArchiveTester::check_reader(interface_ref<archive_new::reader> ar)
+ArchiveTester& ArchiveTester::check_reader(interface_ref<io::reader> ar)
 {
-	archive_new::reader* rd = &ar.get<archive_new::reader>();
+	io::reader* rd = &ar.get<io::reader>();
 
 	BOOST_REQUIRE(rd->readable());
 
@@ -28,9 +28,9 @@ ArchiveTester& ArchiveTester::check_reader(interface_ref<archive_new::reader> ar
 
 	return *this;
 }
-ArchiveTester& ArchiveTester::check_reader_random(interface_ref<archive_new::reader, archive_new::random> ar)
+ArchiveTester& ArchiveTester::check_reader_random(interface_ref<io::reader, io::random> ar)
 {
-	archive_new::reader* rd = &ar.get<archive_new::reader>();
+	io::reader* rd = &ar.get<io::reader>();
 
 	BOOST_REQUIRE(rd->readable());
 
@@ -40,7 +40,7 @@ ArchiveTester& ArchiveTester::check_reader_random(interface_ref<archive_new::rea
 	BOOST_CHECK( reset.empty() || !rd->readable());
 	BOOST_CHECK( !rd->readable() || reset.empty());
 
-	archive_new::random* rnd = &ar.get<archive_new::random>();
+	io::random* rnd = &ar.get<io::random>();
 	if (rnd)
 	{
 		size_t buf_size = std::min(buf.size(), (size_t)rnd->size());
@@ -66,9 +66,9 @@ ArchiveTester& ArchiveTester::check_reader_random(interface_ref<archive_new::rea
 
 }
 
-ArchiveTester& ArchiveTester::check_writer(interface_ref<archive_new::writer> ar)
+ArchiveTester& ArchiveTester::check_writer(interface_ref<io::writer> ar)
 {
-	archive_new::writer* wr = &ar.get<archive_new::writer>();
+	io::writer* wr = &ar.get<io::writer>();
 	BOOST_REQUIRE(wr->writable());
 
 	buffer<aio::byte> buf(128, aio::byte('X'));
@@ -80,9 +80,9 @@ ArchiveTester& ArchiveTester::check_writer(interface_ref<archive_new::writer> ar
 	return *this;
 }
 
-ArchiveTester& ArchiveTester::check_writer_random(interface_ref<archive_new::writer, archive_new::random> ar)
+ArchiveTester& ArchiveTester::check_writer_random(interface_ref<io::writer, io::random> ar)
 {
-	archive_new::writer* wr = &ar.get<archive_new::writer>();
+	io::writer* wr = &ar.get<io::writer>();
 	BOOST_REQUIRE(wr->writable());
 
 	buffer<aio::byte> buf(128, aio::byte('X'));
@@ -91,7 +91,7 @@ ArchiveTester& ArchiveTester::check_writer_random(interface_ref<archive_new::wri
 	BOOST_CHECK(reset.empty());
 	BOOST_REQUIRE(wr->writable());
 
-	archive_new::random* rnd = &ar.get<archive_new::random>();
+	io::random* rnd = &ar.get<io::random>();
 	if (rnd)
 	{
 		size_t buf_size = std::min (buf.size(), (size_t)rnd->size());
@@ -120,17 +120,17 @@ ArchiveTester& ArchiveTester::check_writer_random(interface_ref<archive_new::wri
 	return *this;
 
 }
-ArchiveTester& ArchiveTester::check_sequence(interface_ref<archive_new::sequence> ar)
+ArchiveTester& ArchiveTester::check_sequence(interface_ref<io::sequence> ar)
 {
-	archive_new::sequence* seq = &ar.get<archive_new::sequence>();
+	io::sequence* seq = &ar.get<io::sequence>();
 
-	BOOST_CHECK(seq->size() == archive_new::sequence::unknow_size || seq->offset() <= seq->size());
+	BOOST_CHECK(seq->size() == io::sequence::unknow_size || seq->offset() <= seq->size());
 	return *this;
 }
 
-ArchiveTester& ArchiveTester::check_forward(interface_ref<archive_new::forward> ar)
+ArchiveTester& ArchiveTester::check_forward(interface_ref<io::forward> ar)
 {
-	archive_new::forward* fwd = &ar.get<archive_new::forward>();
+	io::forward* fwd = &ar.get<io::forward>();
 
 	check_sequence(ar);
 
@@ -161,9 +161,9 @@ ArchiveTester& ArchiveTester::check_forward(interface_ref<archive_new::forward> 
 	return *this;
 }
 
-ArchiveTester& ArchiveTester::check_random(interface_ref<archive_new::random> ar)
+ArchiveTester& ArchiveTester::check_random(interface_ref<io::random> ar)
 {
-	archive_new::random* rnd = &ar.get<archive_new::random>();
+	io::random* rnd = &ar.get<io::random>();
 	check_forward(ar);
 
 	aio::long_size_t off = rnd->offset();

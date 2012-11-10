@@ -56,6 +56,8 @@ namespace aio{ namespace fs{
     fs_error create_dir(const  string& path);
 	//it'll return null if failed.
     archive::archive_ptr create(const string& path, int mode, int flag);
+    //interface_auto<archive_new::reader, archive_new::random> create(const string& path, int flag);
+    //interface_auto<archive_new::writer, archive_new::random> open(const string& path, int flag);
     fs_error copy(const string& from, const string& to);
     fs_error move(const string& from, const string& to);
 
