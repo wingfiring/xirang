@@ -9,33 +9,43 @@
 
 namespace xirang
 {
+	//Type of ExtObject must be relocatable.
 	class ExtObject
 	{
 	public:
 		struct ConstPin
 		{
+			ConstPin();
 			ConstPin(const ExtObject& obj);
+			ConstPin(ConstPin&& rhs);
+			ConstPin& operator=(ConstPin&& rhs);
 			~ConstPin();
-			ConstCommonObject get();
+
+			ConstCommonObject get() const;
+			bool valid() const;
+			explicit operator bool() const;
+			void swap(ConstPin& rhs);
+
+		protected:
+			ExtObject* m_obj;
 
 			ConstPin(const ConstPin&) /*= delete*/;
 			ConstPin& operator=(const ConstPin&) /*= delete*/;
-		private:
-			const ExtObject& m_obj;
-			void* m_data;
-
 		};
-		struct Pin 
+		struct Pin : ConstPin
 		{
+			Pin();
 			Pin(ExtObject& obj);
+			Pin(Pin&& rhs);
+			Pin& operator=(Pin&& rhs);
 			~Pin();
-			CommonObject get();
 
+			CommonObject get() const;
+			void swap(Pin& rhs);
+
+		private:
 			Pin(const Pin&) /*= delete*/;
 			Pin& operator=(const Pin&) /*= delete*/;
-		private:
-			ExtObject& m_obj;
-			void* m_data;
 		};
 
 		friend struct Pin;
@@ -54,21 +64,13 @@ namespace xirang
 		ext_heap& get_ext_heap() const;
 
 		void swap(ExtObject& rhs);
-		void release();
 
-		template<typename Archive>
-		friend Archive& operator &(Archive & ar, ExtObject& obj)
-		{
-			return ar & obj.m_heap & obj.m_ext_heap & obj.m_type 
-				& obj.m_handle.begin & obj.m_handle.end 
-				& obj.m_handle_archive.begin & obj.m_handle_archive.end;
-		}
 		template<typename Archive>
 		friend Archive& operator &(Archive & ar, const ExtObject& obj)
 		{
+			using namespace serialize;
 			return ar & obj.m_heap & obj.m_ext_heap & obj.m_type 
-				& obj.m_handle.begin & obj.m_handle.end 
-				& obj.m_handle_archive.begin & obj.m_handle_archive.end;
+				& obj.m_handle.begin & obj.m_handle.end;
 		}
 
 		std::size_t pinCount() const;
@@ -87,28 +89,21 @@ namespace xirang
 
 		Type m_type;
 		mutable ext_heap::handle m_handle;
-		mutable ext_heap::handle m_handle_archive;
 	};
 
-	struct ExtObjMethods : public TypeMethods
-	{
-		virtual void construct(CommonObject obj, heap& , ext_heap&) const;
-		virtual void destruct(CommonObject obj) const;
-		virtual void assign(ConstCommonObject src, CommonObject dest) const;
-		virtual void deserialize(aio::archive::reader& rd, CommonObject obj, heap& inner, ext_heap& ext) const;
-		virtual void serialize(aio::archive::writer& wr, ConstCommonObject obj) const;
+	namespace serialize{
+		template<> struct constructor<ExtObject>{
+			static void apply(CommonObject obj, heap& hp, ext_heap& ehp);
+		};
 
-		virtual void release(CommonObject obj) const;
+		template<> struct hasher<ExtObject> {
+			static size_t apply(ConstCommonObject obj);
+		};
 
-		virtual void beginLayout(std::size_t& payload, std::size_t& offset, std::size_t& align, bool& pod) const;
-		virtual void nextLayout(TypeItem& item, std::size_t& payload, std::size_t& offset, std::size_t& align, bool& pod) const;
-		virtual const TypeInfoHandle& typeinfo() const;
-		virtual const MethodsExtension* extension() const;
-		private:
-		static std::size_t hash_(ConstCommonObject lhs);
-
-		static const TypeInfo<ExtObject> typeinfo_;
-	};
+		template<typename T> struct extendMethods {
+			static MethodsExtension* value();
+		};
+	}
 
 }
 #endif //end AIO_XIRANG_EXT_OBJECT_H

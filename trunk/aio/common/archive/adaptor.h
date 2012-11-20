@@ -3,7 +3,7 @@
 
 #include <aio/common/iarchive.h>
 
-namespace aio{ namespace archive{
+namespace aio{ namespace io{
 
     template<typename Base >
 		struct adaptor_deletor : Base
@@ -285,3 +285,4 @@ namespace aio{ namespace archive{
 	};	
 }}
 #endif //end AIO_COMMON_ARCHIVE_ADAPTOR_H
+

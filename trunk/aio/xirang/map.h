@@ -121,20 +121,7 @@ namespace xirang
 
 	//bool operator==(const Map& lhs, const Map& rhs); 
 	//bool operator<(const Map& lhs, const Map& rhs); 
-#ifndef MSVC_COMPILER_
-	struct MapMethods : public PrimitiveMethods<Map>
-	{
-		virtual void construct(CommonObject obj, heap& hp, ext_heap& ehp) const
-		{
-			AIO_PRE_CONDITION(obj.type().unresolvedArgs() == 0);
-
-			Type key_type = obj.type().arg(0).type();
-			Type value_type = obj.type().arg(1).type();
-
-			new (obj.data()) Map(hp, ehp, key_type, value_type);
-		}
-	};
-#endif	
 }
 
 #endif //end XIRANG_MAP_H
+

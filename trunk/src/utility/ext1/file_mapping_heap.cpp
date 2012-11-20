@@ -51,15 +51,11 @@ namespace aio
 	{
 		typedef int pin_counter;
 		typedef ext_heap::handle handle;
-		typedef boost::bimap<handle, void*, boost::bimaps::with_info<int> > view_map_type;
+		typedef boost::bimap<handle, byte*, boost::bimaps::with_info<int> > view_map_type;
 
-		file_mapping_heap_imp(archive::iarchive& file, heap* hp, memory::thread_policy thp)
+		file_mapping_heap_imp(const file_mapping_heap::ar_type& file, heap* hp, memory::thread_policy thp)
 			: m_heap(hp), m_thp(thp), m_map_file(file)
 		{
-			AIO_PRE_CONDITION(file.query_writer());
-			AIO_PRE_CONDITION(file.query_reader());
-			AIO_PRE_CONDITION(file.query_random());
-
 			info.map_file_size  = 0;
 			info.map_space_size = 0;
 			info.total_view_size = 0;
@@ -71,7 +67,7 @@ namespace aio
 			info.soft_limit = 0;
 			info.hard_limit = 0;
 
-			if (file.query_random()->size() != 0){
+			if (file.get<io::read_map>().size() != 0){
 				load_();
 			}
 		}
@@ -155,9 +151,9 @@ namespace aio
 		}
 
 
-		long_offset_t get_handle(const void* ap) const
+		long_offset_t get_handle(const byte* ap) const
 		{
-			void *p = (void*)ap;
+			byte*p = (byte*)ap;
             view_map_type::right_const_iterator itr = view_map.right.lower_bound(p);
 			if (itr != view_map.right.end() 
 					&& itr->first == p)
@@ -166,13 +162,13 @@ namespace aio
 			AIO_PRE_CONDITION (itr != view_map.right.begin());	// fail if found!
 			--itr;
 			AIO_PRE_CONDITION (itr->info > 0 );	//view counter != 0
-			char * p_start = (char*)itr->first;
-			char * p_end = (char*)itr->first + itr->second.size();
+			byte* p_start = itr->first;
+			byte* p_end = itr->first + itr->second.size();
 			AIO_PRE_CONDITION (p >= p_start && p < p_end);
-			return itr->second.begin + ((char*)p - p_start);
+			return itr->second.begin + (p - p_start);
 		}
 
-		void* pin(handle h)
+		byte* pin(handle h)
 		{
 #ifndef NDEBUG			
 			return pin_(h, true);
@@ -181,7 +177,7 @@ namespace aio
 #endif				
 		}
 
-		void* track_pin(handle h)
+		byte* track_pin(handle h)
 		{
 			return pin_(h, true);
 		}
@@ -203,12 +199,12 @@ namespace aio
 			return 0;
 		}
 
-		int track_unpin(void* p)
+		int track_unpin(byte* p)
 		{
 			return unpin_(p, true);
 		}
 
-		int unpin(void* p)
+		int unpin(byte* p)
 		{
 #ifndef NDEBUG
 			return unpin_(p, true);
@@ -227,7 +223,7 @@ namespace aio
 				view_map_type::left_iterator  pos = view_map.left.find(*itr);
 				return_to_outer_(pos->first);
 
-				std::unordered_map<long_offset_t, archive::view*>::iterator itr_view = view_regions.find(pos->first.begin);
+				std::unordered_map<long_offset_t, io::write_view*>::iterator itr_view = view_regions.find(pos->first.begin);
 				AIO_PRE_CONDITION(itr_view != view_regions.end());
 				delete itr_view->second;
 				view_regions.erase(itr_view);
@@ -321,7 +317,7 @@ namespace aio
 			info.outer_free_size += h.size();
 		}
 
-		void* pin_(handle h, bool track)
+		byte* pin_(handle h, bool track)
 		{
 			view_map_type::left_iterator vpos = locate_in_view_map_(h.begin);
 			if (vpos != view_map.left.end())
@@ -330,14 +326,14 @@ namespace aio
 				if (track)
 					++pin_map[h.begin];
 				//info.inner_free_size -= h.size();
-				return (char*)vpos->second + (h.begin - vpos->first.begin);
+				return vpos->second + (h.begin - vpos->first.begin);
 			}
 
 			// not in exists view.
 			return new_view_(h, track);
 		}
 
-		void * new_view_(handle h, bool track)
+		byte * new_view_(handle h, bool track)
 		{
 			handle ha = h;
 			std::size_t view_align = info.m_view_align;
@@ -353,15 +349,15 @@ namespace aio
 			}
 			ha.end = ha.begin + view_size;
 
-			void *p_view = create_view_(ha);
-			view_map.left.insert(std::make_pair(ha, p_view));
+			auto p_view = create_view_(ha);
+			view_map.left.insert(std::make_pair(ha, p_view.begin()));
 			info.inner_free_size += ha.size() - h.size();
 			view_map.left.find(ha)->info = 1;
 
 			if (track)
 				pin_map[h.begin] = 1;
 
-			void *p = (char*)p_view + (h.begin - ha.begin);
+			byte *p = p_view.begin() + (h.begin - ha.begin);
 
 			// move the view space from outer to inner 
 			//
@@ -394,7 +390,7 @@ namespace aio
 			return p;
 		}
 
-		int unpin_(void* p, bool track)
+		int unpin_(byte* p, bool track)
 		{
 			view_map_type::right_iterator  itr = view_map.right.lower_bound(p);
 			if (itr == view_map.right.end() 
@@ -410,11 +406,11 @@ namespace aio
 			if(track)
 			{
 
-				char * p_start = (char*)itr->first;
-				char * p_end = (char*)itr->first + itr->second.size();
+				byte* p_start = itr->first;
+				byte * p_end = itr->first + itr->second.size();
 				AIO_PRE_CONDITION (p >= p_start && p < p_end);
 
-				long_offset_t h_off =  itr->second.begin + ((char*)p - p_start);
+				long_offset_t h_off =  itr->second.begin + (p - p_start);
 				std::unordered_map<long_offset_t, pin_counter>::iterator pos = pin_map.find(h_off);
 				AIO_PRE_CONDITION(pos != pin_map.end());
 				if (--pos->second == 0)
@@ -427,7 +423,7 @@ namespace aio
 			return itr->info;
 		}
 
-		void* create_view_(handle h)
+		range<byte*> create_view_(handle h)
 		{
 			//if soft_limit reached, it'll try to recycle the empty map view
 			if (info.total_view_size   > info.soft_limit)
@@ -442,12 +438,12 @@ namespace aio
 
 			if (info.map_file_size < numeric_cast<long_size_t>(h.end))
 			{
-				writer_().truncate(h.end);
+				ioctrl_().truncate(h.end);
 				info.map_file_size = h.end;
 			}
-			aio::unique_ptr<archive::view> region ( new archive::view(writer_().view_wr(h)));
+			aio::unique_ptr<io::write_view> region = writer_().view_wr(h);
 			view_regions[h.begin] = region.get();
-			void * addr = region->address();
+			auto addr = region->address();
 			region.release();
 			info.total_view_size += h.size();
 			return addr;
@@ -470,8 +466,9 @@ namespace aio
 		const std::set<handle >& inner_free_() const { return free_space[0];}
 		const std::set<handle >& outer_free_() const { return free_space[1];}
 
-		archive::reader& reader_() const { return *m_map_file.query_reader();}
-		archive::writer& writer_() const { return *m_map_file.query_writer();}
+		io::read_map& reader_() const { return m_map_file.get<io::read_map>();}
+		io::write_map& writer_() const { return m_map_file.get<io::write_map>();}
+		io::ioctrl& ioctrl_() const { return m_map_file.get<io::ioctrl>();}
 
 		bool no_pinned_memory() const{
 			bool result = true;
@@ -484,45 +481,46 @@ namespace aio
 		}
 
 		void load_() {
-            aio::archive::random* rng = m_map_file.query_random();
-			if (rng->size() == 0)
+			io::ioctrl& ctrl = ioctrl_();
+			if (ctrl.size() == 0)
 				return;
 			
 			std::size_t tail_size = sizeof(long_offset_t) + sizeof(uint32_t);
-			if (rng->size() < tail_size)
+			if (ctrl.size() < tail_size)
 				AIO_THROW(bad_ext_heap_format);
-			rng->seek(rng->size() - tail_size);
-			long_offset_t end_pos;
-			uint32_t sig;
-			reader_() & end_pos & sig;
+			auto tail_view = reader_().view_rd(ext_heap::handle(ctrl.size() - tail_size, ctrl.size()));
+			const uint32_t& sig = *reinterpret_cast<const uint32_t*>(tail_view->address().begin());
+			const long_offset_t& end_pos = *reinterpret_cast<const long_offset_t*>(tail_view->address().begin() + sizeof(uint32_t));
 			if (sig != sig_ext_heap)
 				AIO_THROW(bad_ext_heap_format);
-			rng->seek(end_pos);
-			archive::mem_read_write_archive mar;
-			copy_data(reader_(), mar, rng->size() - end_pos - tail_size);
+			auto manager_view = reader_().view_rd(ext_heap::handle(end_pos, ctrl.size() - tail_size));
+			buffer<byte> buf(manager_view->address());
 
+			io::buffer_in mar(buf);
+			iref<io::reader> ird(mar);
 			size_t items = mar.data().size() /sizeof(handle);
 			mar.seek(0);
 			while(items--)
 			{
 				handle h;
-				read(mar) & h.begin & h.end;
+				using namespace lio;
+				ird.get<io::reader>() & h.begin & h.end;
 				free_space[1].insert(h);
 				info.outer_free_size += h.size() ;
 			}
 
-			handle tail_block(end_pos, rng->size());
+			handle tail_block(end_pos, ctrl.size());
 			return_to_outer_(tail_block);
 
 			info.outer_free_size += tail_block.size() ;
-			info.map_file_size  = rng->size();
-			info.map_space_size = rng->size();
+			info.map_file_size  = ctrl.size();
+			info.map_space_size = ctrl.size();
 		}
 
 		void unload_(){
 			view_map.clear();
 
-			for (std::unordered_map<long_offset_t, archive::view*>::iterator itr = view_regions.begin(); itr != view_regions.end(); ++itr)
+			for (std::unordered_map<long_offset_t, io::write_view*>::iterator itr = view_regions.begin(); itr != view_regions.end(); ++itr)
 				delete itr->second;
 			view_regions.clear();
 
@@ -541,20 +539,22 @@ namespace aio
 					break;
 			}
 
-			archive::mem_read_write_archive ar;
+			io::mem_archive war;
+			iref<io::writer> ar(war);
 			
+			using namespace lio;
 			std::set<handle >::iterator use_end = rbeg.base();
 			for (std::set<handle >::iterator itr = free_space[1].begin(); itr != use_end; ++itr)
 			{
-				write(ar) & itr->begin & itr->end;
+				ar.get<io::writer>() & itr->begin & itr->end;
 			}
-			write(ar) & end_pos & sig_ext_heap;
+			ar.get<io::writer>() & sig_ext_heap & end_pos;
 
 			free_space[1].clear();
 
-			writer_().truncate(numeric_cast<long_size_t>(end_pos) + ar.size());
-			m_map_file.query_random()->seek(end_pos);
-			block_write(writer_(), to_range(ar.data()));
+			ioctrl_().truncate(numeric_cast<long_size_t>(end_pos) + war.size());
+			auto manager_view = writer_().view_wr(ext_heap::handle(end_pos, end_pos + war.size()));
+			std::copy(war.data().begin(), war.data().end(), manager_view->address().begin());
 		}
 
 #if 0
@@ -577,7 +577,7 @@ namespace aio
 		heap* m_heap;
 		memory::thread_policy m_thp;
 
-		archive::iarchive&  m_map_file;
+		file_mapping_heap::ar_type m_map_file;
 
 		file_mapping_heap_info info;
 
@@ -588,7 +588,7 @@ namespace aio
         std::unordered_map<long_offset_t, pin_counter> pin_map;
 
 		//platform data
-		std::unordered_map<long_offset_t, archive::view*> view_regions;
+		std::unordered_map<long_offset_t, io::write_view*> view_regions;
 #ifndef MSVC_COMPILER_
 		//TODO for mac std::mutex mutex;
 #else
@@ -596,7 +596,7 @@ namespace aio
 #endif
 	};
 
-	file_mapping_heap::file_mapping_heap(archive::iarchive& file, heap* hp, memory::thread_policy thp)
+	file_mapping_heap::file_mapping_heap(const file_mapping_heap::ar_type& file, heap* hp, memory::thread_policy thp)
 		: m_imp(new file_mapping_heap_imp(file, hp, thp))
 	{
 	}
@@ -630,9 +630,9 @@ namespace aio
 		size = round_size(size);
 
 		handle h;
-		h.begin = m_imp->get_handle(p);
+		h.begin = m_imp->get_handle(reinterpret_cast<byte*>(p));
 		h.end = h.begin + size;
-		m_imp->unpin(p);
+		m_imp->unpin(reinterpret_cast<byte*>(p));
 		m_imp->deallocate(h);
 	}
 
@@ -684,7 +684,7 @@ namespace aio
 #else
 		stdext::threads::_Scoped_lock lock(m_imp->mutex);
 #endif
-		return m_imp->track_pin(h);
+		return reinterpret_cast<void*>(m_imp->track_pin(h));
 	}
 
 	/// map a block into memory, ref count the view only.
@@ -696,7 +696,7 @@ namespace aio
 		stdext::threads::_Scoped_lock lock(m_imp->mutex);
 #endif
 
-		return m_imp->pin(h);
+		return reinterpret_cast<void*>(m_imp->pin(h));
 	}
 
 	int file_mapping_heap::track_pin_count(handle h) const
@@ -730,7 +730,7 @@ namespace aio
 		stdext::threads::_Scoped_lock lock(m_imp->mutex);
 #endif
 
-		return m_imp->track_unpin(h);
+		return m_imp->track_unpin(reinterpret_cast<byte*>(h));
 	}
 
 	/// unmap a block. 
@@ -742,7 +742,7 @@ namespace aio
 		stdext::threads::_Scoped_lock lock(m_imp->mutex);
 #endif
 
-		return m_imp->unpin(h);
+		return m_imp->unpin(reinterpret_cast<byte*>(h));
 	}
 
 	/// TODO: is it necessary?
@@ -755,7 +755,7 @@ namespace aio
 		stdext::threads::_Scoped_lock lock(m_imp->mutex);
 #endif
 
-		void * p = m_imp->pin(h);
+		byte* p = m_imp->pin(h);
 		memcpy(p, src, n);
 		m_imp->unpin(p);
 
@@ -772,7 +772,7 @@ namespace aio
 		stdext::threads::_Scoped_lock lock(m_imp->mutex);
 #endif
 
-		void * p = m_imp->pin(h);
+		byte* p = m_imp->pin(h);
 		memcpy(dest, p, n);
 		m_imp->unpin(p);
 

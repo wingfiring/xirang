@@ -36,8 +36,33 @@ namespace aio
       template<typename U> void operator()(U*) const;
     };
 
+
+    template<typename T>
+    struct unify_delete
+    {
+        unify_delete() : deleter(&destroy_){}
+		template<typename Up, typename = typename
+			std::enable_if<std::is_convertible<Up*, T*>::value>::type>
+			unify_delete(const unify_delete<Up>& rhs) 
+			: deleter((deleter_type)rhs.deleter)
+			{ }
+
+        void operator()(T* ptr) const
+        {
+			deleter(ptr);
+        }
+
+		typedef void (*deleter_type)(T*);
+		deleter_type deleter;
+
+		static void destroy_(T* ptr){
+            static_assert(sizeof(T)>0, "can't delete pointer to incomplete type");
+            delete ptr;
+		}
+    };
+
     /// 20.7.12.2 unique_ptr for single objects.
-    template <typename T, typename Dp = default_delete<T> >
+    template <typename T, typename Dp = unify_delete<T> >
     class unique_ptr
     {   
         T* ptr;
@@ -86,7 +111,8 @@ namespace aio
 		}
 
 		// Observers.
-		T& operator*() const
+		typename std::add_lvalue_reference<element_type>::type 
+		operator*() const
 		{
 			AIO_PRE_CONDITION(get() != pointer());
 			return *get();

@@ -30,7 +30,7 @@ namespace xirang
 			bool valid () const;
 
             /// \return valid()
-			operator bool () const;
+			explicit operator bool () const;
 
             /// deprecated
             /// \pre valid()
@@ -73,10 +73,6 @@ namespace xirang
 	};
 	DEFINE_COMPARE (TypeItem);
 
-	extern aio::archive::reader& operator&(aio::archive::reader& ar, TypeItem& ti);
-	extern aio::archive::writer& operator&(aio::archive::writer& ar, const TypeItem& ti);
-
-
 	class TypeArgImp;
 
     /// class to hold type argument info
@@ -93,7 +89,7 @@ namespace xirang
 			bool valid () const;
 
             /// \return valid()
-			operator bool () const;
+			explicit operator bool () const;
 
             /// get real type of this argument
             /// \pre valid()
@@ -123,9 +119,6 @@ namespace xirang
 	};
 	DEFINE_COMPARE (TypeArg);
 
-	extern aio::archive::reader& operator&(aio::archive::reader& ar, TypeArg& ti);
-	extern aio::archive::writer& operator&(aio::archive::writer& ar, const TypeArg& ti);
-
 	class TypeImp;
 
     /// class to hold type info
@@ -146,7 +139,7 @@ namespace xirang
 			bool valid () const;
 
             /// \return valid()
-			operator bool () const;
+			explicit operator bool () const;
 
 			/// type name without namespace path
             /// \pre valid()
@@ -259,9 +252,6 @@ namespace xirang
             friend class ImpAccessor<TypeImp>;
 	};
 	DEFINE_COMPARE (Type);
-
-	extern aio::archive::reader& operator&(aio::archive::reader& ar, Type& ti);
-	extern aio::archive::writer& operator&(aio::archive::writer& ar, const Type& ti);
 
 	class TypeBuilder
 	{

@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(mem_read_archive_case)
 {
 	aio::buffer<aio::byte> buf(128, byte('X'));
 
-	io::mem_read_archive ar(buf);
+	io::mem_reader ar(buf);
 	ArchiveTester tester;
 
 	tester.check_reader(ar);
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(mem_read_archive_case)
 
 BOOST_AUTO_TEST_CASE(mem_write_archive_case)
 {
-	io::mem_write_archive ar;
+	io::mem_writer ar;
 	ArchiveTester tester;
 
 	tester.check_writer(ar);
@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(mem_write_archive_case)
 
 BOOST_AUTO_TEST_CASE(mem_read_write_archive_case)
 {
-	io::mem_read_write_archive ar;
+	io::mem_archive ar;
 	ArchiveTester tester;
 
 	tester.check_writer(ar);
@@ -77,8 +77,8 @@ BOOST_AUTO_TEST_CASE(mem_read_write_archive_case)
 
 BOOST_AUTO_TEST_CASE(mem_archive_case)
 {
-	io::mem_read_write_archive ar;
-	interface_ref<io::reader, io::writer> iar(ar);
+	io::mem_archive ar;
+	iref<io::reader, io::writer> iar(ar);
 
 	io::writer& wr = iar.get<io::writer>();
 	io::reader& rd = iar.get<io::reader>();

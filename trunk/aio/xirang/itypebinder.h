@@ -35,14 +35,7 @@ namespace xirang
     public:
 
         /// exception tag to identify the type with unresolved parameters
-		struct unresolved_type{};
-
-        /// deprecated. indicate how to use the heap
-		enum /*class*/ HeapFlag
-		{
-			inner,
-			outer,
-		};
+		AIO_EXCEPTION_TYPE(unresolved_type);
 
         /// construct given memory block
         /// \pre obj.valid() && obj.data() must point to uninitialized memory block
@@ -58,13 +51,14 @@ namespace xirang
         /// \pre src.valid() && dest.valid() && both are initialized
 		virtual void assign(ConstCommonObject src, CommonObject dest) const;
 
-        /// desrialize obj into archive 
-        /// \note not readfy, need refine the design
-		virtual void deserialize(aio::archive::reader& rd, CommonObject obj, heap& inner, ext_heap& ext) const;
+        /// desrialize obj from rd 
+		/// \param obj must have been constructed
+        /// \note need refine the design
+		virtual void deserialize(aio::io::reader& rd, CommonObject obj, heap& inner, ext_heap& ext) const;
 
-        /// desrialize obj into archive 
+        /// desrialize obj into io 
         /// \note not readfy, need refine the design
-		virtual void serialize(aio::archive::writer& wr, ConstCommonObject obj) const;
+		virtual void serialize(aio::io::writer& wr, ConstCommonObject obj) const;
 
         /// init the type metadata, all parameters are output. caller 
         /// \param payload hold the size of type

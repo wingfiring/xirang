@@ -4,65 +4,7 @@
 #include <aio/common/iarchive.h>
 #include <aio/common/string.h>
 
-namespace aio{ namespace archive{
-
-	template<typename Archive, typename T>
-	typename std::enable_if< std::is_convertible<Archive&, reader&>::value , Archive&>::type
-	operator &(Archive& ar, basic_range_string<T>& buf)
-	{
-		typename basic_range_string<T>::pointer first, last;
-		ar & first & last;
-		buf = basic_range_string<T>(first, last);
-
-		return ar;
-	}
-
-	template<typename Archive, typename T>
-	typename std::enable_if< std::is_convertible<Archive&, writer&>::value , Archive&>::type
-	operator &(Archive& ar, const basic_range_string<T>& buf)
-	{
-		return ar & buf.begin() & buf.end();
-	}
-
-
-	template<typename Archive, typename T>
-	typename std::enable_if< std::is_convertible<Archive&, reader&>::value , Archive&>::type
-	operator &(Archive& ar, basic_string<T>& buf)
-	{
-        buf.clear();
-
-		uint32_t size;
-		ar & size;
-		if (size > 0)
-		{
-			buffer<byte> rbuf;
-			rbuf.resize(size);
-			block_read(ar, make_range(rbuf.begin(), rbuf.end()));
-			
-			T* first = (T*)rbuf.begin();
-			T* last = first + size;
-			buf = make_range(first, last);
-		}
-
-		return ar;
-	}
-
-	template<typename Archive, typename T>
-	typename std::enable_if< std::is_convertible<Archive&, writer&>::value , Archive&>::type
-	operator &(Archive& ar, const basic_string<T>& buf)
-	{
-        uint32_t size =  (uint32_t)buf.size();
-		ar & size;
-		if (!buf.empty())
-		{
-			const byte* first = reinterpret_cast<const byte*>(buf.data());
-			const byte* last = first + sizeof(T) * buf.size();
-			block_write(ar, make_range(first, last));
-		}
-		return ar;
-	}
-}
-namespace lio{
+namespace aio{namespace lio{
 	using io::reader;
 	using io::writer;
 
@@ -91,8 +33,7 @@ namespace lio{
 	{
         buf.clear();
 
-		uint32_t size;
-		ar & size;
+		size_t size = load<size_t>(ar);
 		if (size > 0)
 		{
 			buffer<byte> rbuf;
@@ -111,8 +52,7 @@ namespace lio{
 		typename std::enable_if< std::is_convertible<Archive&, writer&>::value , Archive&>::type>
 	Archive& save(Archive& ar, const basic_string<T>& buf)
 	{
-        uint32_t size =  (uint32_t)buf.size();
-		ar & size;
+		save(ar, buf.size());
 		if (!buf.empty())
 		{
 			const byte* first = reinterpret_cast<const byte*>(buf.data());

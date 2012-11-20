@@ -10,7 +10,7 @@ namespace xirang{ namespace fs{
 	{
 	public:
 
-        explicit ZipFs(aio::archive::iarchive& file, IVfs& cache, const string& resource = aio::empty_str, bool sync_on_destroy = true);
+        explicit ZipFs(aio::io::iarchive& file, IVfs& cache, const string& resource = aio::empty_str, bool sync_on_destroy = true);
 
 		~ZipFs();
 

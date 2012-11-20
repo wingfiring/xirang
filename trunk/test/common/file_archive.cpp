@@ -15,9 +15,9 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 BOOST_AUTO_TEST_SUITE(file_archive_suite)
 
 using namespace aio;
-using namespace aio::archive;
+using namespace aio::io;
 
-//using archive_suite::ArchiveTester;
+using archive_suite::ArchiveTester;
 
 BOOST_AUTO_TEST_CASE(file_archive_wchar_case)
 {
@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE(file_archive_wchar_case)
     aio::string file_name = tmp + "/\xd0\xa0\xd0\xb0\xd0\xb7\xd0\xbd\xd0\xbe\xd0\xb5";
 
     const string text="This is file archive UT content. --over--";
-    file_write_archive wr(file_name, of_create_or_open);
+    file wr(file_name, of_create_or_open);
     BOOST_CHECK(wr.size() == 0);
 
     wr.write(string_to_c_range(text));
@@ -56,17 +56,17 @@ BOOST_AUTO_TEST_CASE(file_archive)
 
 	//Writer
 	{
-		BOOST_CHECK_THROW(file_write_archive(file_name, of_open), archive_open_file_failed);
+		BOOST_CHECK_THROW(file_writer(file_name, of_open), archive_open_file_failed);
 
-		file_write_archive wr(file_name, of_create_or_open);
+		file_writer wr(file_name, of_create_or_open);
 
-		BOOST_CHECK_THROW(file_write_archive(file_name, of_create), archive_create_file_failed);
+		BOOST_CHECK_THROW(file_writer(file_name, of_create), archive_create_file_failed);
 
 		BOOST_REQUIRE(wr.writable());
 
-		file_write_archive::const_iterator pos = wr.write(ctext);
+		auto reset = wr.write(ctext);
 
-		BOOST_CHECK(pos == ctext.end());
+		BOOST_CHECK(reset.empty());
 		BOOST_CHECK(wr.offset() == text.size());
 		BOOST_CHECK(wr.size() == text.size());
 
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(file_archive)
 	}
 	//Reader
 	{
-		file_read_archive rd(file_name);
+		file_reader rd(file_name);
 
 		BOOST_CHECK(rd.offset() == 0);
 		BOOST_CHECK(rd.size() == len1 + text.size());
@@ -88,8 +88,8 @@ BOOST_AUTO_TEST_CASE(file_archive)
 
 		buffer<aio::byte> buf;
 		buf.resize(len1);
-		file_read_archive::iterator pos = rd.read(to_range(buf));
-		BOOST_CHECK(pos = buf.end());
+		auto reset = rd.read(to_range(buf));
+		BOOST_CHECK(reset.empty());
 		BOOST_CHECK(rd.offset() == len1);
 
 		rd.seek(len2);
@@ -97,24 +97,24 @@ BOOST_AUTO_TEST_CASE(file_archive)
 
 		buf.resize(text.size() * 2);
 
-		pos = rd.read(to_range(buf));
+		reset = rd.read(to_range(buf));
 		BOOST_CHECK(!rd.readable());
-		BOOST_CHECK(pos != buf.end());
+		BOOST_CHECK(!reset.empty());
 
 		rd.seek(len1);
-		pos = rd.read(to_range(buf));
-		BOOST_CHECK(!std::lexicographical_compare(buf.begin(), pos, (const aio::byte*)text.begin(), (const aio::byte*)text.end()));
-		BOOST_CHECK(!std::lexicographical_compare((const aio::byte*)text.begin(), (const aio::byte*)text.end(), buf.begin(), pos));
+		reset = rd.read(to_range(buf));
+		BOOST_CHECK(!std::lexicographical_compare(buf.begin(), reset.begin(), (const aio::byte*)text.begin(), (const aio::byte*)text.end()));
+		BOOST_CHECK(!std::lexicographical_compare((const aio::byte*)text.begin(), (const aio::byte*)text.end(), buf.begin(), reset.begin()));
 
-		//ArchiveTester tester(rd);
-		//rd.seek(0);
-		//tester.check_reader();
-		//tester.check_random();
+		ArchiveTester tester;
+		rd.seek(0);
+		tester.check_reader(rd);
+		tester.check_random(rd);
 	}
 
 	//reader & writer
 	{
-		file_read_write_archive rw(file_name, of_open);
+		file rw(file_name, of_open);
 
 		BOOST_CHECK(rw.offset() == 0);
 		BOOST_CHECK(rw.size() == len1 + text.size());
@@ -125,8 +125,8 @@ BOOST_AUTO_TEST_CASE(file_archive)
 		buf.resize(len1);
 		range<buffer<aio::byte>::iterator> mbuf = string_to_range(buf);
 
-		file_read_write_archive::iterator pos = rw.read(mbuf);
-		BOOST_CHECK(pos == mbuf.end());
+		auto reset = rw.read(mbuf);
+		BOOST_CHECK(reset.empty());
 		BOOST_CHECK(rw.offset() == len1);
 
 		rw.seek(len2);
@@ -139,19 +139,19 @@ BOOST_AUTO_TEST_CASE(file_archive)
 		buf.resize(text.size());
 
 		mbuf = string_to_range(buf);
-		pos = rw.read(mbuf);
+		reset = rw.read(mbuf);
 		BOOST_CHECK(!rw.readable());
 		BOOST_CHECK(rw.writable());
-		BOOST_CHECK(pos != mbuf.end());
+		BOOST_CHECK(!reset.empty());
 
 		rw.truncate(len2);
 		BOOST_CHECK(rw.offset() == len2);
 				
-		//ArchiveTester tester(rw);
-		//tester.check_writer();
-		//rw.seek(0);
-		//tester.check_reader();
-		//tester.check_random();
+		ArchiveTester tester;
+		tester.check_writer(rw);
+		rw.seek(0);
+		tester.check_reader(rw);
+		tester.check_random(rw);
 	}
 
     aio::fs::recursive_remove(temp_path);

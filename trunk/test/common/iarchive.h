@@ -10,16 +10,16 @@ using namespace aio;
 class ArchiveTester
 {
 	public:
-	ArchiveTester& check_reader(interface_ref<io::reader>);
-	ArchiveTester& check_writer(interface_ref<io::writer>);
-	ArchiveTester& check_sequence(interface_ref<io::sequence>);
-	ArchiveTester& check_forward(interface_ref<io::forward>);
-	ArchiveTester& check_random(interface_ref<io::random>);
-	ArchiveTester& check_reader_random(interface_ref<io::reader, io::random> ar);
-	ArchiveTester& check_writer_random(interface_ref<io::writer, io::random> ar);
+	ArchiveTester& check_reader(iref<io::reader>);
+	ArchiveTester& check_writer(iref<io::writer>);
+	ArchiveTester& check_sequence(iref<io::sequence>);
+	ArchiveTester& check_forward(iref<io::forward>);
+	ArchiveTester& check_random(iref<io::random>);
+	ArchiveTester& check_reader_random(iref<io::reader, io::random> ar);
+	ArchiveTester& check_writer_random(iref<io::writer, io::random> ar);
 
-	ArchiveTester& check_rd_view(interface_ref<io::read_view>);
-	ArchiveTester& check_wr_view(interface_ref<io::write_view>);
+	ArchiveTester& check_rd_view(iref<io::read_view>);
+	ArchiveTester& check_wr_view(iref<io::write_view>);
 };
 BOOST_AUTO_TEST_SUITE_END()
 

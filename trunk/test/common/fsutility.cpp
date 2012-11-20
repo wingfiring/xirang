@@ -7,34 +7,34 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 
 BOOST_AUTO_TEST_SUITE(tempfile_suite)
 using namespace aio::fs;
+using namespace aio;
 using aio::byte;
 
 BOOST_AUTO_TEST_CASE(tempfile_case)
 {
     aio::string prefix = "test";
-    aio::string test_name = private_::gen_temp_name(prefix);
+    aio::string test_name = fs::private_::gen_temp_name(prefix);
 
     BOOST_CHECK(prefix.size() < test_name.size());
     BOOST_CHECK(std::equal(prefix.begin(), prefix.end(), test_name.begin()));
 
     aio::string tmppath;
     {   
-        aio::archive::archive_ptr file = temp_file(prefix, aio::archive::of_remove_on_close, &tmppath);
-        BOOST_CHECK(file);
+        aio::io::file file = temp_file(prefix, aio::io::of_remove_on_close, &tmppath);
         BOOST_CHECK(!tmppath.empty());
         BOOST_CHECK(state(tmppath).state == aio::fs::st_regular);
     }
     BOOST_CHECK(state(tmppath).state == aio::fs::st_not_found);
 
-    BOOST_CHECK_THROW(temp_file("test", "path/not/exist"),  aio::archive::create_failed);
+    BOOST_CHECK_THROW(temp_file("test", "path/not/exist"),  aio::io::create_failed);
 
-    BOOST_CHECK_THROW(temp_dir("test", "path/not/exist"),  aio::archive::create_failed);
+    BOOST_CHECK_THROW(temp_dir("test", "path/not/exist"),  aio::io::create_failed);
 
     aio::string tmpfilepath2;
     {
         tmppath  = temp_dir(prefix);
         BOOST_CHECK(!tmppath.empty());
-        BOOST_CHECK(temp_file("test", tmppath));
+        BOOST_CHECK_NO_THROW(temp_file("test", tmppath));
         BOOST_CHECK(state(tmppath).state == aio::fs::st_dir);
 
         temp_file("test", tmppath, 0, &tmpfilepath2);
@@ -48,66 +48,12 @@ BOOST_AUTO_TEST_CASE(tempfile_case)
 
 }
 
-BOOST_AUTO_TEST_CASE(create_case)
-{
-    BOOST_CHECK(!create("path/not/found", aio::archive::mt_write | aio::archive::mt_random, aio::archive::of_create_or_open));
-
-    aio::string tmpdir  = temp_dir("");
-    aio::string tmpfile = tmpdir + "/file1";
-
-    BOOST_CHECK(!create(tmpfile, aio::archive::mt_write | aio::archive::mt_random, aio::archive::of_open));
-
-    BOOST_CHECK(create(tmpfile, aio::archive::mt_write | aio::archive::mt_random, aio::archive::of_create));
-
-    aio::archive::archive_ptr file = create(tmpfile, aio::archive::mt_write | aio::archive::mt_random, aio::archive::of_create_or_open);
-    BOOST_CHECK(file);
-    BOOST_CHECK(file->query_writer());
-    BOOST_CHECK(file->query_random());
-
-    aio::string tmpfile2 = tmpdir + "/file2";
-    const char txt[] = "quick fox jump over the lazy dog";
-    aio::buffer<byte> buf (aio::make_range((const byte*)txt, (const byte*)(txt + sizeof(txt)-1)));
-    file->query_writer()->write(to_range(buf));
-    file.reset();
-
-    aio::fs::copy(tmpfile, tmpfile2);
-    aio::archive::archive_ptr file2 = create(tmpfile2, aio::archive::mt_read | aio::archive::mt_random, aio::archive::of_open);
-    BOOST_REQUIRE(file2);
-
-    aio::buffer<aio::byte> buf2;
-    buf2.resize(buf.size());
-    file2->query_reader()->read(aio::to_range(buf2));
-    file2.reset();
-    BOOST_CHECK(std::equal(buf.begin(), buf.end(), buf2.begin()));
-
-    BOOST_CHECK(aio::fs::truncate(tmpfile2, 5) == aio::fs::er_ok);
-    BOOST_CHECK(aio::fs::state(tmpfile2).size == 5);
-
-    aio::fs::file_range filelist = children(tmpdir);
-    aio::fs::file_range::iterator file_itr = filelist.begin();
-    BOOST_CHECK(file_itr != filelist.end());
-    aio::string filepath = aio::fs::append_tail_slash(tmpdir) + *file_itr;
-    BOOST_CHECK(filepath == tmpfile || filepath == tmpfile2);
-    ++file_itr;
-    filepath = aio::fs::append_tail_slash(tmpdir) + *file_itr;
-    BOOST_CHECK(filepath == tmpfile || filepath == tmpfile2);
-    ++file_itr;
-    BOOST_CHECK(file_itr == filelist.end());
-
-    BOOST_CHECK(exists(tmpfile));
-    BOOST_CHECK(!exists(tmpfile + "/notfound"));
-
-
-    recursive_remove(tmpdir);
-
-    BOOST_CHECK(state(tmpdir).state == aio::fs::st_not_found);
-}
 BOOST_AUTO_TEST_CASE(recursive_create_dir_case)
 {
     aio::string tmpdir  = temp_dir("tmp");
     BOOST_CHECK(recursive_create_dir(tmpdir + "/a/b/c") == aio::fs::er_ok);
 
-    BOOST_CHECK(recursive_create(tmpdir + "/x/y/z", aio::archive::mt_write | aio::archive::mt_random, aio::archive::of_create));
+    BOOST_CHECK_NO_THROW(recursive_create(tmpdir + "/x/y/z", aio::io::of_create));
     recursive_remove(tmpdir);
 }
 
@@ -198,21 +144,17 @@ BOOST_AUTO_TEST_CASE(ext_filename_case)
 BOOST_AUTO_TEST_CASE(recreate_file_case)
 {
     aio::string tmppath;
-    aio::archive::archive_ptr file = temp_file("test", 0, &tmppath);
-    aio::buffer<aio::byte> data;
-    data.resize(100);
-    file->query_writer()->write(to_range(data));
+	{
+		aio::io::file file = temp_file("test", 0, &tmppath);
+		aio::buffer<aio::byte> data;
+		data.resize(100);
+		BOOST_CHECK(file.write(to_range(data)).empty());
 
-    aio::archive::archive_ptr file2 = create(tmppath, aio::archive::mt_read |aio::archive::mt_random, aio::archive::of_open);
-    BOOST_CHECK(file2);
-    BOOST_CHECK(file2->query_writer() == 0);
+		BOOST_CHECK_NO_THROW(aio::io::file_reader((aio::string&)tmppath));
 
-    file.reset();
-    aio::archive::archive_ptr file3 = create(tmppath, aio::archive::mt_write | aio::archive::mt_read |aio::archive::mt_random, aio::archive::of_open);
-    BOOST_CHECK(file3);
-    BOOST_CHECK(file3->query_writer() );
-
-    aio::fs::remove(tmppath);
+		BOOST_CHECK_NO_THROW(aio::io::file(tmppath, aio::io::of_open));
+	}
+	aio::fs::remove(tmppath);
 }
 BOOST_AUTO_TEST_SUITE_END()
 

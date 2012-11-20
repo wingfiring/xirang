@@ -12,24 +12,24 @@ namespace xirang
   
   //handle of a type member item owned by Type.
   class TypeItem;
-  typedef RangeT<aio::const_itr_traits<TypeItem> > TypeItemRange;
+  typedef BiRangeT<aio::const_itr_traits<TypeItem> > TypeItemRange;
 
   class TypeArg;
-  typedef RangeT<aio::const_itr_traits<TypeArg> > TypeArgRange;
+  typedef BiRangeT<aio::const_itr_traits<TypeArg> > TypeArgRange;
 
   //handle of a type owned by Xirang
   class Type;
-  typedef RangeT<aio::const_itr_traits<Type> >  TypeRange;
+  typedef BiRangeT<aio::const_itr_traits<Type> >  TypeRange;
 
   class TypeAlias;
-  typedef RangeT<aio::const_itr_traits<TypeAlias> > TypeAliasRange;
+  typedef BiRangeT<aio::const_itr_traits<TypeAlias> > TypeAliasRange;
 
   class Namespace;
-  typedef RangeT<aio::const_itr_traits<Namespace> > NamespaceRange;
+  typedef BiRangeT<aio::const_itr_traits<Namespace> > NamespaceRange;
 
   //handle of a subobject of object woned by Xirang.
   class SubObject;
-  typedef RangeT<aio::const_itr_traits<SubObject> > SubObjRange;
+  typedef BiRangeT<aio::const_itr_traits<SubObject> > SubObjRange;
 
   //handle of an object owned by Xirang
   class CommonObject;
@@ -37,13 +37,13 @@ namespace xirang
   struct ConstNameValuePair;
   struct NameValuePair;
 
-  typedef RangeT<aio::const_itr_traits<NameValuePair> > ObjectRange;
+  typedef BiRangeT<aio::const_itr_traits<NameValuePair> > ObjectRange;
 
   class ConstSubObject;
-  typedef RangeT<aio::const_itr_traits<ConstSubObject> > ConstSubObjRange;
+  typedef BiRangeT<aio::const_itr_traits<ConstSubObject> > ConstSubObjRange;
 
   class ConstCommonObject;
-  typedef RangeT<aio::const_itr_traits<ConstCommonObject> > ConstObjectRange;
+  typedef BiRangeT<aio::const_itr_traits<ConstCommonObject> > ConstObjectRange;
 
   class Xirang;			//runtime
 

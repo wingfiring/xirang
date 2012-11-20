@@ -7,32 +7,32 @@ BOOST_AUTO_TEST_SUITE(interface_suite)
 
 struct Bar{ virtual void bar() = 0; };
 
-template<typename Derive>
+template<typename RealType>
 struct BarCo : public Bar
 {
 	virtual void bar() {
-		static_cast<const Derive*>(this)->get_target()->bar();
+		static_cast<const RealType*>(this)->get_target()->bar();
 	};
 };
 
-template<typename Derive>
-BarCo<Derive> get_interface_map(Derive*, Bar*);
+template<typename RealType,typename CoClass>
+BarCo<RealType> get_interface_map(RealType*, Bar*, CoClass*);
 
 
 struct Foo{
 	virtual void foo() = 0;
 };
 
-template<typename Derive>
+template<typename RealType>
 struct FooCo : public Foo
 {
 	virtual void foo() {
-		static_cast<const Derive*>(this)->get_target()->foo();
+		static_cast<const RealType*>(this)->get_target()->foo();
 	};
 };
 
-template<typename Derive>
-FooCo<Derive> get_interface_map(Derive*, Foo*);
+template<typename RealType, typename CoClass>
+FooCo<RealType> get_interface_map(RealType*, Foo*, CoClass*);
 
 struct X{
 	X(): m(0), n(0){}
@@ -46,10 +46,34 @@ struct X{
 	mutable int n;
 };
 
+struct Z{
+	void fun(){ std::cout << "Z::fun\n";}
+};
+
+template<typename Derive>
+struct Z_to_Foo : public Foo{
+	virtual void foo() {
+		static_cast<const Derive*>(this)->get_target()->fun();
+	}
+};
+template<typename Derive>
+Z_to_Foo<Derive> get_interface_map(Derive*, Foo*, Z*);
+
+template<typename RealType>
+struct Z_to_Bar : public Bar
+{
+	virtual void bar() {
+		static_cast<const RealType*>(this)->get_target()->fun();
+	};
+};
+
+//template<typename RealType>
+//Z_to_Bar<RealType> get_interface_map(RealType*, Bar*, Z*);
+
 void interface_test()
 {
 	X a;
-	interface_ref<Foo, Bar> ref(a);
+	iref<Foo, Bar> ref(a);
 	
 	ref.get<Foo>().foo();
 	BOOST_CHECK(a.m == 1);
@@ -58,19 +82,19 @@ void interface_test()
 	BOOST_CHECK(a.m == 0);
 
 	const X a1;
-	interface_ref<Foo, Bar> ref1(a1);
+	iref<Foo, Bar> ref1(a1);
 	ref1.get<Foo>().foo();
 	BOOST_CHECK(a1.n == 1);
 	ref1.get<Bar>().bar();
 	BOOST_CHECK(a1.n == 0);
 
-	interface_ref<Foo, Bar> ref2(ref);
+	iref<Foo, Bar> ref2(ref);
 	ref2.get<Foo>().foo();
 	BOOST_CHECK(a.m == 1);
 	ref2.get<Bar>().bar();
 	BOOST_CHECK(a.m == 0);
 
-	interface_ref<Foo> ref3(ref);
+	iref<Foo> ref3(ref);
 	ref3.get<Foo>().foo();
 	BOOST_CHECK(a.m == 1);
 
@@ -80,9 +104,21 @@ void interface_test()
 
 
 	X* px = new X;
-	interface_auto<Foo, Bar> af((std::unique_ptr<X>(px)));
+	iauto<Foo, Bar> af((unique_ptr<X>(px)));
 	af.get<Foo>().foo();
 	BOOST_CHECK(px->m == 1);
+
+	Z z;
+	static_assert(private_::is_iref<iauto<Foo, Bar>>::value, "oops...");
+
+	iref<Foo, noif<Bar>> refz(z);
+	iref<Foo, opt<Bar>> refb(*px);
+	iref<Foo, opt<Bar>> refc(iref<Foo, noif<Bar>>(z));
+	iref<Foo, opt<Bar>> refd(refz);
+	iref<Foo, opt<Bar>> refe(af);
+
+	BOOST_CHECK(refz.get<Bar>() == 0);
+	BOOST_CHECK(refb.get<Bar>() != 0);
 
 }
 BOOST_AUTO_TEST_CASE(interface_case)

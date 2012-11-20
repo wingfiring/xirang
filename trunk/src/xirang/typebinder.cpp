@@ -8,7 +8,7 @@ namespace xirang
 {
 	namespace {
 		TypeMethods defaultMethods;
-		std::size_t lcm(std::size_t p1, std::size_t p2)
+		std::size_t align_lcm(std::size_t p1, std::size_t p2)
 		{
 			return p1 < p2 ? p2 : p1;
 		}
@@ -55,19 +55,6 @@ namespace xirang
             itr != end; ++itr)
         {   
             SubObject ti = *itr;
-            // ! warning: can't use itr->type() at here, vc stl imp is:
-            // reference operator*() const
-            // {	// return designated value
-            //    _RanIt _Tmp = current;
-            //    return (*--_Tmp);
-            // }
-            // pointer operator->() const
-            // {	// return pointer to class object
-            //    return (&**this);
-            // }
-            // 
-            // since the reference is a value here, so operator* is safe and operator-> is incorrect
-            // 
             Type t2 = ti.type();
             if (!t2.isPod())
                 t2.methods().destruct(ti.asCommonObject());
@@ -156,7 +143,7 @@ namespace xirang
 				payload += item.type().payload() + padding;
 				offset = payload;
 				pod = pod && item.type().isPod();
-				align = lcm(align, item.type().align());
+				align = align_lcm(align, item.type().align());
 			}
 		}
 	}

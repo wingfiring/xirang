@@ -14,7 +14,7 @@ BOOST_AUTO_TEST_SUITE(archive_suite)
 using namespace aio;
 
 
-ArchiveTester& ArchiveTester::check_reader(interface_ref<io::reader> ar)
+ArchiveTester& ArchiveTester::check_reader(iref<io::reader> ar)
 {
 	io::reader* rd = &ar.get<io::reader>();
 
@@ -28,7 +28,7 @@ ArchiveTester& ArchiveTester::check_reader(interface_ref<io::reader> ar)
 
 	return *this;
 }
-ArchiveTester& ArchiveTester::check_reader_random(interface_ref<io::reader, io::random> ar)
+ArchiveTester& ArchiveTester::check_reader_random(iref<io::reader, io::random> ar)
 {
 	io::reader* rd = &ar.get<io::reader>();
 
@@ -66,7 +66,7 @@ ArchiveTester& ArchiveTester::check_reader_random(interface_ref<io::reader, io::
 
 }
 
-ArchiveTester& ArchiveTester::check_writer(interface_ref<io::writer> ar)
+ArchiveTester& ArchiveTester::check_writer(iref<io::writer> ar)
 {
 	io::writer* wr = &ar.get<io::writer>();
 	BOOST_REQUIRE(wr->writable());
@@ -80,7 +80,7 @@ ArchiveTester& ArchiveTester::check_writer(interface_ref<io::writer> ar)
 	return *this;
 }
 
-ArchiveTester& ArchiveTester::check_writer_random(interface_ref<io::writer, io::random> ar)
+ArchiveTester& ArchiveTester::check_writer_random(iref<io::writer, io::random> ar)
 {
 	io::writer* wr = &ar.get<io::writer>();
 	BOOST_REQUIRE(wr->writable());
@@ -120,15 +120,15 @@ ArchiveTester& ArchiveTester::check_writer_random(interface_ref<io::writer, io::
 	return *this;
 
 }
-ArchiveTester& ArchiveTester::check_sequence(interface_ref<io::sequence> ar)
+ArchiveTester& ArchiveTester::check_sequence(iref<io::sequence> ar)
 {
 	io::sequence* seq = &ar.get<io::sequence>();
 
-	BOOST_CHECK(seq->size() == io::sequence::unknow_size || seq->offset() <= seq->size());
+	BOOST_CHECK(seq->size() == io::unknow_size || seq->offset() <= seq->size());
 	return *this;
 }
 
-ArchiveTester& ArchiveTester::check_forward(interface_ref<io::forward> ar)
+ArchiveTester& ArchiveTester::check_forward(iref<io::forward> ar)
 {
 	io::forward* fwd = &ar.get<io::forward>();
 
@@ -151,17 +151,17 @@ ArchiveTester& ArchiveTester::check_forward(interface_ref<io::forward> ar)
 	if (can_over_end)
 	{
 		BOOST_CHECK(new_off == size + step);
+		BOOST_CHECK(new_off == fwd->size() + step);
 	}
 	else
 	{
 		BOOST_CHECK(new_off == size);
 	}
-	BOOST_CHECK(new_off == fwd->size());
 	BOOST_CHECK(new_off == fwd->offset());
 	return *this;
 }
 
-ArchiveTester& ArchiveTester::check_random(interface_ref<io::random> ar)
+ArchiveTester& ArchiveTester::check_random(iref<io::random> ar)
 {
 	io::random* rnd = &ar.get<io::random>();
 	check_forward(ar);

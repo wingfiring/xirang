@@ -21,7 +21,10 @@ namespace aio
 	};
 	struct AIO_COMM_API file_mapping_heap : ext_heap
 	{
-		file_mapping_heap(archive::iarchive& file, heap* hp, memory::thread_policy thp);
+	public:
+		typedef iref<io::read_map, io::write_map, io::ioctrl> ar_type;
+
+		file_mapping_heap(const ar_type& file, heap* hp, memory::thread_policy thp);
 		~file_mapping_heap();
 
 	public: //heap methods

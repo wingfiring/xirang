@@ -46,12 +46,12 @@ namespace xirang { namespace fs
         vo_user = 1 << 16
     };
 
-	typedef RangeT<aio::const_itr_traits<MountInfo> > VfsRange;
-	typedef RangeT<aio::const_itr_traits<VfsNode> > VfsNodeRange;
+	typedef BiRangeT<aio::const_itr_traits<MountInfo> > VfsRange;
+	typedef BiRangeT<aio::const_itr_traits<VfsNode> > VfsNodeRange;
 
-    using aio::archive::iarchive;
-    using aio::archive::archive_deletor;
-	using aio::archive::archive_ptr;
+    using aio::io::iarchive;
+    using aio::io::archive_deletor;
+	using aio::io::archive_ptr;
 
     /// \notes 1. all vfs modifications will return er_ok or not null archive_ptr if succeeded.
     ///     2. the path or file name must be aio style, separated by "/".
@@ -76,8 +76,8 @@ namespace xirang { namespace fs
 		virtual fs_error createDir(const  string& path) = 0;
 
 		/// create or open file
-        /// \param compound flag of aio::archive::archive_mode
-        /// \param flag one of aio::archive::open_flag
+        /// \param compound flag of aio::io::archive_mode
+        /// \param flag one of aio::io::open_flag
         /// \pre path must not end with '/'. 
 		/// \pre !absolute(path)
         /// \notes the capability of returned archive_ptr must greater than or equal to given mode. 
@@ -85,6 +85,10 @@ namespace xirang { namespace fs
         /// \notes if the parent of path is not exist, failed.
         /// \notes the result depends on implementation capability.
 		virtual archive_ptr create(const string& path, int mode, int flag) = 0;
+
+		template<typename... Interfaces> iauto<Interfaces...> create(const range_string& path, int flag){
+
+		}
 
 
         /// copy file via file path
@@ -185,7 +189,7 @@ namespace xirang { namespace fs
     // return true if p[0] is '/';
 	extern bool is_absolute(const string& p);
 
-    archive_ptr temp_file(IVfs& vfs, aio::const_range_string template_ , aio::const_range_string dir, int flag = aio::archive::of_remove_on_close, string* path = 0);
+    archive_ptr temp_file(IVfs& vfs, aio::const_range_string template_ , aio::const_range_string dir, int flag = aio::io::of_remove_on_close, string* path = 0);
     string temp_dir(IVfs& vfs, aio::const_range_string template_, aio::const_range_string parent_dir);
     fs_error recursive_remove(IVfs&vfs, const string& path);
     fs_error recursive_create_dir(IVfs&vfs, const string& path);

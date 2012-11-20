@@ -71,15 +71,6 @@ namespace xirang
         return comparePtr(m_imp, rhs.m_imp);
 	}
 
-	aio::archive::reader& operator&(aio::archive::reader& ar, TypeItem& ti)
-	{
-		return ar;
-	}
-
-	aio::archive::writer& operator&(aio::archive::writer& ar, const TypeItem& ti)
-	{
-		return ar;
-	}
 
 	//
 	// TypeArg
@@ -119,16 +110,6 @@ namespace xirang
 	int TypeArg::compare (const TypeArg & rhs) const
 	{
         return comparePtr(m_imp, rhs.m_imp);
-	}
-
-	extern aio::archive::reader& operator&(aio::archive::reader& ar, TypeArg& ti)
-	{
-		return ar;
-	}
-
-	extern aio::archive::writer& operator&(aio::archive::writer& ar, const TypeArg& ti)
-	{
-		return ar;
 	}
 
 	//
@@ -389,16 +370,6 @@ namespace xirang
 	int Type::compare (const Type& rhs) const 
 	{
         return comparePtr(m_imp, rhs.m_imp);
-	}
-
-	extern aio::archive::reader& operator&(aio::archive::reader& ar, Type& ti)
-	{
-		return ar;
-	}
-
-	extern aio::archive::writer& operator&(aio::archive::writer& ar, const Type& ti)
-	{
-		return ar;
 	}
 
 	TypeBuilder::TypeBuilder(TypeMethods* methods )

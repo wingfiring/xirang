@@ -57,10 +57,11 @@ namespace aio {namespace fs{
 
 		auto err = errno;
 		if(EXDEV == err){
-			auto ret = copy(from, to);
-			if (ret == er_ok)
+			try{
+				copy(from, to);
 				unlink(from.c_str());
-			else return ret;
+			} catch(...){}
+			return er_system_error;
 		}
 		switch(err){
 			case EFAULT:
@@ -229,42 +230,16 @@ namespace aio {namespace fs{
     }
 #endif
 
-    archive::archive_ptr create(const string& path, int mode, int flag)
+    void copy(const string& from, const string& to)
     {
-        typedef default_deletorT<archive::file_read_archive> file_read_archive;
-        typedef default_deletorT<archive::file_read_write_archive> file_read_write_archive;
-        typedef default_deletorT<archive::file_write_archive> file_write_archive;
+		io::file_reader src(from);
+		io::file_writer dest(to, io::of_create_or_open);
+		iref<io::reader> rd(src);
+		iref<io::writer> wr(dest);
 
-        try{
-            if (mode & archive::mt_read)
-            {
-                if ((mode & archive::mt_write) == 0)
-                {
-                    AIO_PRE_CONDITION(flag == archive::of_open);
-                    return archive::archive_ptr(new file_read_archive(path));
-                }
-                else
-                    return archive::archive_ptr(new file_read_write_archive(path, flag));
-            }
-            else if (mode & archive::mt_write)	//write only
-            {
-                return archive::archive_ptr(new file_write_archive(path, flag));
-            }
-        } catch(...){}
-
-        return archive::archive_ptr();
-    }
-
-    fs_error copy(const string& from, const string& to)
-    {
-        aio::archive::archive_ptr src = create(from, archive::mt_read|archive::mt_sequence, archive::of_open);
-        if (!src)
-            return er_open_failed;
-        aio::archive::archive_ptr dst = create(to, archive::mt_write|archive::mt_sequence, archive::of_create_or_open);
-        if (!dst)
-            return er_open_failed;
-       long_size_t n = archive::copy_archive(*src, *dst);
-        return n == src->query_sequence()->size() ? er_ok : er_system_error;
+		long_size_t n = io::copy_data(rd.get<io::reader>(), wr.get<io::writer>());
+		if (n != src.size())
+			AIO_THROW(file_copy_error);
     }
 
 
@@ -319,7 +294,7 @@ namespace aio {namespace fs{
             : file_range();
     }
 
-    archive::archive_ptr temp_file(const_range_string template_/* = "tmpf"*/, int flag /*= archive::of_create | archive::of_remove_on_close*/, string* path/* = 0*/)
+	io::file temp_file(const_range_string template_/* = "tmpf"*/, int flag /*= io::of_create | io::of_remove_on_close*/, string* path/* = 0*/)
     {   
         const char* tmpdir = getenv("TMPDIR");
         if (!tmpdir)
@@ -329,13 +304,13 @@ namespace aio {namespace fs{
         return temp_file(template_, to_aio_path(prefix), flag, path);
     }
     
-    archive::archive_ptr temp_file(const_range_string template_, const_range_string parent_dir, int flag /*= archive::of_create | archive::of_remove_on_close*/, string* path/* = 0*/)
+	io::file temp_file(const_range_string template_, const_range_string parent_dir, int flag /*= io::of_create | io::of_remove_on_close*/, string* path/* = 0*/)
     {
-        AIO_PRE_CONDITION(flag == 0 ||  flag  == archive::of_remove_on_close);
-        flag |= archive::of_create;
+        AIO_PRE_CONDITION(flag == 0 ||  flag  == io::of_remove_on_close);
+        flag |= io::of_create;
 
         if (state(parent_dir).state != st_dir)
-            AIO_THROW(aio::archive::create_failed)("failed to locate the temp directory:")(parent_dir);
+            AIO_THROW(aio::io::create_failed)("failed to locate the temp directory:")(parent_dir);
 
         string parent =  append_tail_slash(parent_dir);
 
@@ -345,17 +320,12 @@ namespace aio {namespace fs{
             string_builder file_path = parent;
             file_path += private_::gen_temp_name(template_);
 
-            try
-            {
-                typedef aio::default_deletorT<aio::archive::file_read_write_archive> file_read_write_archive;
-                if (path)
-                    *path = file_path;
-                return archive::archive_ptr(new file_read_write_archive(string(file_path), archive::open_flag(flag)));
-            }
-            catch(...){}
+			if (path)
+				*path = file_path;
+			return io::file(file_path.str(), flag);
         }
 
-        AIO_THROW(aio::archive::create_failed)("failed to create temp file in directory:")(parent_dir);
+        AIO_THROW(aio::io::create_failed)("failed to create temp file in directory:")(parent_dir);
     }
 
     
@@ -373,7 +343,7 @@ namespace aio {namespace fs{
     string temp_dir(const_range_string template_, const_range_string parent_dir)
     {
         if (state(parent_dir).state != st_dir)
-            AIO_THROW(aio::archive::create_failed)("failed to locate the temp directory:")(parent_dir);
+            AIO_THROW(aio::io::create_failed)("failed to locate the temp directory:")(parent_dir);
 
         string prefix =  append_tail_slash(parent_dir) + template_;
 
@@ -388,7 +358,7 @@ namespace aio {namespace fs{
 			else srand(time(0) ^ rand());
         }
 
-        AIO_THROW(aio::archive::create_failed)("failed to create temp file in directory:")(parent_dir);
+        AIO_THROW(aio::io::create_failed)("failed to create temp file in directory:")(parent_dir);
     }
 
     bool exists(const_range_string file)
@@ -541,14 +511,14 @@ namespace aio {namespace fs{
 		return er_ok;
     }
 
-    archive::archive_ptr recursive_create(const string& path, int mode, int flag)
+    io::file recursive_create(const string& path, int flag)
     {
         fs_error err = recursive_create_dir(dir_filename(path));
         if (err != er_ok && err != er_exist)
         {
-            return archive::archive_ptr();
+			AIO_THROW(io::create_failed)(path);
         }
-        return create(path, mode, flag);
+        return io::file(path, flag);
     }
 
     string dir_filename(const string& path, string* file/* = 0*/)

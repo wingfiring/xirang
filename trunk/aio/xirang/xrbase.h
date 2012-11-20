@@ -15,12 +15,12 @@ namespace xirang
   typedef aio::byte byte;
 
   template<typename T>
-  struct RangeT : public  aio::range<aio::bidir_iterator<T> >
+  struct BiRangeT : public  aio::range<aio::bidir_iterator<T> >
   {	
 	  typedef aio::range<aio::bidir_iterator<T> > base;
 	  typedef typename base::iterator iterator;
-      RangeT() {};
-	  RangeT(const iterator& first, const iterator& last) : base(first, last){}
+      BiRangeT() {};
+	  BiRangeT(const iterator& first, const iterator& last) : base(first, last){}
 
   };
 }

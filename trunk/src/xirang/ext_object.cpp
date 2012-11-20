@@ -1,6 +1,5 @@
 #include <aio/xirang/ext_object.h>
 #include <aio/xirang/binder.h>
-#include <aio/common/archive/ext_heap_archive.h>
 #include <aio/common/atomic.h>
 
 namespace xirang
@@ -61,12 +60,6 @@ namespace xirang
 
 		swap(m_type, rhs.m_type);
 		swap(m_handle, rhs.m_handle);
-		swap(m_handle_archive, rhs.m_handle_archive);
-	}
-
-	void ExtObject::release()
-	{
-        //TODO: imp
 	}
 
 	void ExtObject::destroy_()
@@ -79,12 +72,6 @@ namespace xirang
 			m_ext_heap->unpin(m_data);
 			m_ext_heap->deallocate(m_handle);
 			m_handle.clear();
-		}
-
-		if (m_handle_archive)
-		{
-			m_ext_heap->deallocate(m_handle_archive);
-			m_handle_archive.clear();
 		}
 	}
 
@@ -125,12 +112,6 @@ namespace xirang
 			else
 			{
 				m_data = m_ext_heap->pin(m_handle);
-				
-				if (m_handle_archive.valid())
-				{
-					aio::archive::ext_heap_archive ar(*m_ext_heap, m_handle_archive);
-					m_type.methods().deserialize(ar, CommonObject(m_type, m_data), *m_heap, *m_ext_heap);
-				}
 			}
 		}
 		++m_counter;
@@ -143,119 +124,98 @@ namespace xirang
 		{
 			AIO_PRE_CONDITION(m_data != 0);
 
-			aio::archive::ext_heap_archive ar(*m_ext_heap, ext_heap::handle());
-			m_type.methods().serialize(ar, CommonObject(m_type, m_data));
-			if (m_handle_archive.valid())
-				m_ext_heap->deallocate(m_handle_archive);
-			m_handle_archive = ar.get_handle();
-
 			m_ext_heap->unpin(m_data);
 			m_data = 0;
 		}
 	}
 
+	ExtObject::ConstPin::ConstPin()
+		: m_obj(0)
+	{}
 	ExtObject::ConstPin::ConstPin(const ExtObject& obj)
-		: m_obj(obj), m_data(0)
+		: m_obj(&const_cast<ExtObject&>(obj))
 	{
 		AIO_PRE_CONDITION(obj.valid());
 		m_obj.pin_();
+	}
+	ExtObject::ConstPin::ConstPin(ExtObject::ConstPin&& rhs) 
+		: m_obj(rhs.m_obj)
+	{
+		rhs.m_obj = 0;
+	}
+	ExtObject::ConstPin& ExtObject::ConstPin::operator=(ExtObject::ConstPin&& rhs){
+		if(this != &rhs)
+			ConstPin(std::move(rhs)).swap(*this);
+		return *this;		
+	}
+	void ExtObject::ConstPin::swap(ExtObject::ConstPin& rhs){
+		std::swap(m_obj, rhs.m_obj);
 	}
 	ExtObject::ConstPin::~ConstPin()
 	{
-		m_obj.unpin_();
+		if (m_obj) m_obj.unpin_();
 	}
 	ConstCommonObject ExtObject::ConstPin::get()
 	{
+		AIO_PRE_CONDITION(valid());
 		return ConstCommonObject(m_obj.type(), m_obj.data_());
 	}
 
+	bool ExtObject::ConstPin::valid() const{ return m_obj != 0;}
+	ExtObject::ConstPin::operator bool() const{ return valid();}
 
-	ExtObject::Pin::Pin(ExtObject& obj)
-		: m_obj(obj), m_data(0)
+	ExtObject::Pin::Pin(){}
+	ExtObject::Pin::Pin(ExtObject& obj) 
+		: ExtObject::ConstPin(obj)
 	{
-		AIO_PRE_CONDITION(obj.valid());
-		m_obj.pin_();
+	}
+	ExtObject::Pin::Pin(Pin&& rhs)
+		: m_obj(rhs.m_obj)
+	{
+		rhs.m_obj = 0;
+	}
+	ExtObject::Pin& ExtObject::Pin::operator=(Pin&& rhs){
+		if(this != &rhs)
+			Pin(std::move(rhs)).swap(*this);
+		return *this;
+		
 	}
 	ExtObject::Pin::~Pin()
 	{
-		m_obj.unpin_();
 	}
 	CommonObject ExtObject::Pin::get()
 	{
 		return CommonObject(m_obj.type(), m_obj.data_());
 	}
-
-
-	void ExtObjMethods::construct(CommonObject obj, heap& inner, ext_heap& outer) const
-	{
-		Type t = obj.type();
-		AIO_PRE_CONDITION(t.valid() && t.argCount() == 1);
-
-		TypeArg ta = t.arg(0);
-		AIO_PRE_CONDITION(ta.name() == "value_type");
-
-		t = ta.type();
-		AIO_PRE_CONDITION(t.valid());
-		new (obj.data()) ExtObject(t, inner, outer);
-	}
-	void ExtObjMethods::destruct(CommonObject obj) const
-	{
-		ExtObject& eo = uncheckBind<ExtObject>(obj);
-		eo.~ExtObject();
-	}
-	void ExtObjMethods::assign(ConstCommonObject src, CommonObject dest) const
-	{
-		*reinterpret_cast<ExtObject*>(dest.data()) = *reinterpret_cast<const ExtObject*>(src.data());
+	void ExtObject::Pin::swap(Pin& rhs){
+		std::swap(m_obj, rhs.m_obj);
 	}
 
-	void ExtObjMethods::deserialize(aio::archive::reader& rd, CommonObject obj, heap& inner, ext_heap& ext) const
-	{
-		rd & *reinterpret_cast<ExtObject*>(obj.data());
-	}
-	void ExtObjMethods::serialize(aio::archive::writer& wr, ConstCommonObject obj) const
-	{
-		const ExtObject& eo = uncheckBind<const ExtObject>(obj);
-		AIO_PRE_CONDITION(eo.pinCount() == 0);
-
-		wr & eo;
-	}
-
-	void ExtObjMethods::release(CommonObject obj) const
-	{
-		uncheckBind<ExtObject>(obj).release();
-	}
-	void ExtObjMethods::beginLayout(std::size_t& payload, std::size_t& offset, std::size_t& align, bool& pod) const
-	{
-		payload = sizeof(ExtObject);
-		offset = 0;
-		align = sizeof(void*);
-		pod = false;
-	}
-	void ExtObjMethods::nextLayout(TypeItem& item, std::size_t& payload, std::size_t& offset, std::size_t& align, bool& pod) const
-	{
-		AIO_PRE_CONDITION(false && "should no composed item");
-	}
-	const TypeInfoHandle& ExtObjMethods::typeinfo() const
-	{
-		return typeinfo_;
-	}
-	const MethodsExtension* ExtObjMethods::extension() const
-	{
-		static MethodsExtension methodsExt = 
+	namespace serialize{
+		void constructor<ExtObject>::apply(CommonObject obj, heap& hp, ext_heap& ehp)
 		{
-			0,
-			&hash_
-		};
-		return &methodsExt;
+			Type t = obj.type();
+			AIO_PRE_CONDITION(t.valid() && t.argCount() == 1);
+
+			TypeArg ta = t.arg(0);
+			AIO_PRE_CONDITION(ta.name() == "value_type");
+
+			t = ta.type();
+			AIO_PRE_CONDITION(t.valid());
+			new (obj.data()) ExtObject(t, inner, outer);
+		}
+
+		size_t hasher<ExtObject>::apply(ConstCommonObject obj) {
+			return (size_t)obj.data();
+		}
+
+		MethodsExtension* extendMethods<ExtObject>::value(){
+			static MethodsExtension methodsExt = 
+			{
+				0,
+				&hasher<T>::apply
+			};
+			return &methodsExt;
+		}
 	}
-	std::size_t ExtObjMethods::hash_(ConstCommonObject lhs)
-	{
-		union {
-			const void * p;
-			std::size_t hash;
-		} res;
-		res.p = lhs.data();
-		return res.hash;
-	}
-	const TypeInfo<ExtObject> ExtObjMethods::typeinfo_;
 }

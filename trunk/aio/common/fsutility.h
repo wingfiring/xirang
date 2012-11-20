@@ -8,6 +8,7 @@
 #include <aio/common/exception.h>
 #include <aio/common/iarchive.h>
 #include <aio/common/iterator.h>
+#include <aio/common/archive/file_archive.h>
 
 namespace aio{ namespace fs{
     namespace private_{
@@ -54,11 +55,8 @@ namespace aio{ namespace fs{
 
     fs_error remove(const string& path);
     fs_error create_dir(const  string& path);
-	//it'll return null if failed.
-    archive::archive_ptr create(const string& path, int mode, int flag);
-    //interface_auto<archive_new::reader, archive_new::random> create(const string& path, int flag);
-    //interface_auto<archive_new::writer, archive_new::random> open(const string& path, int flag);
-    fs_error copy(const string& from, const string& to);
+	AIO_EXCEPTION_TYPE(file_copy_error);
+    void copy(const string& from, const string& to);
     fs_error move(const string& from, const string& to);
 
     fs_error truncate(const string& path, long_size_t s);
@@ -77,16 +75,16 @@ namespace aio{ namespace fs{
 
 // temp file related 
 
-    // \throw aio::archive::create_failed
-    archive::archive_ptr temp_file(const_range_string template_ = "tmpf", int flag = archive::of_remove_on_close, string* result_path = 0);
+    // \throw aio::io::create_failed
+	io::file temp_file(const_range_string template_ = "tmpf", int flag = io::of_remove_on_close, string* result_path = 0);
 
-    // \throw aio::archive::create_failed
-    archive::archive_ptr temp_file(const_range_string template_, const_range_string parent_dir, int flag = archive::of_remove_on_close, string* result_path = 0);
+    // \throw aio::io::create_failed
+	io::file temp_file(const_range_string template_, const_range_string parent_dir, int flag = io::of_remove_on_close, string* result_path = 0);
 
-    // \throw aio::archive::create_failed
+    // \throw aio::io::create_failed
     string temp_dir(const_range_string template_ = "tmpd");
     
-    // \throw aio::archive::create_failed
+    // \throw aio::io::create_failed
     string temp_dir(const_range_string template_, const_range_string parent_dir);
 
 //********************** end core fs functions
@@ -137,7 +135,8 @@ namespace aio{ namespace fs{
     fs_error recursive_create_dir(const string& path);
 
     // create a file, if the some dir of the paths are not exist, create them
-    archive::archive_ptr recursive_create(const string& path, int mode, int flag);
+    // \throw aio::io::create_failed
+	io::file recursive_create(const string& path, int flag);
 
     // split the path into dir part and file name part. return the dir part, fill the file name into out parameter file.
     string dir_filename(const string& path, string* file = 0);

@@ -23,8 +23,8 @@ namespace aio
 			return static_cast<const Derive*>(this)->get_target()->destroy();
 		}
 	};
-	template<typename Derive>
-	ideletor_co<Derive> get_interface_map(Derive*, ideletor*);
+	template<typename Derive, typename CoClass>
+	ideletor_co<Derive> get_interface_map(Derive*, ideletor*, CoClass*);
 
 
 	template<typename Deletor, typename ... Base>
