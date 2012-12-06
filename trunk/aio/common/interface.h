@@ -21,20 +21,25 @@ namespace aio
 
 	template<typename Interface> struct interface_holder
 	{
-		interface_holder() : vptr(0){}
-		interface_holder(Interface& t) : vptr(*(void**)&t){}
+		interface_holder() : vptr(0), this_(0){}
+		interface_holder(Interface& t, void* obj) : vptr(*(void**)&t), this_(obj){}
 		Interface& get_interface() const{ return *(Interface*)(&vptr);}
+		void* get_this() const{ return this_;}
 		private:
 		void* vptr;
+		void* this_;
 	};
+
 	template<typename Interface> struct interface_holder<opt<Interface>>
 	{
-		interface_holder() : vptr(0){}
-		interface_holder(Interface& t) : vptr(*(void**)&t){}
-		interface_holder(Interface* t) : vptr(t?*(void**)t : 0){}
+		interface_holder() : vptr(0), this_(0){}
+		interface_holder(Interface& t, void* obj) : vptr(*(void**)&t), this_(obj){}
+		interface_holder(Interface* t, void* obj) : vptr(t?*(void**)t : 0), this_(obj){}
 		Interface* get_interface() const{ return (Interface*)(&vptr);}
+		void* get_this() const{ return this_;}
 		private:
 		void* vptr;
+		void* this_;
 	};
 
 
@@ -83,29 +88,38 @@ namespace aio
 			static const bool value = true;
 		};
 
-		template<typename Derive, typename Interface, typename CoClass> struct get_base
-			: public std::remove_reference<decltype(get_interface_map((Derive*)0, (Interface*)0, (CoClass*)0))>::type
+		template<typename Interface, typename CoClass> struct get_base
+			: public std::remove_reference<decltype(get_interface_map((Interface*)0, (CoClass*)0))>::type
 		{
+			get_base(void* obj) : this_(obj){}
+			void* this_;
 		};
-		template<typename Derive, typename Interface, typename CoClass> struct get_base <Derive, opt<Interface>, CoClass>
+		template<typename Interface, typename CoClass> struct get_base <opt<Interface>, CoClass>
 			: public null_interface
-		{ };
-		template<typename Derive, typename Interface, typename CoClass> struct get_base <Derive, noif<Interface>, CoClass>
+		{ 
+			get_base(void* obj) : this_(obj){}
+			void* this_;
+		};
+		template<typename Interface, typename CoClass> struct get_base <noif<Interface>, CoClass>
 			: public null_interface
-		{ };
+		{ 
+			get_base(void* obj) : this_(obj){}
+			void* this_;
+		};
 
 
 		template<typename CoClass, typename... Interfaces> struct compose_vptr0
-			: public get_base<compose_vptr0<CoClass, Interfaces...>, Interfaces, CoClass>...
+			: public get_base<Interfaces, CoClass>...
 		{
 			typedef typename std::remove_const<CoClass>::type coclass_type;
 			CoClass* get_target() const{ return ((CoClass**)this)[-1];}
+			compose_vptr0(CoClass* this_) : get_base<Interfaces, CoClass>((void*)this_)...{}
 		};
 		template<typename CoClass, typename... Interfaces> struct compose_vptr 
 		{
 			target_holder<CoClass> m0;
 			compose_vptr0<CoClass, Interfaces...> m2; 
-			template<typename OtherCoClass> compose_vptr(OtherCoClass& u) : m0(&u){
+			template<typename OtherCoClass> compose_vptr(OtherCoClass& u) : m0(&u), m2(&u){
 			}
 		};
 
@@ -189,14 +203,14 @@ namespace aio
 		template<typename... OArgs>
 			iref(iref<OArgs...>& rhs) 
 			: target_holder<void>(rhs.get_target()), interface_holder<Args>(
-					rhs.get<typename private_::get_interface_type<Args>::type>())...
+					rhs.get<typename private_::get_interface_type<Args>::type>(), rhs.get_target())...
 		{
 		}
 
 		template<typename... OArgs>
 			iref(const iref<OArgs...>& rhs) 
 			: target_holder<void>(rhs.get_target()), interface_holder<Args>(
-					rhs.get<typename private_::get_interface_type<Args>::type>())...
+					rhs.get<typename private_::get_interface_type<Args>::type>(), rhs.get_target())...
 		{
 		}
 

@@ -54,17 +54,17 @@ namespace aio { namespace io{
 
 		virtual ~reader();
 	};
-	template<typename RealType> struct reader_co : public reader
+	template<typename CoClass> struct reader_co : public reader
 	{
 		virtual range<iterator> read(const range<iterator>& buf){
-			return static_cast<const RealType*>(this)->get_target()->read(buf);
+			return static_cast<CoClass*>(*((void**)this + 1))->read(buf);
 		}
 		virtual bool readable() const{
-			return static_cast<const RealType*>(this)->get_target()->readable();
+			return static_cast<CoClass*>(*((void**)this + 1))->readable();
 		}
 	};
-	template<typename RealType, typename CoClass>
-	reader_co<RealType> get_interface_map(RealType*, reader*, CoClass*);
+	template<typename CoClass>
+	reader_co<CoClass> get_interface_map(reader*, CoClass*);
 
 	struct AIO_INTERFACE writer
 	{
@@ -76,37 +76,37 @@ namespace aio { namespace io{
 
 		virtual ~writer();
 	};
-	template<typename RealType> struct writer_co : public writer
+	template<typename CoClass> struct writer_co : public writer
 	{
 		virtual range<iterator> write(const range<const_iterator>& r){
-			return static_cast<const RealType*>(this)->get_target()->write(r);
+			return static_cast<CoClass*>(*((void**)this + 1))->write(r);
 		}
 		virtual bool writable() const{
-			return static_cast<const RealType*>(this)->get_target()->writable();
+			return static_cast<CoClass*>(*((void**)this + 1))->writable();
 		}
 		virtual void sync(){
-			static_cast<const RealType*>(this)->get_target()->sync();
+			static_cast<CoClass*>(*((void**)this + 1))->sync();
 		}
 	};
-	template<typename RealType, typename CoClass>
-	writer_co<RealType> get_interface_map(RealType*, writer*, CoClass*);
+	template<typename CoClass>
+	writer_co<CoClass> get_interface_map(writer*, CoClass*);
 
 	struct AIO_INTERFACE ioctrl{
 		virtual long_size_t truncate(long_size_t size) = 0;
 		virtual long_size_t size() const = 0;
 		virtual ~ioctrl(){}
 	};
-	template<typename RealType> struct ioctrl_co : public ioctrl
+	template<typename CoClass> struct ioctrl_co : public ioctrl
 	{
 		virtual long_size_t truncate(long_size_t size){
-			return static_cast<const RealType*>(this)->get_target()->truncate(size);
+			return static_cast<CoClass*>(*((void**)this + 1))->truncate(size);
 		}
 		virtual long_size_t size() const{
-			return static_cast<const RealType*>(this)->get_target()->size();
+			return static_cast<CoClass*>(*((void**)this + 1))->size();
 		}
 	};
-	template<typename RealType, typename CoClass>
-	ioctrl_co<RealType> get_interface_map(RealType*, ioctrl*, CoClass*);
+	template<typename CoClass>
+	ioctrl_co<CoClass> get_interface_map(ioctrl*, CoClass*);
 
 
 	struct AIO_INTERFACE sequence
@@ -116,17 +116,17 @@ namespace aio { namespace io{
 		virtual long_size_t size() const = 0;
 		virtual ~sequence();
 	};
-	template<typename RealType> struct sequence_co : public sequence
+	template<typename CoClass> struct sequence_co : public sequence
 	{
 		virtual long_size_t offset() const{
-			return static_cast<const RealType*>(this)->get_target()->offset();
+			return static_cast<CoClass*>(*((void**)this + 1))->offset();
 		}
 		virtual long_size_t size() const{
-			return static_cast<const RealType*>(this)->get_target()->size();
+			return static_cast<CoClass*>(*((void**)this + 1))->size();
 		}
 	};
-	template<typename RealType, typename CoClass>
-	sequence_co<RealType> get_interface_map(RealType*, sequence*, CoClass*);
+	template<typename CoClass>
+	sequence_co<CoClass> get_interface_map(sequence*, CoClass*);
 
 	struct AIO_INTERFACE forward : sequence
 	{
@@ -135,20 +135,20 @@ namespace aio { namespace io{
 		virtual long_size_t seek(long_size_t off) = 0;
 		virtual ~forward();
 	};
-	template<typename RealType> struct forward_co : public forward
+	template<typename CoClass> struct forward_co : public forward
 	{
 		virtual long_size_t offset() const{
-			return static_cast<const RealType*>(this)->get_target()->offset();
+			return static_cast<CoClass*>(*((void**)this + 1))->offset();
 		}
 		virtual long_size_t size() const{
-			return static_cast<const RealType*>(this)->get_target()->size();
+			return static_cast<CoClass*>(*((void**)this + 1))->size();
 		}
 		virtual long_size_t seek(long_size_t off){
-			return static_cast<const RealType*>(this)->get_target()->seek(off);
+			return static_cast<CoClass*>(*((void**)this + 1))->seek(off);
 		}
 	};
-	template<typename RealType, typename CoClass>
-	forward_co<RealType> get_interface_map(RealType*, forward*, CoClass*);
+	template<typename CoClass>
+	forward_co<CoClass> get_interface_map(forward*, CoClass*);
 
 	struct AIO_INTERFACE random : forward
 	{
@@ -157,65 +157,65 @@ namespace aio { namespace io{
 		virtual long_size_t seek(long_size_t offset) = 0;
 		virtual ~random();
 	};
-	template<typename RealType> struct random_co : public random
+	template<typename CoClass> struct random_co : public random
 	{
 		virtual long_size_t offset() const{
-			return static_cast<const RealType*>(this)->get_target()->offset();
+			return static_cast<CoClass*>(*((void**)this + 1))->offset();
 		}
 		virtual long_size_t size() const{
-			return static_cast<const RealType*>(this)->get_target()->size();
+			return static_cast<CoClass*>(*((void**)this + 1))->size();
 		}
 		virtual long_size_t seek(long_size_t off){
-			return static_cast<const RealType*>(this)->get_target()->seek(off);
+			return static_cast<CoClass*>(*((void**)this + 1))->seek(off);
 		}
 	};
-	template<typename RealType, typename CoClass>
-	random_co<RealType> get_interface_map(RealType*, random*, CoClass*);
+	template<typename CoClass>
+	random_co<CoClass> get_interface_map(random*, CoClass*);
 
 	struct AIO_INTERFACE options{
 		virtual any getopt(int id, const any & optdata = any() ) const = 0;
 		virtual any setopt(int id, const any & optdata,  const any & indata= any()) = 0;
 		virtual ~options();
 	};
-	template<typename RealType> struct options_co : public options
+	template<typename CoClass> struct options_co : public options
 	{
 		virtual any getopt(int id, const any & optdata){
-			return static_cast<const RealType*>(this)->get_target()->getopt(id, optdata);
+			return static_cast<CoClass*>(*((void**)this + 1))->getopt(id, optdata);
 		}
 		virtual any setopt(int id, const any & optdata,  const any & indata){
-			return static_cast<const RealType*>(this)->get_target()->setopt(id, optdata, indata);
+			return static_cast<CoClass*>(*((void**)this + 1))->setopt(id, optdata, indata);
 		}
 	};
-	template<typename RealType, typename CoClass>
-	options_co<RealType> get_interface_map(RealType*, options*, CoClass*);
+	template<typename CoClass>
+	options_co<CoClass> get_interface_map(options*, CoClass*);
 
 	struct AIO_INTERFACE read_view
 	{
 		virtual range<const byte*> address() const =0;
 		virtual ~read_view();
 	};
-	template<typename RealType> struct read_view_co : public read_view
+	template<typename CoClass> struct read_view_co : public read_view
 	{
 		virtual range<const byte*> address() const{
-			return static_cast<const RealType*>(this)->get_target()->address();
+			return static_cast<CoClass*>(*((void**)this + 1))->address();
 		}
 	};
-	template<typename RealType, typename CoClass>
-	read_view_co<RealType> get_interface_map(RealType*, read_view*, CoClass*);
+	template<typename CoClass>
+	read_view_co<CoClass> get_interface_map(read_view*, CoClass*);
 
 	struct AIO_INTERFACE write_view
 	{
 		virtual range<byte*> address() const = 0;
 		virtual ~write_view();
 	};
-	template<typename RealType> struct write_view_co : public write_view
+	template<typename CoClass> struct write_view_co : public write_view
 	{
 		virtual range<byte*> address() const {
-			return static_cast<const RealType*>(this)->get_target()->address();
+			return static_cast<CoClass*>(*((void**)this + 1))->address();
 		}
 	};
-	template<typename RealType, typename CoClass>
-	write_view_co<RealType> get_interface_map(RealType*, write_view*, CoClass*);
+	template<typename CoClass>
+	write_view_co<CoClass> get_interface_map(write_view*, CoClass*);
 
 	struct AIO_INTERFACE read_map
 	{
@@ -223,17 +223,17 @@ namespace aio { namespace io{
 		virtual long_size_t size() const = 0;
 		virtual ~read_map();
 	};
-	template<typename RealType> struct read_map_co : public read_map
+	template<typename CoClass> struct read_map_co : public read_map
 	{
 		virtual unique_ptr<read_view> view_rd(ext_heap::handle h){
-			return static_cast<const RealType*>(this)->get_target()->view_rd(h);
+			return static_cast<CoClass*>(*((void**)this + 1))->view_rd(h);
 		}
 		virtual long_size_t size() const{
-			return static_cast<const RealType*>(this)->get_target()->size();
+			return static_cast<CoClass*>(*((void**)this + 1))->size();
 		}
 	};
-	template<typename RealType, typename CoClass>
-	read_map_co<RealType> get_interface_map(RealType*, read_map*, CoClass*);
+	template<typename CoClass>
+	read_map_co<CoClass> get_interface_map(read_map*, CoClass*);
 
 	struct AIO_INTERFACE write_map
 	{
@@ -242,20 +242,20 @@ namespace aio { namespace io{
 		virtual void sync() = 0;
 		virtual ~write_map();
 	};
-	template<typename RealType> struct write_map_co : public write_map
+	template<typename CoClass> struct write_map_co : public write_map
 	{
 		virtual unique_ptr<write_view> view_wr(ext_heap::handle h){
-			return static_cast<const RealType*>(this)->get_target()->view_wr(h);
+			return static_cast<CoClass*>(*((void**)this + 1))->view_wr(h);
 		}
 		virtual long_size_t size() const{
-			return static_cast<const RealType*>(this)->get_target()->size();
+			return static_cast<CoClass*>(*((void**)this + 1))->size();
 		}
 		virtual void sync(){
-			static_cast<const RealType*>(this)->get_target()->sync();
+			static_cast<CoClass*>(*((void**)this + 1))->sync();
 		}
 	};
-	template<typename RealType, typename CoClass>
-	write_map_co<RealType> get_interface_map(RealType*, write_map*, CoClass*);
+	template<typename CoClass>
+	write_map_co<CoClass> get_interface_map(write_map*, CoClass*);
 
 
 	extern range<reader::iterator> block_read(reader& rd, const range<reader::iterator>& buf);

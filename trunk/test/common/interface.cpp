@@ -11,12 +11,12 @@ template<typename RealType>
 struct BarCo : public Bar
 {
 	virtual void bar() {
-		static_cast<const RealType*>(this)->get_target()->bar();
+		static_cast<RealType*>(*((void**)this + 1))->bar();
 	};
 };
 
-template<typename RealType,typename CoClass>
-BarCo<RealType> get_interface_map(RealType*, Bar*, CoClass*);
+template<typename CoClass>
+BarCo<CoClass> get_interface_map(Bar*, CoClass*);
 
 
 struct Foo{
@@ -27,12 +27,12 @@ template<typename RealType>
 struct FooCo : public Foo
 {
 	virtual void foo() {
-		static_cast<const RealType*>(this)->get_target()->foo();
+		static_cast<RealType*>(*((void**)this + 1))->foo();
 	};
 };
 
-template<typename RealType, typename CoClass>
-FooCo<RealType> get_interface_map(RealType*, Foo*, CoClass*);
+template<typename CoClass>
+FooCo<CoClass> get_interface_map(Foo*, CoClass*);
 
 struct X{
 	X(): m(0), n(0){}
@@ -50,20 +50,18 @@ struct Z{
 	void fun(){ std::cout << "Z::fun\n";}
 };
 
-template<typename Derive>
 struct Z_to_Foo : public Foo{
 	virtual void foo() {
-		static_cast<const Derive*>(this)->get_target()->fun();
+		static_cast<Z*>(*((void**)this + 1))->fun();
 	}
 };
-template<typename Derive>
-Z_to_Foo<Derive> get_interface_map(Derive*, Foo*, Z*);
+Z_to_Foo get_interface_map(Foo*, Z*);
 
 template<typename RealType>
 struct Z_to_Bar : public Bar
 {
 	virtual void bar() {
-		static_cast<const RealType*>(this)->get_target()->fun();
+		static_cast<RealType*>(*((void**)this + 1))->fun();
 	};
 };
 
