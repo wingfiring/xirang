@@ -333,7 +333,7 @@ namespace xirang{ namespace fs{
 			if (copied_size != h.compressed_size)
 				AIO_THROW(archive_io_fatal_error);
 		}
-        else if (h.cache_fs->state(h.name).size > 0)
+        else 
 		{
             zip_defalter defalter;
 
