@@ -14,16 +14,6 @@
 #include <aio/common/backward/unique_ptr.h>
 #include <aio/common/interface.h>
 namespace aio { namespace io{
-	enum io_mode 
-	{
-		mt_sequence = 0,
-		mt_forward = 1,
-		mt_random = 2,
-
-		mt_read = 4,
-		mt_write = 8,
-		mt_user = 1<<24
-	};
 
 	enum open_flag
 	{
@@ -57,10 +47,10 @@ namespace aio { namespace io{
 	template<typename CoClass> struct reader_co : public reader
 	{
 		virtual range<iterator> read(const range<iterator>& buf){
-			return static_cast<CoClass*>(*((void**)this + 1))->read(buf);
+			return get_cobj<CoClass>(this).read(buf);
 		}
 		virtual bool readable() const{
-			return static_cast<CoClass*>(*((void**)this + 1))->readable();
+			return get_cobj<CoClass>(this).readable();
 		}
 	};
 	template<typename CoClass>
@@ -79,13 +69,13 @@ namespace aio { namespace io{
 	template<typename CoClass> struct writer_co : public writer
 	{
 		virtual range<iterator> write(const range<const_iterator>& r){
-			return static_cast<CoClass*>(*((void**)this + 1))->write(r);
+			return get_cobj<CoClass>(this).write(r);
 		}
 		virtual bool writable() const{
-			return static_cast<CoClass*>(*((void**)this + 1))->writable();
+			return get_cobj<CoClass>(this).writable();
 		}
 		virtual void sync(){
-			static_cast<CoClass*>(*((void**)this + 1))->sync();
+			get_cobj<CoClass>(this).sync();
 		}
 	};
 	template<typename CoClass>
@@ -99,10 +89,10 @@ namespace aio { namespace io{
 	template<typename CoClass> struct ioctrl_co : public ioctrl
 	{
 		virtual long_size_t truncate(long_size_t size){
-			return static_cast<CoClass*>(*((void**)this + 1))->truncate(size);
+			return get_cobj<CoClass>(this).truncate(size);
 		}
 		virtual long_size_t size() const{
-			return static_cast<CoClass*>(*((void**)this + 1))->size();
+			return get_cobj<CoClass>(this).size();
 		}
 	};
 	template<typename CoClass>
@@ -119,10 +109,10 @@ namespace aio { namespace io{
 	template<typename CoClass> struct sequence_co : public sequence
 	{
 		virtual long_size_t offset() const{
-			return static_cast<CoClass*>(*((void**)this + 1))->offset();
+			return get_cobj<CoClass>(this).offset();
 		}
 		virtual long_size_t size() const{
-			return static_cast<CoClass*>(*((void**)this + 1))->size();
+			return get_cobj<CoClass>(this).size();
 		}
 	};
 	template<typename CoClass>
@@ -138,13 +128,13 @@ namespace aio { namespace io{
 	template<typename CoClass> struct forward_co : public forward
 	{
 		virtual long_size_t offset() const{
-			return static_cast<CoClass*>(*((void**)this + 1))->offset();
+			return get_cobj<CoClass>(this).offset();
 		}
 		virtual long_size_t size() const{
-			return static_cast<CoClass*>(*((void**)this + 1))->size();
+			return get_cobj<CoClass>(this).size();
 		}
 		virtual long_size_t seek(long_size_t off){
-			return static_cast<CoClass*>(*((void**)this + 1))->seek(off);
+			return get_cobj<CoClass>(this).seek(off);
 		}
 	};
 	template<typename CoClass>
@@ -160,13 +150,13 @@ namespace aio { namespace io{
 	template<typename CoClass> struct random_co : public random
 	{
 		virtual long_size_t offset() const{
-			return static_cast<CoClass*>(*((void**)this + 1))->offset();
+			return get_cobj<CoClass>(this).offset();
 		}
 		virtual long_size_t size() const{
-			return static_cast<CoClass*>(*((void**)this + 1))->size();
+			return get_cobj<CoClass>(this).size();
 		}
 		virtual long_size_t seek(long_size_t off){
-			return static_cast<CoClass*>(*((void**)this + 1))->seek(off);
+			return get_cobj<CoClass>(this).seek(off);
 		}
 	};
 	template<typename CoClass>
@@ -180,10 +170,10 @@ namespace aio { namespace io{
 	template<typename CoClass> struct options_co : public options
 	{
 		virtual any getopt(int id, const any & optdata){
-			return static_cast<CoClass*>(*((void**)this + 1))->getopt(id, optdata);
+			return get_cobj<CoClass>(this).getopt(id, optdata);
 		}
 		virtual any setopt(int id, const any & optdata,  const any & indata){
-			return static_cast<CoClass*>(*((void**)this + 1))->setopt(id, optdata, indata);
+			return get_cobj<CoClass>(this).setopt(id, optdata, indata);
 		}
 	};
 	template<typename CoClass>
@@ -197,7 +187,7 @@ namespace aio { namespace io{
 	template<typename CoClass> struct read_view_co : public read_view
 	{
 		virtual range<const byte*> address() const{
-			return static_cast<CoClass*>(*((void**)this + 1))->address();
+			return get_cobj<CoClass>(this).address();
 		}
 	};
 	template<typename CoClass>
@@ -211,7 +201,7 @@ namespace aio { namespace io{
 	template<typename CoClass> struct write_view_co : public write_view
 	{
 		virtual range<byte*> address() const {
-			return static_cast<CoClass*>(*((void**)this + 1))->address();
+			return get_cobj<CoClass>(this).address();
 		}
 	};
 	template<typename CoClass>
@@ -226,10 +216,10 @@ namespace aio { namespace io{
 	template<typename CoClass> struct read_map_co : public read_map
 	{
 		virtual unique_ptr<read_view> view_rd(ext_heap::handle h){
-			return static_cast<CoClass*>(*((void**)this + 1))->view_rd(h);
+			return get_cobj<CoClass>(this).view_rd(h);
 		}
 		virtual long_size_t size() const{
-			return static_cast<CoClass*>(*((void**)this + 1))->size();
+			return get_cobj<CoClass>(this).size();
 		}
 	};
 	template<typename CoClass>
@@ -245,13 +235,13 @@ namespace aio { namespace io{
 	template<typename CoClass> struct write_map_co : public write_map
 	{
 		virtual unique_ptr<write_view> view_wr(ext_heap::handle h){
-			return static_cast<CoClass*>(*((void**)this + 1))->view_wr(h);
+			return get_cobj<CoClass>(this).view_wr(h);
 		}
 		virtual long_size_t size() const{
-			return static_cast<CoClass*>(*((void**)this + 1))->size();
+			return get_cobj<CoClass>(this).size();
 		}
 		virtual void sync(){
-			static_cast<CoClass*>(*((void**)this + 1))->sync();
+			get_cobj<CoClass>(this).sync();
 		}
 	};
 	template<typename CoClass>

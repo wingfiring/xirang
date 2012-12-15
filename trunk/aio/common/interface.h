@@ -25,7 +25,6 @@ namespace aio
 		interface_holder(Interface& t, void* obj) : vptr(*(void**)&t), this_(obj){}
 		Interface& get_interface() const{ return *(Interface*)(&vptr);}
 		void* get_this() const{ return this_;}
-		private:
 		void* vptr;
 		void* this_;
 	};
@@ -37,7 +36,6 @@ namespace aio
 		interface_holder(Interface* t, void* obj) : vptr(t?*(void**)t : 0), this_(obj){}
 		Interface* get_interface() const{ return (Interface*)(&vptr);}
 		void* get_this() const{ return this_;}
-		private:
 		void* vptr;
 		void* this_;
 	};
@@ -195,9 +193,9 @@ namespace aio
 		template<typename U, typename T = typename std::enable_if<!private_::is_iref<U>::value>::type> 
 			iref(U&& obj, T* = 0)
 		{
-			private_::compose_vptr<typename std::remove_reference<U>::type, Args...> c(std::forward<U>(obj));
-			static_assert(sizeof(c) == sizeof(*this), "size mismatch");
-			std::memcpy(this, &c, sizeof(c));
+			typedef private_::compose_vptr<typename std::remove_reference<U>::type, Args...> vptrs;
+			static_assert(sizeof(vptrs) == sizeof(*this), "size mismatch");
+			new (this) vptrs(std::forward<U>(obj));
 		}
 
 		template<typename... OArgs>
@@ -278,6 +276,11 @@ namespace aio
 		unique_ptr<void> target_ptr;
 	};
 
+	template<typename CoClass, typename Interface>
+		CoClass& get_cobj(Interface* this_){ 
+			return *static_cast<CoClass*>(*((void**)this_ + 1));
+		}
 }
+
 #endif //end AIO_COMMON_INTERFACE_H_
 
