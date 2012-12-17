@@ -48,12 +48,25 @@ namespace aio{ namespace io{
 
 	range<const byte*> buffer_in::data() const { return m_data;}
 
-	/// fixed_buffer_out
-	fixed_buffer_out::fixed_buffer_out(const range<byte*>& buf)
+	/// fixed_buffer_io
+	fixed_buffer_io::fixed_buffer_io(const range<byte*>& buf)
 		: m_pos(0), m_data(buf)
 	{ }
 
-	range<const byte*> fixed_buffer_out::write(const range<const byte*>& r)
+	range<byte*> fixed_buffer_io::read(const range<byte*>& buf){
+		auto sitr = m_data.begin() + m_pos;
+		auto ditr = buf.begin();
+		for (; sitr != m_data.end() && ditr != buf.end();++sitr, ++ditr)
+		{
+			*ditr = *sitr;
+		}
+		m_pos = sitr - m_data.begin();
+		return range<fixed_buffer_in::iterator>(ditr, buf.end());
+	}
+	bool fixed_buffer_io::readable() const{
+		return m_pos < m_data.size();
+	}
+	range<const byte*> fixed_buffer_io::write(const range<const byte*>& r)
 	{
 		auto ditr = m_data.begin() + m_pos;
 		auto sitr = r.begin();
@@ -65,28 +78,33 @@ namespace aio{ namespace io{
 
 	}
 
-	bool fixed_buffer_out::writable() const { 
+	bool fixed_buffer_io::writable() const { 
 		return m_pos < m_data.size();
 	}
 
-	long_size_t fixed_buffer_out::truncate(long_size_t size)
+	long_size_t fixed_buffer_io::truncate(long_size_t size)
 	{
 		AIO_PRE_CONDITION(in_size_t_range(size));
 		return unknow_size;
 	}
 
-	buffer_wr_view fixed_buffer_out::view_wr(ext_heap::handle h) {
+	buffer_wr_view fixed_buffer_io::view_wr(ext_heap::handle h) {
 		AIO_PRE_CONDITION((size_t)h.begin <= (size_t)h.end);
 		AIO_PRE_CONDITION((size_t)h.end <= size());
 		return buffer_wr_view(range<byte*>(m_data.begin() + h.begin, m_data.begin() + h.end));
 	}
+	buffer_rd_view fixed_buffer_io::view_rd(ext_heap::handle h) const{
+		AIO_PRE_CONDITION((size_t)h.begin <= (size_t)h.end);
+		AIO_PRE_CONDITION((size_t)h.end <= size());
+		return buffer_rd_view(range<const byte*>(m_data.begin() + h.begin, m_data.begin() + h.end));
+	}
 
 
-	void fixed_buffer_out::sync() {}
+	void fixed_buffer_io::sync() {}
 
-	long_size_t fixed_buffer_out::offset() const { return m_pos;}
-	long_size_t fixed_buffer_out::size() const { return m_data.size();}
-	long_size_t fixed_buffer_out::seek(long_size_t offset)
+	long_size_t fixed_buffer_io::offset() const { return m_pos;}
+	long_size_t fixed_buffer_io::size() const { return m_data.size();}
+	long_size_t fixed_buffer_io::seek(long_size_t offset)
 	{
 		AIO_PRE_CONDITION(in_size_t_range(offset));
 		if (offset >= size())
@@ -95,7 +113,7 @@ namespace aio{ namespace io{
 		return m_pos;
 	}
 
-	range<byte*> fixed_buffer_out::data() const { return m_data;}
+	range<byte*> fixed_buffer_io::data() const { return m_data;}
 
 
 	/// buffer_out
