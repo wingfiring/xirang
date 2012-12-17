@@ -107,6 +107,11 @@ namespace aio{ namespace str_algo {
         return std::find(src.begin(), src.end(), var);
     }
 
+    template<typename ContT, typename ValueT>
+    bool contains(ContT& src, ValueT var){
+        return find(src, var) != src.end();
+    }
+
 }
 
 using str_algo::replace;
@@ -118,5 +123,7 @@ using str_algo::toupper_copy;
 using str_algo::tolower_copy;
 
 using std::find;
+using std::rfind;
+using str_algo::contains;
 }
 #endif //end AIO_COMMON_STRING_ALGO_STRING_H
