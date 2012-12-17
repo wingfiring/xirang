@@ -47,10 +47,14 @@ namespace aio{ namespace io{
 
 	};
 
-	struct fixed_buffer_out	//  writer, random, view
+	struct fixed_buffer_io	//  writer, random, view
 	{
+		typedef byte* iterator;
 		typedef const byte* const_iterator;
-		explicit fixed_buffer_out(const range<byte*>& buf);
+		explicit fixed_buffer_io(const range<byte*>& buf);
+
+		range<byte*> read(const range<byte*>& buf);
+		bool readable() const;
 
 		range<const byte*> write(const range<const byte*>& r);
 		bool writable() const;
@@ -62,6 +66,7 @@ namespace aio{ namespace io{
 
 		long_size_t truncate(long_size_t size);
 		buffer_wr_view view_wr(ext_heap::handle h);
+		buffer_rd_view view_rd(ext_heap::handle h) const;
 		range<byte*> data() const;
 	private:
 		size_t m_pos;
