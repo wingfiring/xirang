@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(mem_archive_case)
 
 	io::writer& wr = iar.get<io::writer>();
 	io::reader& rd = iar.get<io::reader>();
-	using namespace lio;
+	using namespace sio;
 
 	int i = 3;
 	wr & i;

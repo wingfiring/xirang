@@ -4,7 +4,7 @@
 #include <aio/common/iarchive.h>
 #include <aio/common/string.h>
 
-namespace aio{namespace lio{
+namespace aio{namespace sio{
 	using io::reader;
 	using io::writer;
 

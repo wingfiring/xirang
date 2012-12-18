@@ -123,7 +123,7 @@ using str_algo::toupper_copy;
 using str_algo::tolower_copy;
 
 using std::find;
-using std::rfind;
+using str_algo::rfind;
 using str_algo::contains;
 }
 #endif //end AIO_COMMON_STRING_ALGO_STRING_H

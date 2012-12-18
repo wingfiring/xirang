@@ -61,7 +61,7 @@ namespace aio{ namespace io{
 			*ditr = *sitr;
 		}
 		m_pos = sitr - m_data.begin();
-		return range<fixed_buffer_in::iterator>(ditr, buf.end());
+		return range<fixed_buffer_io::iterator>(ditr, buf.end());
 	}
 	bool fixed_buffer_io::readable() const{
 		return m_pos < m_data.size();

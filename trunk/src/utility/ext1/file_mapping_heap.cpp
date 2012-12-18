@@ -503,7 +503,7 @@ namespace aio
 			while(items--)
 			{
 				handle h;
-				using namespace lio;
+				using namespace sio;
 				ird.get<io::reader>() & h.begin & h.end;
 				free_space[1].insert(h);
 				info.outer_free_size += h.size() ;
@@ -542,7 +542,7 @@ namespace aio
 			io::mem_archive war;
 			iref<io::writer> ar(war);
 			
-			using namespace lio;
+			using namespace sio;
 			std::set<handle >::iterator use_end = rbeg.base();
 			for (std::set<handle >::iterator itr = free_space[1].begin(); itr != use_end; ++itr)
 			{

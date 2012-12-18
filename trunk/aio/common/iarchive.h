@@ -259,7 +259,7 @@ namespace aio { namespace io{
 
 }
 
-namespace lio{
+namespace sio{
 	template<typename Ar, typename T>
 		typename std::enable_if<std::is_pod<T>::value, Ar&>::type 
 		save( Ar& wt, const T& t)
