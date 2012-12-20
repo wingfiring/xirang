@@ -1,7 +1,7 @@
 #ifndef XIRANG_NAMESPACE_H
 #define XIRANG_NAMESPACE_H
 
-#include <aio/xirang/xrfwd.h>
+#include <aio/xirang/object.h>
 
 namespace xirang
 {

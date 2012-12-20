@@ -25,18 +25,17 @@ namespace xirang{ namespace fs{
 
 	fs_error copyFile(const VfsNode& from, const VfsNode& to)
 	{
-		aio::unique_ptr<iarchive, archive_deletor> src ( from.owner_fs->create(from.path, aio::archive::mt_read, aio::archive::of_open));
-		if (!src)
-			return aiofs::er_open_failed;
+		using aio::io::reader;
+		using aio::io::writer;
+		using aio::io::sequence;
 
-		aio::unique_ptr<iarchive, archive_deletor> dest ( to.owner_fs->create(to.path, aio::archive::mt_write, aio::archive::of_create_or_open));
-		if (!dest )
-			return aiofs::er_open_failed;
+		auto src = from.owner_fs->create<reader, sequence>(from.path, aio::io::of_open);
+		auto dest = to.owner_fs->create<writer>(to.path, aio::io::of_create_or_open);
 
-		unsigned long long copied_size = copy_archive(*src, *dest);
-		return copied_size == src->query_sequence()->size()
-			? aiofs::er_ok
-			: aiofs::er_system_error;
+		aio::long_size_t copied_size = copy_data(src.get<reader>(), dest.get<writer>());
+		if (copied_size != src.get<sequence>().size())
+			return aio::fs::er_system_error;
+		return aio::fs::er_ok;
 	}
 }}
 

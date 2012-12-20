@@ -261,37 +261,6 @@ namespace xirang{ namespace fs{
 		return !p.empty() && p[0] == '/';
 	}
 
-    archive_ptr temp_file(IVfs& vfs, aio::const_range_string template_ , aio::const_range_string parent_dir, int flag /*= aio::archive::of_remove_on_close*/, string* path /*= 0*/)
-    {
-        AIO_PRE_CONDITION(flag == 0 ||  flag  == aio::archive::of_remove_on_close);
-        flag |= aio::archive::of_create;
-
-        if (vfs.state(parent_dir).state != aio::fs::st_dir)
-            AIO_THROW(aio::archive::create_failed)("failed to locate the temp directory:")(parent_dir);
-
-        //avoid to make parent start with '/'
-        string parent =  parent_dir.empty()? aio::string(parent_dir) : append_tail_slash(parent_dir);
-
-        const int max_try = 100;
-        for(int i = 0; i < max_try ; ++i)
-        {
-            aio::string_builder file_path = parent;
-            file_path += aio::fs::private_::gen_temp_name(template_);
-
-            try
-            {
-                aio::archive::archive_ptr ret = vfs.create(string(file_path), aio::archive::mt_read | aio::archive::mt_write | aio::archive::mt_random, flag);
-                if (ret){
-                    if (path) *path = file_path;
-                    return std::move(ret);
-                }
-            }
-            catch(...){}
-        }
-
-        AIO_THROW(aio::archive::create_failed)("failed to create temp file in directory:")(parent_dir);
-    }
-
     string temp_dir(IVfs& vfs, aio::const_range_string template_, aio::const_range_string parent_dir)
     {
         if (vfs.state(parent_dir).state != aio::fs::st_dir)
@@ -365,14 +334,6 @@ namespace xirang{ namespace fs{
             mpath = mpath + "/";
 		}
 		return aio::fs::er_ok;
-    }
-    archive_ptr recursive_create(IVfs&vfs, const string& path, int mode, int flag)
-    {
-        fs_error err = recursive_create_dir(vfs, dir_filename(path));
-        if (err != aio::fs::er_ok && err != aio::fs::er_exist)
-            return archive_ptr();
-
-        return vfs.create(path, mode, flag);
     }
 
 }	//fs

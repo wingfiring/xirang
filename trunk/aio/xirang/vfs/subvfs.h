@@ -21,9 +21,6 @@ namespace xirang{ namespace fs{
 		// \pre !absolute(path)
 		virtual fs_error createDir(const  string& path);
 
-		// file operations
-		virtual archive_ptr create(const string& path, int mode, int flag);
-
 		// \pre !absolute(to)
 		// if from and to in same fs, it may have a more effective implementation
 		// otherwise, from should be a
@@ -53,6 +50,9 @@ namespace xirang{ namespace fs{
 		virtual VfsState state(const string& path) const;
 
         IVfs& parentFs() const;
+
+		virtual void** do_create(unsigned long long mask,
+				void* ret, aio::unique_ptr<void>& owner, const string& path, int flag);
 	private:
 		// if r == null, means unmount
 		virtual void setRoot(RootFs* r);
@@ -67,9 +67,7 @@ namespace xirang{ namespace fs{
 
 	};
 
-	typedef RootFs TestRootFs;
-
-}
-}
+}}
 
 #endif //end AIO_XIRANG_VFS_SUBVFS
+

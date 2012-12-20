@@ -24,12 +24,6 @@ namespace xirang
 		return m_imp != 0;
 	}
 
-	TypeItem::SubCategory TypeItem::category () const
-	{
-		AIO_PRE_CONDITION (valid ());
-		return m_imp->category;
-	}
-
 	Type TypeItem::type () const
 	{
 		AIO_PRE_CONDITION (valid ());
@@ -283,7 +277,7 @@ namespace xirang
 	TypeItem Type::member (const string& name) const
 	{
 		AIO_PRE_CONDITION (valid ());
-		for (std::vector<TypeItemImp>::iterator itr(m_imp->items.begin() + m_imp->bases());
+		for (std::vector<TypeItemImp>::iterator itr(m_imp->items.begin());
 				itr != m_imp->items.end(); ++itr)
 		{
 			if (name == itr->name)
@@ -291,13 +285,6 @@ namespace xirang
 		}
 		return TypeItem();
 	}
-
-	std::size_t Type::baseCount () const
-	{
-		AIO_PRE_CONDITION (valid ());
-		return m_imp->bases();
-	}
-
 
 	std::size_t Type::argCount () const
 	{
@@ -371,6 +358,10 @@ namespace xirang
 	{
         return comparePtr(m_imp, rhs.m_imp);
 	}
+	size_t hasher<Type>::apply(ConstCommonObject obj){
+		auto& data = uncheckBind<Type>(obj);
+		return (size_t)data.m_imp;
+	}
 
 	TypeBuilder::TypeBuilder(TypeMethods* methods )
 		: m_imp(0)
@@ -440,34 +431,6 @@ namespace xirang
 		return *this;
 	}
 
-	TypeBuilder& TypeBuilder::addBase(const string& typeName, Type type)
-	{
-		AIO_PRE_CONDITION(m_imp);
-        AIO_PRE_CONDITION(m_stage <= st_base);
-
-		m_imp->items.resize(++m_imp->baseCount);
-		TypeItemImp& m = m_imp->items.back();
-
-		m.category = TypeItem::sub_base;
-        m.typeName = typeName;
-		m.type = ImpAccessor<TypeImp>::getImp(type);
-        m.index = m_imp->items.size() - 1;
-
-		TypeItem tim(&m);
-		m_imp->methods->nextLayout(tim, m_imp->payload, m_offset, m_imp->alignment, m_imp->isPod);
-
-		if (type.valid())
-		{	
-			m.offset = m_imp->payload - type.payload();
-		}
-		else
-			m.offset = Type::unknown;
-
-        m_stage = st_base;
-		return *this;
-
-	}	
-
 	TypeBuilder& TypeBuilder::addMember(const string& name, const string& typeName, Type t)
 	{
 		AIO_PRE_CONDITION(m_imp);
@@ -477,7 +440,6 @@ namespace xirang
 		m_imp->items.resize(m_imp->items.size() + 1);
 		TypeItemImp& m = m_imp->items.back();
 		m.name = name;
-		m.category = TypeItem::sub_member;
 		m.typeName = typeName;
 		m.type = ImpAccessor<TypeImp>::getImp(t);
         m.index = m_imp->items.size() - 1;
@@ -490,7 +452,7 @@ namespace xirang
 			m.offset = m_imp->payload - t.payload();
 		}
 		else
-			m.offset = Type::unknown;
+			m.offset = Type::no_size;
 			
 
         m_stage = st_member;
@@ -520,7 +482,7 @@ namespace xirang
                 }
                 else
                 {
-                    m_imp->payload = Type::unknown;
+                    m_imp->payload = Type::no_size;
                     break;
                 }
             }

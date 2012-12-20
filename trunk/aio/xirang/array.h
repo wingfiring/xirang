@@ -502,27 +502,17 @@ namespace xirang
 		return i + n; 
 	}
 
-	namespace serialize{
-		template<> struct constructor<Array>{
-			static void apply(CommonObject obj, heap& hp, ext_heap& ehp);
-		};
+	template<> struct constructor<Array>{
+		static void apply(CommonObject obj, heap& hp, ext_heap& ehp);
+	};
 
-		template<> struct serializer<Array> {
-			static aio::io::writer& apply(aio::io::writer& ar, ConstCommonObject obj);
-		};
+	template<> struct hasher<Array> {
+		static size_t apply(ConstCommonObject obj);
+	};
 
-		template<> struct deserializer<Array> {
-			static aio::io::reader& apply(aio::io::reader& rd, CommonObject obj, heap& inner, ext_heap& ext);
-		};
-
-		template<> struct hasher<Array> {
-			static size_t apply(ConstCommonObject obj);
-		};
-
-		template<> struct comparison<Array> {
-			static int apply(ConstCommonObject lhs,ConstCommonObject rhs) ;
-		};
-	}
+	template<> struct comparison<Array> {
+		static int apply(ConstCommonObject lhs,ConstCommonObject rhs) ;
+	};
 }
 
 #endif //end XIRANG_ARRAY_H

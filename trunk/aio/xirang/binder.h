@@ -2,7 +2,7 @@
 #define AIO_COMMON_XIRANG_BINDER_H
 
 #include <aio/xirang/object.h>
-#include <aio/xirang/typebinder.h>
+#include <aio/xirang/itypebinder.h>
 
 #include <aio/common/context_except.h>
 
@@ -10,7 +10,6 @@ namespace xirang
 {
     ///  exception for type mismatch
 	AIO_EXCEPTION_TYPE(TypeMismatchException);
-    template < typename T >struct TypeInfo;
     /// Bind T* to const CommonObject pointer. if type mismatch, it returns null pointer.
     /// \pre obj && obj->valid()
 	template < typename T > T * bind (const CommonObject * obj) 
@@ -35,9 +34,7 @@ namespace xirang
 		T* p = bind<T>(&obj);
 
 		if (!p)
-		{
 			AIO_THROW(TypeMismatchException);
-		}
 		return *p;
 	}
 

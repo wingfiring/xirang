@@ -4,8 +4,8 @@
 
 #include <boost/functional/hash.hpp>
 
-namespace xirang
-{
+namespace xirang {
+
 	namespace {
 		TypeMethods defaultMethods;
 		std::size_t align_lcm(std::size_t p1, std::size_t p2)
@@ -91,31 +91,6 @@ namespace xirang
         }
 	}
 
-	void TypeMethods::deserialize(aio::archive::reader& rd, CommonObject obj, heap& inner, ext_heap& ext) const
-	{
-		AIO_PRE_CONDITION(obj.valid());
-
-		SubObjRange subs = obj.members();
-		for (SubObjRange::iterator itr(subs.begin()), end(subs.end()); itr != end; ++itr)
-		{
-			CommonObject iobj = (*itr).asCommonObject();
-			Type it = iobj.type();
-			it.methods().deserialize(rd, iobj, inner, ext);
-		}
-	}
-	void TypeMethods::serialize(aio::archive::writer& wr, ConstCommonObject obj) const
-	{
-		AIO_PRE_CONDITION(obj.valid());
-
-		ConstSubObjRange subs = obj.members();
-		for (ConstSubObjRange::iterator itr(subs.begin()), end(subs.end()); itr != end; ++itr)
-		{
-			ConstCommonObject iobj = (*itr).asCommonObject();
-			Type it = iobj.type();
-			it.methods().serialize(wr, iobj);
-		}
-	}
-	
 	void TypeMethods::beginLayout(std::size_t& payload, std::size_t& offset, std::size_t& align, bool& pod) const
 	{
 		payload = 0;
@@ -125,13 +100,13 @@ namespace xirang
 	}
 	void TypeMethods::nextLayout(TypeItem& item, std::size_t& payload, std::size_t& offset, std::size_t& align, bool& pod) const
 	{
-		if (payload != Type::unknown)
+		if (payload != Type::no_size)
 		{
 			if (!item.type().valid())
 			{
-				payload = Type::unknown;
-				offset = Type::unknown;
-				align = Type::unknown;
+				payload = Type::no_size;
+				offset = Type::no_size;
+				align = Type::no_size;
 			}
 			else
 			{

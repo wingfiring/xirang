@@ -3,8 +3,6 @@
 
 #include <aio/xirang/xrfwd.h>
 
-#include <aio/common/iarchive.h>
-
 namespace xirang
 {
 	class TypeItemImp;
@@ -13,13 +11,6 @@ namespace xirang
 	class TypeItem
 	{
 		public:
-            /// deprecated
-			enum SubCategory
-			{
-				sub_member = 0,
-				sub_base = 1
-			};
-
             /// ctor
 			TypeItem (TypeItemImp * p = 0);
 
@@ -31,10 +22,6 @@ namespace xirang
 
             /// \return valid()
 			explicit operator bool () const;
-
-            /// deprecated
-            /// \pre valid()
-			SubCategory category () const;
 
             /// get the type of this data member
             /// \pre valid()
@@ -127,7 +114,7 @@ namespace xirang
 		public:
 
             /// the size is unknown if a type contains any data member which type is unresolved.
-			static const std::size_t unknown = -1;
+			static const std::size_t no_size = -1;
 
             /// default ctor
 			Type (TypeImp * imp = 0);
@@ -158,7 +145,7 @@ namespace xirang
             /// \pre valid()
 			bool isInterim () const;
 
-			/// return true if all base and data members are resolved.
+			/// return true if all data members are resolved.
             /// \pre valid()
 			bool isMemberResolved () const;
 
@@ -197,16 +184,11 @@ namespace xirang
             /// \pre valid()
 			TypeMethods & methods () const;
 
-			/// get the number of all data members, base + memebers.
+			/// get the number of all data members, memebers.
             /// \pre valid()
 			std::size_t memberCount () const;
 
-            /// deprecated
-            /// get number of bases
-            /// \pre valid() 
-			std::size_t baseCount () const;
-
-            /// get all data members, base + memebers.
+            /// get all data members, memebers.
             /// \pre valid()
 			TypeItemRange members () const;
 
@@ -247,11 +229,18 @@ namespace xirang
             /// compare the internal address only, do not compare elements.
             /// return 0 if this and other refer to same type
 			int compare (const Type &) const;
+
 		private:
+			friend struct hasher<Type>;
 			TypeImp * m_imp;
             friend class ImpAccessor<TypeImp>;
 	};
 	DEFINE_COMPARE (Type);
+
+	// specialize for Type
+	template<> struct hasher<Type> {
+		static size_t apply(ConstCommonObject obj);
+	};
 
 	class TypeBuilder
 	{
@@ -261,7 +250,6 @@ namespace xirang
                 st_renew,
                 st_model,
                 st_arg,
-                st_base,
                 st_member,
                 st_end,
             };
@@ -289,11 +277,6 @@ namespace xirang
             /// \pre getStage <= st_arg
             /// \post getStage == st_arg
 			TypeBuilder& setArg(const string& arg, const string& typeName, Type t);
-
-            /// add a base
-            /// \pre getStage <= st_base
-            /// \post getStage == st_base
-			TypeBuilder& addBase(const string& typeName, Type type);
 
             /// add a data member
             /// \pre getStage <= st_member

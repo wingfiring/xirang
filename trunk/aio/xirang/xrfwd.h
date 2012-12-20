@@ -9,6 +9,9 @@ namespace xirang
   class TypeMethods;
   extern TypeMethods& DefaultMethods();
 
+  struct Serializer;
+  struct DeSerializer;
+
   
   //handle of a type member item owned by Type.
   class TypeItem;
@@ -64,6 +67,20 @@ namespace xirang
           return 1;
       return 0;
   }
+
+  template<typename T> struct assigner;
+	template<typename T> struct constructor;
+	template<typename T> struct destructor;
+	template<typename T> struct comparison;
+	template<typename T> struct hasher;
+	template<typename T> struct layout;
+	template<typename T> struct extendMethods;
+
+	template<typename T> constructor<T> get_constructor(T*);
+	template<typename T> destructor<T> get_destructor(T*);
+	template<typename T> assigner<T> get_assigner(T*);
+	template<typename T> layout<T> get_layout(T*);
+	template<typename T> extendMethods<T> get_extendMethods(T*);
 }
 
 

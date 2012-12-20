@@ -3,9 +3,9 @@
 
 #include <aio/xirang/object.h>
 #include <aio/xirang/typebinder.h>
+#include <aio/xirang/serialize.h>
 
 #include <aio/common/memory.h>
-#include <aio/common/iarchive.h>
 
 namespace xirang
 {
@@ -68,7 +68,7 @@ namespace xirang
 		template<typename Archive>
 		friend Archive& operator &(Archive & ar, const ExtObject& obj)
 		{
-			using namespace serialize;
+			using namespace sio;
 			return ar & obj.m_heap & obj.m_ext_heap & obj.m_type 
 				& obj.m_handle.begin & obj.m_handle.end;
 		}
@@ -91,19 +91,17 @@ namespace xirang
 		mutable ext_heap::handle m_handle;
 	};
 
-	namespace serialize{
-		template<> struct constructor<ExtObject>{
-			static void apply(CommonObject obj, heap& hp, ext_heap& ehp);
-		};
+	template<> struct constructor<ExtObject>{
+		static void apply(CommonObject obj, heap& hp, ext_heap& ehp);
+	};
 
-		template<> struct hasher<ExtObject> {
-			static size_t apply(ConstCommonObject obj);
-		};
+	template<> struct hasher<ExtObject> {
+		static size_t apply(ConstCommonObject obj);
+	};
 
-		template<typename T> struct extendMethods {
-			static MethodsExtension* value();
-		};
-	}
+	template<> struct extendMethods<ExtObject> {
+		static MethodsExtension* value();
+	};
 
 }
 #endif //end AIO_XIRANG_EXT_OBJECT_H

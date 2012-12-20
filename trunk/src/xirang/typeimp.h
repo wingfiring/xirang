@@ -12,12 +12,11 @@ namespace xirang
 	class TypeItemImp
 	{
 		public:
-			TypeItemImp() : category(TypeItem::sub_member), type(0), offset(0){}
+			TypeItemImp() : type(0), offset(0){}
 			const static std::size_t unknown_offset = std::size_t (-1);
 
 			string name;		//member name. should be valid name.
 			string typeName;		//the type name of this member, should be valid name.
-			TypeItem::SubCategory category;	//indicate base or member.
 			TypeImp *type;		//can be null if unresolved. type->name may diffrent from typeName; since alias, type args.
 			std::size_t offset;	//offset in host type.
             size_t index;
@@ -38,14 +37,13 @@ namespace xirang
 		public:
 			TypeImp()
 				: modelType(0)
-				, payload(Type::unknown), alignment(0), instanceCount(0), referenceCount(0)
-				, baseCount(0)
+				, payload(Type::no_size), alignment(0), instanceCount(0), referenceCount(0)
 				, unresolvedArgs(0)
 				, isPod(true)
 				, parent(0), methods(0)
 
 			{}
-			std::vector < TypeItemImp > 	items;	//bases + members. base at the front
+			std::vector < TypeItemImp > 	items;
 			//std::map < string, size_t > 	memberIndexByName;	//just members
 
 			std::vector < TypeArgImp>		typeArgs;
@@ -59,15 +57,13 @@ namespace xirang
 			std::size_t alignment;	// cached value;
 			std::size_t instanceCount;
 			std::size_t referenceCount;
-			std::size_t baseCount;
 			std::size_t unresolvedArgs;	//cached value
             bool isPod;
 			NamespaceImp *parent;
 			TypeMethods *methods;
 
-            std::size_t bases() const { return baseCount;}
 			std::size_t members() const { return items.size(); }
-			bool isMemberResolved() const { return payload != Type::unknown; }
+			bool isMemberResolved() const { return payload != Type::no_size; }
 
             void modelTo(TypeImp& other)
             {
@@ -80,7 +76,6 @@ namespace xirang
                 other.alignment = alignment;
                 other.instanceCount = instanceCount ;
                 other.referenceCount = referenceCount;
-                other.baseCount = baseCount;
                 other.unresolvedArgs = unresolvedArgs;
                 other.isPod = isPod;
                 other.methods = methods;
@@ -126,3 +121,4 @@ namespace xirang
 	};
 }
 #endif				//end XIRANG_DETAIL_TYPE_IMP_H
+

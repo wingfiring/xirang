@@ -136,7 +136,7 @@ namespace xirang
 		: m_obj(&const_cast<ExtObject&>(obj))
 	{
 		AIO_PRE_CONDITION(obj.valid());
-		m_obj.pin_();
+		m_obj->pin_();
 	}
 	ExtObject::ConstPin::ConstPin(ExtObject::ConstPin&& rhs) 
 		: m_obj(rhs.m_obj)
@@ -153,12 +153,12 @@ namespace xirang
 	}
 	ExtObject::ConstPin::~ConstPin()
 	{
-		if (m_obj) m_obj.unpin_();
+		if (m_obj) m_obj->unpin_();
 	}
-	ConstCommonObject ExtObject::ConstPin::get()
+	ConstCommonObject ExtObject::ConstPin::get() const
 	{
 		AIO_PRE_CONDITION(valid());
-		return ConstCommonObject(m_obj.type(), m_obj.data_());
+		return ConstCommonObject(m_obj->type(), m_obj->data_());
 	}
 
 	bool ExtObject::ConstPin::valid() const{ return m_obj != 0;}
@@ -170,9 +170,8 @@ namespace xirang
 	{
 	}
 	ExtObject::Pin::Pin(Pin&& rhs)
-		: m_obj(rhs.m_obj)
+		: ConstPin(std::forward<ConstPin>(rhs))
 	{
-		rhs.m_obj = 0;
 	}
 	ExtObject::Pin& ExtObject::Pin::operator=(Pin&& rhs){
 		if(this != &rhs)
@@ -183,39 +182,38 @@ namespace xirang
 	ExtObject::Pin::~Pin()
 	{
 	}
-	CommonObject ExtObject::Pin::get()
+	CommonObject ExtObject::Pin::get() const
 	{
-		return CommonObject(m_obj.type(), m_obj.data_());
+		return CommonObject(m_obj->type(), m_obj->data_());
 	}
 	void ExtObject::Pin::swap(Pin& rhs){
 		std::swap(m_obj, rhs.m_obj);
 	}
 
-	namespace serialize{
-		void constructor<ExtObject>::apply(CommonObject obj, heap& hp, ext_heap& ehp)
+	void constructor<ExtObject>::apply(CommonObject obj, heap& hp, ext_heap& ehp)
+	{
+		Type t = obj.type();
+		AIO_PRE_CONDITION(t.valid() && t.argCount() == 1);
+
+		TypeArg ta = t.arg(0);
+		AIO_PRE_CONDITION(ta.name() == "value_type");
+
+		t = ta.type();
+		AIO_PRE_CONDITION(t.valid());
+		new (obj.data()) ExtObject(t, hp, ehp);
+	}
+
+	size_t hasher<ExtObject>::apply(ConstCommonObject obj) {
+		return (size_t)obj.data();
+	}
+
+	MethodsExtension* extendMethods<ExtObject>::value(){
+		static MethodsExtension methodsExt = 
 		{
-			Type t = obj.type();
-			AIO_PRE_CONDITION(t.valid() && t.argCount() == 1);
-
-			TypeArg ta = t.arg(0);
-			AIO_PRE_CONDITION(ta.name() == "value_type");
-
-			t = ta.type();
-			AIO_PRE_CONDITION(t.valid());
-			new (obj.data()) ExtObject(t, inner, outer);
-		}
-
-		size_t hasher<ExtObject>::apply(ConstCommonObject obj) {
-			return (size_t)obj.data();
-		}
-
-		MethodsExtension* extendMethods<ExtObject>::value(){
-			static MethodsExtension methodsExt = 
-			{
-				0,
-				&hasher<T>::apply
-			};
-			return &methodsExt;
-		}
+			0,
+			&hasher<ExtObject>::apply
+		};
+		return &methodsExt;
 	}
 }
+

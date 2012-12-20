@@ -5,6 +5,7 @@
 #include <aio/common/string.h>
 #include <aio/common/iterator.h>
 #include <aio/common/buffer.h>
+#include <aio/common/context_except.h>
 
 namespace xirang
 {
@@ -12,7 +13,7 @@ namespace xirang
   using aio::heap;
   using aio::ext_heap;
   typedef aio::ext_heap::handle handle;
-  typedef aio::byte byte;
+  using aio::byte;
 
   template<typename T>
   struct BiRangeT : public  aio::range<aio::bidir_iterator<T> >

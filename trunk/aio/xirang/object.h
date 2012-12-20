@@ -1,7 +1,6 @@
 #ifndef XIRANG_OBJECT_H
 #define XIRANG_OBJECT_H
 
-#include <aio/xirang/xrfwd.h>
 #include <aio/xirang/type.h>
 
 namespace xirang
@@ -88,6 +87,16 @@ namespace xirang
             /// \pre valid() && obj.valid() && type() == obj.type()
 			void assign(ConstCommonObject obj);
 	};
+	template<typename Handler, typename Obj, typename ... Args> 
+	inline void VisitObjectMember(Handler& h, Obj obj, Args... args)
+	{
+		if (obj.type().memberCount > 0){
+			auto children = obj.members();
+			for (auto i: children)
+				VisitObjectMember(h, i.asCommonObject(), args...);
+		}
+		h(obj, args...);
+	}
 
     struct NameValuePair
     {

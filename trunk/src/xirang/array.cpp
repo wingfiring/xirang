@@ -329,54 +329,21 @@ namespace xirang
             : 0;
     }
 
-	namespace serialize{
-		void constructor<Array>::apply(CommonObject obj, heap& hp, ext_heap& ehp)
-		{
-			AIO_PRE_CONDITION(obj.type().unresolvedArgs() == 0);
+	void constructor<Array>::apply(CommonObject obj, heap& hp, ext_heap& ehp)
+	{
+		AIO_PRE_CONDITION(obj.type().unresolvedArgs() == 0);
 
-			Type value_type = obj.type().arg(0).type();
-			new (obj.data()) Array(hp, ehp, value_type);
-		}
-
-		aio::archive::writer& serializer<Array>::apply(aio::archive::writer& ar, ConstCommonObject obj){
-			using namespace serialize;
-			const Array& buf = uncheckBind<Array>(obj);
-			save(ar, numeric_uint32_cast(buf.size()));
-			Type t = buf.type();
-
-			std::size_t size = buf.size();
-			for (std::size_t i = 0; i < size; ++i)
-			{
-				t.methods().serialize(ar, buf[i]);
-			}
-			return ar;
-		}
-
-
-		aio::archive::reader& deserializer<Array>::apply(aio::archive::reader& rd, 
-				CommonObject obj, heap& inner, ext_heap& ext){
-			using namespace serialize;
-
-			Array& buf = uncheckBind<Array>(obj);
-			size_t size = load<uint32_t>(rd);
-			Type t = buf.type();
-			buf.resize(size);
-
-			for(std::size_t i = 0; i < size;  i++)
-			{
-				t.methods().deserialize(rd, buf[i], inner, ext);
-			}
-			return rd;
-		}
-
-
-		size_t hasher<Array>::apply(ConstCommonObject obj) {
-			return (size_t)obj.data();
-		}
-
-		int comparison<Array>::apply(ConstCommonObject lhs,ConstCommonObject rhs) {
-			return uncheckBind<Array>(lhs).compare(uncheckBind<Array>(rhs));
-		}
+		Type value_type = obj.type().arg(0).type();
+		new (obj.data()) Array(hp, ehp, value_type);
 	}
+
+	size_t hasher<Array>::apply(ConstCommonObject obj) {
+		return (size_t)obj.data();
+	}
+
+	int comparison<Array>::apply(ConstCommonObject lhs,ConstCommonObject rhs) {
+		return uncheckBind<Array>(lhs).compare(uncheckBind<Array>(rhs));
+	}
+
 }
 

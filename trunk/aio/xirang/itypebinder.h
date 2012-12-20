@@ -1,11 +1,8 @@
 #ifndef AIO_XIRANG_ITYPE_BINDER_H
 #define AIO_XIRANG_ITYPE_BINDER_H
 
-#include <aio/xirang/xrfwd.h>
-#include <aio/xirang/type.h>
 #include <aio/xirang/object.h>
-
-#include <aio/common/iarchive.h>
+#include <typeinfo>
 
 namespace xirang
 {
@@ -18,6 +15,18 @@ namespace xirang
 		virtual ~TypeInfoHandle();
 	};
 
+	template<typename T>
+	struct TypeInfo : TypeInfoHandle
+	{
+        TypeInfo():TypeInfoHandle(){}
+		virtual bool equal(const TypeInfoHandle& other) const 
+		{
+			return this == &other
+				|| typeid(*this) == typeid(other); 
+		}
+	};
+
+
     /// defines optional type methods 
 	struct MethodsExtension
 	{
@@ -27,7 +36,6 @@ namespace xirang
         /// return the hash code for given object
 		std::size_t (*hash)(ConstCommonObject lhs);
 	};
-
 
     /// define general methods to manipulate object
 	class TypeMethods
@@ -50,15 +58,6 @@ namespace xirang
         /// assign the pointed object from src to  dest
         /// \pre src.valid() && dest.valid() && both are initialized
 		virtual void assign(ConstCommonObject src, CommonObject dest) const;
-
-        /// desrialize obj from rd 
-		/// \param obj must have been constructed
-        /// \note need refine the design
-		virtual void deserialize(aio::io::reader& rd, CommonObject obj, heap& inner, ext_heap& ext) const;
-
-        /// desrialize obj into io 
-        /// \note not readfy, need refine the design
-		virtual void serialize(aio::io::writer& wr, ConstCommonObject obj) const;
 
         /// init the type metadata, all parameters are output. caller 
         /// \param payload hold the size of type

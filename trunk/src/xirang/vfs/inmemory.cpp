@@ -1,37 +1,19 @@
 #include <aio/xirang/vfs/inmemory.h>
 #include <aio/common/archive/mem_archive.h>
 
-#include "file_tree.h"
 #include <aio/xirang/vfs/vfs_common.h>
 #include <aio/common/archive/adaptor.h>
+#include <aio/common/string_algo/string.h>
 
-namespace xirang{ namespace fs{  namespace private_ {
+#include "file_tree.h"
 
-	template<> struct node_releaser<iarchive*>
-	{
-		static void release(iarchive* p)
-		{
-            if (!p)
-                return;
-            
-            aio::ideletor* pdeletor = p->query_deletor();
-			AIO_PRE_CONDITION(pdeletor);
-			pdeletor->destroy();
-		}
-	};
-	
-	void no_action_iarchive_deletor(iarchive*)
-	{
-	}
-}	//end namespace private_
-using namespace aio::archive;
-typedef multiplex_deletor<multiplex_reader<multiplex_random<multiplex_base<reader, aio::archive::random, aio::ideletor> > > > inmem_read_archive;
-typedef multiplex_deletor<multiplex_writer<multiplex_random<multiplex_base<writer, aio::archive::random, aio::ideletor> > > > inmem_write_archive;
-typedef multiplex_deletor<multiplex_reader<multiplex_writer<multiplex_random<multiplex_base<reader, writer, aio::archive::random, aio::ideletor> > > > > inmem_read_write_archive;
+namespace xirang{ namespace fs{ 
+
+	using namespace aio::archive;
 
 	class InMemoryImp
 	{
-		typedef private_::file_node<iarchive*> file_node;
+		typedef private_::file_node<buffer<byte>> file_node;
 		public:
 
 		InMemoryImp(const string& res, IVfs* host)
@@ -51,11 +33,11 @@ typedef multiplex_deletor<multiplex_reader<multiplex_writer<multiplex_random<mul
             fs_error ret = remove_check(*host(), path);
 			if (ret == aiofs::er_ok)
 			{
-				file_node* pos = locate(m_root_node, path);
-				AIO_PRE_CONDITION(pos);
-                if (pos == &m_root_node)
-                    return aiofs::er_invalid;
-				return removeNode(pos);
+				auto pos = locate(m_root_node, path);
+				AIO_PRE_CONDITION(pos.node);
+                return pos.not_found.empty()
+					? removeNode(pos)
+					: aiofs::er_not_found;
 			}
 
 			return ret;
@@ -68,55 +50,51 @@ typedef multiplex_deletor<multiplex_reader<multiplex_writer<multiplex_random<mul
             if (m_readonly)
                 return aiofs::er_permission_denied;
 
-			if (state(path).state != aiofs::st_not_found)
+			auto pos = locate(m_root_node, path);
+			if (pos.not_found.empty())
 				return aiofs::er_exist;
+			if (pos.node->type != aiofs::st_dir)
+				return aio::er_not_dir;
 
-			file_node* pos = private_::create_node(m_root_node, path, aiofs::st_dir, false);
-			return pos ?  aiofs::er_ok : aiofs::er_not_found;
+			if (aio::contains(pos.not_found, '/'))
+				return aiofs::er_not_found;
+
+			create_node(pos, aiofs::st_dir);
+			return aiofs::er_ok;
 		}
 
+
 		// file operations
-		archive_ptr create(const string& path, int mode, int flag)
+		aio::io::buffer_io create(const string& path, int flag)
 		{
-			typedef aio::default_deletorT<aio::archive::mem_read_write_archive> archive_type;
 			AIO_PRE_CONDITION(!is_absolute(path));
 
-            file_node* pos = locate(m_root_node, path);
-            if ( (m_readonly &&  (mode & aio::archive::mt_write))
-                || (pos && flag == of_create)
-					|| (!pos && flag == of_open)
-                 || pos == &m_root_node)                    
-				return archive_ptr();
+            if ( m_readonly) AIO_THROW(PermisionDenied);
 
-			if (!pos)
-			{
-				pos = private_::create_node(m_root_node, path, aiofs::st_regular, false);
-				if (pos && pos->type == aiofs::st_regular)
-				{
-					if (!pos->data)
-						pos->data = new archive_type;
-				}
-				else 
-					return archive_ptr();
-			}
+            auto pos = locate(m_root_node, path);
+            if(flag == of_create && pos.not_found.empty()) AIO_THROW(FileExist);
+			if(flag == of_open && (!pos.not_found.empty() || pos.node == &m_root_node)) AIO_THROW(FileNotFound);
+			if (pos.node->type != aiofs::st_regular || aio::contains(pos.not_found, '/'))
+				AIO_THROW(FileNotFound);
 
-            if (mode & aio::archive::mt_read)
+			if (!pos.not_found.empty())
 			{
-				if ((mode & aio::archive::mt_write) == 0)
-				{
-					AIO_PRE_CONDITION(flag == of_open);
-					return archive_ptr(new inmem_read_archive(pos->data));
-				}
-				else
-                {
-					return archive_ptr(new inmem_read_write_archive(pos->data));
-                }
+				auto res = create_node(pos, aiofs::st_regular);
+				return buffer_io(res->data)
 			}
-			else if (mode & aio::archive::mt_write)	//write only
-			{
-				return archive_ptr(new inmem_write_archive(pos->data));
-			}
-			return archive_ptr();
+			else
+				return buffer_io(pos.node->data);
+		}
+
+		aio::io::buffer_in readOpen(const string& path){
+			AIO_PRE_CONDITION(!is_absolute(path));
+
+            auto pos = locate(m_root_node, path);
+			if(!pos.not_found.empty() || pos.node == &m_root_node) AIO_THROW(FileNotFound);
+			if (pos.node->type != aiofs::st_regular || aio::contains(pos.not_found, '/'))
+				AIO_THROW(FileNotFound);
+
+			return buffer_in(pos.node->data);
 		}
 
 		// \pre !absolute(to)
@@ -151,8 +129,7 @@ typedef multiplex_deletor<multiplex_reader<multiplex_writer<multiplex_random<mul
 			if (pos->type != aiofs::st_regular)
 				return aiofs::er_system_error;
 
-            aio::archive::writer* wr = pos->data->query_writer();
-			wr->truncate(s);
+			pos->data->resize(s);
 			return aiofs::er_ok;
 
 		}
@@ -182,8 +159,8 @@ typedef multiplex_deletor<multiplex_reader<multiplex_writer<multiplex_random<mul
 			typedef private_::FileNodeIterator<iarchive*> FileIterator;
 			if (pos && pos->type == aiofs::st_dir)
 			{
-                std::map<string, private_::file_node<iarchive*>*>::iterator beg = pos->children.begin();
-                std::map<string, private_::file_node<iarchive*>*>::iterator end = pos->children.end();
+                auto beg = pos->children.begin();
+                auto end = pos->children.end();
 				return VfsNodeRange(
                     VfsNodeRange::iterator(FileIterator(beg, m_host)),
 					VfsNodeRange::iterator(FileIterator(end, m_host))
@@ -199,16 +176,13 @@ typedef multiplex_deletor<multiplex_reader<multiplex_writer<multiplex_random<mul
 			AIO_PRE_CONDITION(!is_absolute(path));
 			VfsState fst = 
 			{
-				{ path, m_host},
-					aiofs::st_not_found, 0
+				{ path, m_host}, aiofs::st_not_found, 0
 			};
-			file_node* pos = locate(const_cast<file_node&>(m_root_node), path);
-			if (pos)
+			auto pos = locate(const_cast<file_node&>(m_root_node), path);
+			if (pos.not_found.empty())
 			{
 				fst.state = pos->type;
-
-				if (pos->data)
-					fst.size = pos->data->query_sequence()->size();
+				fst.size = pos.node->data.size();
 			}
 			return fst;
 		}
@@ -246,72 +220,74 @@ typedef multiplex_deletor<multiplex_reader<multiplex_writer<multiplex_random<mul
 
 
 	InMemory::InMemory(const string& resource)
-: m_imp(new InMemoryImp(resource, this))
-{}
+		: m_imp(new InMemoryImp(resource, this))
+	{}
 
-InMemory::~InMemory() { delete m_imp;}
+	InMemory::~InMemory() { delete m_imp;}
 
-// common operations of dir and file
-// \pre !absolute(path)
-fs_error InMemory::remove(const string& path)
-{
-	return m_imp->remove(path);
-}
+	// common operations of dir and file
+	// \pre !absolute(path)
+	fs_error InMemory::remove(const string& path)
+	{
+		return m_imp->remove(path);
+	}
 
-// dir operations
-// \pre !absolute(path)
-fs_error InMemory::createDir(const  string& path) { return m_imp->createDir(path);}
+	// dir operations
+	// \pre !absolute(path)
+	fs_error InMemory::createDir(const  string& path) { return m_imp->createDir(path);}
 
-// file operations
-archive_ptr InMemory::create(const string& path, int mode, int flag)
-{
-	return m_imp->create(path, mode, flag);
-}
+	// file operations
+	aio::io::buffer_io InMemory::create(const string& path, int flag){
+		return m_imp->create(path, flag);
+	}
+	aio::io::buffer_in readOpen(const string& path){
+		return m_imp->readOpen(path);
+	}
 
-// \pre !absolute(to)
-// if from and to in same fs, it may have a more effective implementation
-// otherwise, from should be a
-fs_error InMemory::copy(const string& from, const string& to)
-{
-	return m_imp->copy(from, to);
-}
+	// \pre !absolute(to)
+	// if from and to in same fs, it may have a more effective implementation
+	// otherwise, from should be a
+	fs_error InMemory::copy(const string& from, const string& to)
+	{
+		return m_imp->copy(from, to);
+	}
 
-fs_error InMemory::truncate(const string& path, aio::long_size_t s)
-{
-	return m_imp->truncate(path, s);
-}
+	fs_error InMemory::truncate(const string& path, aio::long_size_t s)
+	{
+		return m_imp->truncate(path, s);
+	}
 
-void InMemory::sync() { return m_imp->sync();}
+	void InMemory::sync() { return m_imp->sync();}
 
-// query
-const string& InMemory::resource() const { return m_imp->resource();}
+	// query
+	const string& InMemory::resource() const { return m_imp->resource();}
 
-// volume
-// if !mounted, return null
-RootFs* InMemory::root() const { return m_imp->root();}
+	// volume
+	// if !mounted, return null
+	RootFs* InMemory::root() const { return m_imp->root();}
 
-// \post mounted() && root() || !mounted() && !root()
-bool InMemory::mounted() const { return m_imp->mounted(); }
+	// \post mounted() && root() || !mounted() && !root()
+	bool InMemory::mounted() const { return m_imp->mounted(); }
 
-// \return mounted() ? absolute() : empty() 
-string InMemory::mountPoint() const { return m_imp->mountPoint();}
+	// \return mounted() ? absolute() : empty() 
+	string InMemory::mountPoint() const { return m_imp->mountPoint();}
 
-// \pre !absolute(path)
-VfsNodeRange InMemory::children(const string& path) const { return m_imp->children(path); }
+	// \pre !absolute(path)
+	VfsNodeRange InMemory::children(const string& path) const { return m_imp->children(path); }
 
-// \pre !absolute(path)
-VfsState InMemory::state(const string& path) const { return m_imp->state(path); }
-// if r == null, means unmount
-void InMemory::setRoot(RootFs* r) { return m_imp->setRoot(r); }
+	// \pre !absolute(path)
+	VfsState InMemory::state(const string& path) const { return m_imp->state(path); }
+	// if r == null, means unmount
+	void InMemory::setRoot(RootFs* r) { return m_imp->setRoot(r); }
 
-any InMemory::getopt(int id, const any & optdata /*= any() */) const 
-{
-    return m_imp->getopt(id, optdata);
-}
-any InMemory::setopt(int id, const any & optdata,  const any & indata/*= any()*/)
-{
-    return m_imp->setopt(id, optdata, indata);
-}
+	any InMemory::getopt(int id, const any & optdata /*= any() */) const 
+	{
+		return m_imp->getopt(id, optdata);
+	}
+	any InMemory::setopt(int id, const any & optdata,  const any & indata/*= any()*/)
+	{
+		return m_imp->setopt(id, optdata, indata);
+	}
 
 }}
 
