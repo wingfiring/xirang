@@ -23,12 +23,6 @@ namespace xirang{ namespace fs{
         return parent.createDir(m_resource + path);
 	}
 
-	// file operations
-	archive_ptr SubVfs::create(const string& path, int mode, int flag) {
-        AIO_PRE_CONDITION(!is_absolute(path));
-        return parent.create(m_resource + path,  mode, flag);
-	}
-
 	// \pre !absolute(to)
 	// if from and to in same fs, it may have a more effective implementation
 	fs_error SubVfs::copy(const string& from, const string& to){
@@ -73,6 +67,11 @@ namespace xirang{ namespace fs{
         AIO_PRE_CONDITION(!mounted() || r == 0);
         m_root = r;
 	}
+	void** SubVfs::do_create(unsigned long long mask,
+			void* ret, aio::unique_ptr<void>& owner, const string& path, int flag){
+        AIO_PRE_CONDITION(!is_absolute(path));
+        return parent.do_create(mask, ret, owner, m_resource + path,  flag);
+	}
 
-}
-}
+} }
+
