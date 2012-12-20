@@ -264,7 +264,7 @@ namespace xirang{ namespace fs{
     string temp_dir(IVfs& vfs, aio::const_range_string template_, aio::const_range_string parent_dir)
     {
         if (vfs.state(parent_dir).state != aio::fs::st_dir)
-            AIO_THROW(aio::archive::create_failed)("failed to locate the temp directory:")(parent_dir);
+            AIO_THROW(aio::io::create_failed)("failed to locate the temp directory:")(parent_dir);
 
         string prefix =  parent_dir.empty() ? string(template_) : append_tail_slash(parent_dir) + template_;
 
@@ -276,7 +276,7 @@ namespace xirang{ namespace fs{
                 return file_path;
         }
 
-        AIO_THROW(aio::archive::create_failed)("failed to create temp file in directory:")(parent_dir);
+        AIO_THROW(aio::io::create_failed)("failed to create temp file in directory:")(parent_dir);
     }
     fs_error recursive_remove(IVfs&vfs, const string& path)
     {
