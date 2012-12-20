@@ -2,18 +2,19 @@
 #include <aio/common/archive/mem_archive.h>
 
 #include <aio/xirang/vfs/vfs_common.h>
-#include <aio/common/archive/adaptor.h>
 #include <aio/common/string_algo/string.h>
+#include <aio/common/buffer.h>
 
 #include "file_tree.h"
 
 namespace xirang{ namespace fs{ 
 
-	using namespace aio::archive;
+	using namespace aio::io;
+	using aio::buffer;
 
 	class InMemoryImp
 	{
-		typedef private_::file_node<buffer<byte>> file_node;
+		typedef private_::file_node<buffer<byte> > file_node;
 		public:
 
 		InMemoryImp(const string& res, IVfs* host)
@@ -36,7 +37,7 @@ namespace xirang{ namespace fs{
 				auto pos = locate(m_root_node, path);
 				AIO_PRE_CONDITION(pos.node);
                 return pos.not_found.empty()
-					? removeNode(pos)
+					? removeNode(pos.node)
 					: aiofs::er_not_found;
 			}
 
@@ -54,7 +55,7 @@ namespace xirang{ namespace fs{
 			if (pos.not_found.empty())
 				return aiofs::er_exist;
 			if (pos.node->type != aiofs::st_dir)
-				return aio::er_not_dir;
+				return aiofs::er_not_dir;
 
 			if (aio::contains(pos.not_found, '/'))
 				return aiofs::er_not_found;
@@ -80,7 +81,7 @@ namespace xirang{ namespace fs{
 			if (!pos.not_found.empty())
 			{
 				auto res = create_node(pos, aiofs::st_regular);
-				return buffer_io(res->data)
+				return buffer_io(res->data);
 			}
 			else
 				return buffer_io(pos.node->data);
@@ -123,13 +124,13 @@ namespace xirang{ namespace fs{
             if (m_readonly)
                 return aiofs::er_permission_denied;
 
-			file_node* pos = locate(m_root_node, path);
-			if (!pos)
+			auto pos = locate(m_root_node, path);
+			if (!pos.not_found.empty())
 				return aiofs::er_not_found;
-			if (pos->type != aiofs::st_regular)
+			if (pos.node->type != aiofs::st_regular)
 				return aiofs::er_system_error;
 
-			pos->data->resize(s);
+			pos.node->data.resize(s);
 			return aiofs::er_ok;
 
 		}
@@ -155,12 +156,12 @@ namespace xirang{ namespace fs{
 		// \pre !absolute(path)
 		VfsNodeRange children(const string& path) const 
 		{
-			file_node* pos = locate(const_cast<file_node&>(m_root_node), path);
-			typedef private_::FileNodeIterator<iarchive*> FileIterator;
-			if (pos && pos->type == aiofs::st_dir)
+			auto pos = locate(const_cast<file_node&>(m_root_node), path);
+			typedef private_::FileNodeIterator<aio::buffer<byte> > FileIterator;
+			if (pos.not_found.empty() && pos.node->type == aiofs::st_dir)
 			{
-                auto beg = pos->children.begin();
-                auto end = pos->children.end();
+                auto beg = pos.node->children.begin();
+                auto end = pos.node->children.end();
 				return VfsNodeRange(
                     VfsNodeRange::iterator(FileIterator(beg, m_host)),
 					VfsNodeRange::iterator(FileIterator(end, m_host))
@@ -181,7 +182,7 @@ namespace xirang{ namespace fs{
 			auto pos = locate(const_cast<file_node&>(m_root_node), path);
 			if (pos.not_found.empty())
 			{
-				fst.state = pos->type;
+				fst.state = pos.node->type;
 				fst.size = pos.node->data.size();
 			}
 			return fst;
@@ -240,7 +241,7 @@ namespace xirang{ namespace fs{
 	aio::io::buffer_io InMemory::create(const string& path, int flag){
 		return m_imp->create(path, flag);
 	}
-	aio::io::buffer_in readOpen(const string& path){
+	aio::io::buffer_in InMemory::readOpen(const string& path){
 		return m_imp->readOpen(path);
 	}
 

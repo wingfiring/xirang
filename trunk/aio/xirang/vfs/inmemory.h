@@ -59,18 +59,19 @@ namespace xirang{ namespace fs{
         virtual any setopt(int id, const any & optdata,  const any & indata= any());
 
 		virtual void** do_create(unsigned long long mask,
-				void** base, unique_ptr<void>& owner, const string& path, int flag){
+				void** base, aio::unique_ptr<void>& owner, const string& path, int flag){
+			using namespace aio::io;
 
 			void** ret = 0;
-			if (mask & io::get_mask<aio::io::writer, aio::io::write_view>::value ){ //write open
-				unique_ptr<aio::io::buffer_io> ar(new aio::io::file(std::forward(get_cobj<InMemory>(this).create(path, flag))));
-				ret = copy_interface<reader, writer, random, ioctrl, read_map, write_map >(mask, base, *ar, this); 
-				owner.swap(ar);
+			if (mask & io::get_mask<writer, write_map>::value ){ //write open
+				aio::unique_ptr<buffer_io> ar(new buffer_io(aio::get_cobj<InMemory>(this).create(path, flag)));
+				ret = copy_interface<reader, writer, random, ioctrl, read_map, write_map>::apply(mask, base, *ar, (void*)ar.get()); 
+				aio::unique_ptr<void>(std::move(ar)).swap(owner);
 			}
 			else{ //read open
-				unique_ptr<aio::io::buffer_in> ar(new aio::io::file(std::forward(get_cobj<InMemory>(this).readOpen(path))));
-				ret = copy_interface<reader, random, ioctrl, read_map>(mask, base, *ar, this); 
-				owner.swap(ar);
+				aio::unique_ptr<buffer_in> ar(new buffer_in(aio::get_cobj<InMemory>(this).readOpen(path)));
+				ret = copy_interface<reader, random, ioctrl, read_map>::apply(mask, base, *ar, (void*)ar.get()); 
+				aio::unique_ptr<void>(std::move(ar)).swap(owner);
 			}
 			return ret;
 		}

@@ -89,11 +89,16 @@ namespace xirang{ namespace fs{
 		return aio::fs::create_dir(m_resource + path);
 	}
 
-	// file operations
-	archive_ptr LocalFs::create(const string& path, int mode, int flag) {
+	aio::io::file LocalFs::create(const string& path, int flag) {
         AIO_PRE_CONDITION(!is_absolute(path));
         string real_path = m_resource + path;
-        return aio::fs::create(m_resource + path, mode, flag);
+        return aio::io::file(real_path, flag);
+
+	}
+	aio::io::file_reader LocalFs::read_open(const string& path){
+        AIO_PRE_CONDITION(!is_absolute(path));
+        string real_path = m_resource + path;
+        return aio::io::file_reader(real_path);
 	}
 
 	// \pre !absolute(to)

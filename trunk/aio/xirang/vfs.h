@@ -47,10 +47,10 @@ namespace xirang { namespace io{
 	};
 	
 	template<typename I, typename... Interfaces> struct get_mask{
-		static const unsigned long long value = I::value | get_mask<Interfaces...>::value;
+		static const unsigned long long value = interface_mask<I>::value | get_mask<Interfaces...>::value;
 	};
 	template<typename T> struct get_mask<T>{
-		static const unsigned long long value = T::value;
+		static const unsigned long long value = interface_mask<T>::value;
 	};
 }
 
@@ -105,16 +105,19 @@ namespace fs
 			}
 		};
 	}
-	template<typename ... Interfaces, typename CoClass> 
-	void** copy_interface(unsigned long long mask, void** ret, CoClass& ref, void* this_){
-		if((mask & io::get_mask<Interfaces...>::value) != mask)
-			AIO_THROW(unsupport_interface);
+	template<typename... Interfaces> struct copy_interface{
+		template<typename CoClass> 
+			static void** apply(unsigned long long mask, void** ret, CoClass& ref, void* this_){
+				if((mask & io::get_mask<Interfaces...>::value) != mask)
+					AIO_THROW(unsupport_interface);
 
-		typedef typename private_::sorted_iref<Interfaces...>::type iref_type;
-		typedef typename private_::sorted_iref<Interfaces...>::sorted_seq seq;
+				typedef typename private_::sorted_iref<Interfaces...>::type iref_type;
+				typedef typename private_::sorted_iref<Interfaces...>::sorted_seq seq;
 
-		return private_::copy_interface_helper<seq>::template copy(mask, ret, ref, this_);
-	}
+				return private_::copy_interface_helper<seq>::template copy(mask, ret, ref, this_);
+			}
+
+	};
 
 
 	class IVfs;

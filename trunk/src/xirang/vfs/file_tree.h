@@ -16,13 +16,19 @@ namespace xirang{ namespace fs{
 
 namespace xirang{ namespace fs{ namespace private_{
 
+	struct hash_string{
+		size_t operator()(const string& str) const{
+			return str.hash();
+		}
+	};
+
 	template<typename T> struct file_node
 	{
 		typedef file_node<T> node_type;
 
 		string name;
 		file_state type;	//dir or normal
-		std::unordered_map<string, node_type*> children;
+		std::unordered_map<string, node_type*, hash_string> children;
 		node_type* parent;
 
 		T data;
@@ -42,11 +48,11 @@ namespace xirang{ namespace fs{ namespace private_{
 
 	template<typename T> struct locate_result{
 		file_node<T>* node;
-		const_range_string not_found;
+		aio::const_range_string not_found;
 	};
 
 	template <typename T>
-	locate_result locate(file_node<T>& root, const const_range_string& path) 
+	locate_result<T> locate(file_node<T>& root, const aio::const_range_string& path) 
 	{
         aio::char_separator<char> sep('/');
         typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
@@ -63,11 +69,13 @@ namespace xirang{ namespace fs{ namespace private_{
 				break;
 		}
 
-		auto rest_first = itr == tokens.end()?  path.end() : itr.begin();
+		auto rest_first = itr == tokens.end()?  path.end() : itr->begin();
 
-		return locate_result{
-			pos, const_range_string(rest_first, path.end());
+		typedef locate_result<T> return_type;
+		return return_type {
+			pos, aio::const_range_string(rest_first, path.end())
 		};
+		//return ret;
 	}
 
 
@@ -169,17 +177,17 @@ namespace xirang{ namespace fs{ namespace private_{
 	}
 
 	template<typename T>
-	file_nodes<T>* create_node(const locate_result& pos, file_state type){
+	file_node<T>* create_node(const locate_result<T>& pos, file_state type){
 		AIO_PRE_CONDITION(pos.node);
 		AIO_PRE_CONDITION(!pos.not_found.empty());
 		AIO_PRE_CONDITION(!aio::contains(pos.not_found, '/'));
 		AIO_PRE_CONDITION(pos.node->children.count(pos.not_found) == 0);
 
 		aio::unique_ptr<file_node<T> > fnode(new file_node<T> );
-		fnode->name = *pos.not_found;
+		fnode->name = pos.not_found;
 		fnode->type = type;
-		fnode->parent = pos;
-		pos->children[*fnode->name] = fnode.get();
+		fnode->parent = pos.node;
+		pos.node->children[fnode->name] = fnode.get();
 
 		return fnode.release();
 	}
@@ -189,7 +197,7 @@ namespace xirang{ namespace fs{ namespace private_{
 	{
 	public:
 		typedef file_node<T> node_type;
-		typedef typename std::map<string, node_type*>::iterator iterator;
+		typedef typename std::unordered_map<string, node_type*, hash_string>::iterator iterator;
 		FileNodeIterator()
 			: m_itr() 
 		{
