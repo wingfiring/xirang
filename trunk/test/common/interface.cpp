@@ -107,7 +107,7 @@ void interface_test()
 	BOOST_CHECK(px->m == 1);
 
 	Z z;
-	static_assert(private_::is_iref<iauto<Foo, Bar>>::value, "oops...");
+	static_assert(is_iref<iauto<Foo, Bar>>::value, "oops...");
 
 	iref<Foo, noif<Bar>> refz(z);
 	iref<Foo, opt<Bar>> refb(*px);

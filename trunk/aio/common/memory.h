@@ -25,7 +25,7 @@ namespace aio
 	{
 		/// allocate a memory blcok with specified size
 		/// \param size bytes of required block
-		/// \param alignment the alignment of allocated memory block. Default is 0, 0 means the alignment is min(size, upper bound of 2^n, maxAlignment())
+		/// \param alignment the alignment of allocated memory block. Default is 1, alignment must be 2^N 
 		/// \param hint hint of allocation, it's used to improve the performance for some implementation. null means no hint.
 		/// \return head address of allocated memory blcok
 		/// \pre size >= 0
@@ -35,9 +35,9 @@ namespace aio
 
 		/// free the memory block allocated by current handler instance or equivalent
 		/// \param p head address of memory block
-		/// \param alignment the alignment of allocated memory block. Default is 0, 0 means the alignment is min(size, upper bound of 2^n, maxAlignment())
-		/// \param size size of memory block
-		/// \pre size should match the malloc call and p should belong to this heap
+		/// \param alignment the alignment of allocated memory block. Default is 1, alignment must be 2^N 
+		/// \param size size of memory block. if size equals to -1, means unknown size and heap imp should check the size. The check may be slow.
+		/// \pre size should match the malloc call or -1, and p should belong to this heap
 		/// \throw nothrow
 		/// \note if p is null, do nothing.
 		virtual void free(void* p, std::size_t size, std::size_t alignment ) = 0;
@@ -181,15 +181,24 @@ namespace aio
 
 	public:
 		struct handle {
-			long_offset_t begin;
-			long_offset_t end ;
+			long_offset_t begin() const;
+			long_offset_t end() const;
 
+			/// the default begin and end are zero
 			handle();
+			/// \pre b <= e
 			handle(long_offset_t b, long_offset_t e);
+
+			/// \return end - begin
 			long_size_t size() const;
-			void clear();
-			bool valid() const;
-			EXPLICIT_OPERATOR  operator bool() const;
+
+			/// \return end == begin
+			bool empty() const;
+
+			bool in(const handle& rhs) const;
+			bool contains(const handle& rhs) const;
+			private:
+			long_offset_t m_begin, m_end;
 		};
 
 		/// allocate a block in external heap
@@ -226,10 +235,15 @@ namespace aio
 		virtual ~ext_heap();
 	};
 
+	inline bool operator ==(ext_heap::handle lhs, ext_heap::handle rhs) 
+	{
+		return lhs.begin() == rhs.begin() && lhs.end() == rhs.end();
+	}
+
 	inline bool operator <(ext_heap::handle lhs, ext_heap::handle rhs) 
 	{
-		return lhs.begin < rhs.begin 
-			|| (lhs.begin == rhs.begin && lhs.end < rhs.end);
+		return lhs.begin() < rhs.begin() 
+			|| (lhs.begin() == rhs.begin() && lhs.end() < rhs.end());
 	}
 
 	/// this allocator intends to be used crossing module. see std::allocator interface

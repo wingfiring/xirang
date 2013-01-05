@@ -164,22 +164,22 @@ namespace aio{ namespace io{
 		}
 		unique_ptr<write_view> view_wr(ext_heap::handle h)
 		{
-			AIO_PRE_CONDITION(h.valid());
-			if (m_file_size < numeric_cast<long_size_t>(h.end))
-				truncate(h.end);
+			AIO_PRE_CONDITION(h.begin() >= 0);
+			if (m_file_size < numeric_cast<long_size_t>(h.end()))
+				truncate(h.end());
 
-			return unique_ptr<write_view>(new write_file_view(m_file, m_mode, h.begin, numeric_cast<std::size_t>(h.size())));
+			return unique_ptr<write_view>(new write_file_view(m_file, m_mode, h.begin(), numeric_cast<std::size_t>(h.size())));
 		}
 
 		unique_ptr<read_view> view_rd(ext_heap::handle h)
 		{
-			AIO_PRE_CONDITION(h.valid());
+			AIO_PRE_CONDITION(h.begin() >= 0);
+			AIO_PRE_CONDITION(h.empty() || numeric_cast<long_size_t>(h.begin()) < m_file_size);
 
-			if (m_file_size < numeric_cast<long_size_t>(h.end) )
-				h.end = m_file_size;
-			AIO_PRE_CONDITION(h.valid());
+			if (m_file_size < numeric_cast<long_size_t>(h.end()) )
+				h = ext_heap::handle(h.begin(), m_file_size);
 
-			return unique_ptr<read_view>(new read_file_view(m_file, m_mode, h.begin, numeric_cast<std::size_t>(h.size())));
+			return unique_ptr<read_view>(new read_file_view(m_file, m_mode, h.begin(), numeric_cast<std::size_t>(h.size())));
 		}
 
 		long_size_t offset() const { return m_pos; }

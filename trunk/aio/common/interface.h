@@ -7,11 +7,6 @@
 #include <cstring>	//for memcpy
 #include <aio/common/backward/unique_ptr.h>
 
-namespace interface_suite{
-	struct Z;
-	struct Bar;
-	struct Foo;
-}
 namespace aio
 {
 	template<typename... Interfaces> struct iref;
@@ -168,9 +163,6 @@ namespace aio
 
 		template<typename T> struct find_convertible<T> { typedef interface_not_exist type;};
 
-		template<typename T> struct is_iref{
-				static const bool value = std::is_base_of<target_holder<void>, typename std::remove_reference<T>::type>::value;
-			};
 
 		template<typename T, typename Interface> struct get_return_type_imp{ typedef Interface& type;};
 		template<typename T, typename Interface> struct get_return_type_imp<T, opt<Interface>>{ typedef Interface* type;};
@@ -183,6 +175,9 @@ namespace aio
 			};
 	}
 
+	template<typename T> struct is_iref{
+		static const bool value = std::is_base_of<target_holder<void>, typename std::remove_reference<T>::type>::value;
+	};
 	template<typename... Args>
 		struct iref : public target_holder<void>, public interface_holder<Args>...
 	{
@@ -190,8 +185,8 @@ namespace aio
 
 		iref(){}
 
-		template<typename U, typename T = typename std::enable_if<!private_::is_iref<U>::value>::type> 
-			iref(U&& obj, T* = 0)
+		template<typename U, typename T = typename std::enable_if<!is_iref<U>::value>::type> 
+			iref(U&& obj)
 		{
 			typedef private_::compose_vptr<typename std::remove_reference<U>::type, Args...> vptrs;
 			static_assert(sizeof(vptrs) == sizeof(*this), "size mismatch");

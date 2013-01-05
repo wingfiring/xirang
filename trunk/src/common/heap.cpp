@@ -39,10 +39,20 @@ namespace aio
 	{
 		return typeid(*this) == typeid(rhs);
 	}
-	ext_heap::handle::handle() : begin(-1), end(-1){}
-	ext_heap::handle::handle(long_offset_t b, long_offset_t e) : begin(b), end(e){}
-	long_size_t ext_heap::handle::size() const { return end - begin;}
-	void ext_heap::handle::clear() { begin = -1; end = -1;}
-	bool ext_heap::handle::valid() const { return 0 <= begin && begin < end; }
-	ext_heap::handle::operator bool() const { return valid();}
+	ext_heap::handle::handle() : m_begin(0), m_end(0){}
+	ext_heap::handle::handle(long_offset_t b, long_offset_t e) : m_begin(b), m_end(e){
+		AIO_PRE_CONDITION(b <= e);
+	}
+	long_size_t ext_heap::handle::size() const { return m_end - m_begin;}
+	bool ext_heap::handle::empty() const { return m_begin == m_end; }
+	long_offset_t ext_heap::handle::begin() const { return m_begin;}
+	long_offset_t ext_heap::handle::end() const { return m_end;}
+
+	bool ext_heap::handle::in(const ext_heap::handle& h) const { 
+		return m_begin >= h.begin()
+			&& m_end <= h.end();
+	}
+	bool ext_heap::handle::contains(const ext_heap::handle& h) const { 
+		return h.in(*this);
+	}
 }

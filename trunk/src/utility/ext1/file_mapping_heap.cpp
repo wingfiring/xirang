@@ -85,14 +85,14 @@ namespace aio
 		{
 
 			handle h = allocate_free_space_(inner_free_(), size, alignment, hint);
-			if (h.valid())
+			if (!h.empty())
 			{
 				info.inner_free_size -= h.size();
 				return h;
 			}
 
 			h = allocate_free_space_(outer_free_(), size, alignment, hint);
-			if (h.valid())
+			if (!h.empty())
 			{
 				info.outer_free_size -= h.size();
 				return h;
@@ -101,10 +101,10 @@ namespace aio
 			// if there are no enough space in both inner and outer memory
 			// expend a space in outer
 			handle expand_space = new_space_(size);
-			handle r (expand_space.begin, expand_space.begin + size);
+			handle r (expand_space.begin(), expand_space.begin() + size);
 			if (expand_space.size() > size)
 			{
-				expand_space.begin += size;
+				expand_space = handle(expand_space.begin() + size, expand_space.end());
 				info.outer_free_size += expand_space.size();
 				outer_free_().insert(expand_space);
 			}
@@ -118,25 +118,25 @@ namespace aio
 			AIO_PRE_CONDITION(track_pin_count(h) == 0);
 
 			handle r = h;
-			view_map_type::left_iterator view = locate_in_view_map_(h.begin);
+			view_map_type::left_iterator view = locate_in_view_map_(h.begin());
 			if (view != view_map.left.end())	// in memory
 			{
 				std::set<handle >::iterator in_pos = inner_free_().lower_bound(h);	// h is never in any free_space
 				if (in_pos != inner_free_().end()
-						&& h.end == in_pos->begin	// right upon pos
-						&& view->first.end >= in_pos->end)//contains in same view block
+						&& h.end() == in_pos->begin()	// right upon pos
+						&& view->first.end() >= in_pos->end())//contains in same view block
 				{
-					r.end = in_pos->end;
+					r = handle(r.begin(), in_pos->end());
 					inner_free_().erase(in_pos++);
 				}
 				if (in_pos != inner_free_().begin())
 				{
 					--in_pos;
 
-					if ( in_pos->end == h.begin	//left upon
-							&& view->first.begin <= in_pos->begin) //contains the range in memory view
+					if ( in_pos->end() == h.begin()	//left upon
+							&& view->first.begin() <= in_pos->begin()) //contains the range in memory view
 					{
-						r.begin = in_pos->begin;
+						r = handle(in_pos->begin(), r.end());
 						inner_free_().erase(in_pos);
 					}
 				}
@@ -157,7 +157,7 @@ namespace aio
             view_map_type::right_const_iterator itr = view_map.right.lower_bound(p);
 			if (itr != view_map.right.end() 
 					&& itr->first == p)
-				return itr->second.begin;
+				return itr->second.begin();
 
 			AIO_PRE_CONDITION (itr != view_map.right.begin());	// fail if found!
 			--itr;
@@ -165,7 +165,7 @@ namespace aio
 			byte* p_start = itr->first;
 			byte* p_end = itr->first + itr->second.size();
 			AIO_PRE_CONDITION (p >= p_start && p < p_end);
-			return itr->second.begin + (p - p_start);
+			return itr->second.begin() + (p - p_start);
 		}
 
 		byte* pin(handle h)
@@ -184,14 +184,14 @@ namespace aio
 
 		int track_pin_count(handle h) const
 		{
-			std::unordered_map<long_offset_t, pin_counter>::const_iterator itr = pin_map.find(h.begin);
+			std::unordered_map<long_offset_t, pin_counter>::const_iterator itr = pin_map.find(h.begin());
 			return itr == pin_map.end() ? 0 : itr->second;
 
 		}
 
 		int view_pin_count(handle h) const
 		{
-			view_map_type::left_iterator view = const_cast<file_mapping_heap_imp*>(this)->locate_in_view_map_(h.begin);
+			view_map_type::left_iterator view = const_cast<file_mapping_heap_imp*>(this)->locate_in_view_map_(h.begin());
 			if (view != view_map.left.end())	// in memory
 			{
 				return view->info;
@@ -223,7 +223,7 @@ namespace aio
 				view_map_type::left_iterator  pos = view_map.left.find(*itr);
 				return_to_outer_(pos->first);
 
-				std::unordered_map<long_offset_t, io::write_view*>::iterator itr_view = view_regions.find(pos->first.begin);
+				std::unordered_map<long_offset_t, io::write_view*>::iterator itr_view = view_regions.find(pos->first.begin());
 				AIO_PRE_CONDITION(itr_view != view_regions.end());
 				delete itr_view->second;
 				view_regions.erase(itr_view);
@@ -252,10 +252,10 @@ namespace aio
 					handle can_use = *itr;
 					space.erase(itr);
 
-					handle h (can_use.begin, can_use.begin + size);
+					handle h (can_use.begin(), can_use.begin() + size);
 					if (can_use.size() > size)
 					{
-						can_use.begin += size;
+						can_use = handle(can_use.begin() + size, can_use.end());
 						space.insert(can_use);
 					}
 					return h;
@@ -272,7 +272,7 @@ namespace aio
 			if (pos != view_map.left.begin())
 			{
 				--pos;
-				if (pos->first.end > h)
+				if (pos->first.end() > h)
 					return pos;
 			}
 			return view_map.left.end();
@@ -286,7 +286,7 @@ namespace aio
 			{
 				std::set<handle >::const_iterator itr = pos;
 				--itr;
-				if (itr->end > h)
+				if (itr->end() > h)
 					return itr;
 			}
 			return pos;
@@ -297,18 +297,18 @@ namespace aio
 			handle r = h;
 			std::set<handle >::const_iterator out_pos = outer_free_().lower_bound(h);
 			if (out_pos != outer_free_().end()
-					&& h.end == out_pos->begin)	// right upon
+					&& h.end() == out_pos->begin())	// right upon
 			{
-				r.end = out_pos->end;
+				r = handle(r.begin(), out_pos->end());
 				outer_free_().erase(out_pos++);
 			}
 			if (out_pos != outer_free_().begin())
 			{
 				--out_pos;
 
-				if ( out_pos->end == h.begin)	//left upon
+				if ( out_pos->end() == h.begin())	//left upon
 				{
-					r.begin = out_pos->begin;
+					r = handle(out_pos->begin(), r.end());
 					outer_free_().erase(out_pos);
 				}
 			}
@@ -319,14 +319,14 @@ namespace aio
 
 		byte* pin_(handle h, bool track)
 		{
-			view_map_type::left_iterator vpos = locate_in_view_map_(h.begin);
+			view_map_type::left_iterator vpos = locate_in_view_map_(h.begin());
 			if (vpos != view_map.left.end())
 			{
 				++vpos->info;
 				if (track)
-					++pin_map[h.begin];
+					++pin_map[h.begin()];
 				//info.inner_free_size -= h.size();
-				return vpos->second + (h.begin - vpos->first.begin);
+				return vpos->second + (h.begin() - vpos->first.begin());
 			}
 
 			// not in exists view.
@@ -337,9 +337,9 @@ namespace aio
 		{
 			handle ha = h;
 			std::size_t view_align = info.m_view_align;
-			if (ha.begin % view_align != 0)
+			if (ha.begin() % view_align != 0)
 			{
-				ha.begin -= ha.begin % info.m_view_align;
+				ha = handle(ha.begin() - ha.begin() % info.m_view_align, ha.end());
 			}
 
 			long_size_t view_size = ha.size() > info.m_view_size ? ha.size() : info.m_view_size;
@@ -347,7 +347,7 @@ namespace aio
 			{
 				view_size += info.m_view_align - view_size % info.m_view_align;
 			}
-			ha.end = ha.begin + view_size;
+			ha = handle(ha.begin(), ha.begin() + view_size);
 
 			auto p_view = create_view_(ha);
 			view_map.left.insert(std::make_pair(ha, p_view.begin()));
@@ -355,24 +355,24 @@ namespace aio
 			view_map.left.find(ha)->info = 1;
 
 			if (track)
-				pin_map[h.begin] = 1;
+				pin_map[h.begin()] = 1;
 
-			byte *p = p_view.begin() + (h.begin - ha.begin);
+			byte *p = p_view.begin() + (h.begin() - ha.begin());
 
 			// move the view space from outer to inner 
 			//
-			std::set<handle >::iterator lower = outer_free_().lower_bound(handle(ha.begin, 0));
-			std::set<handle >::iterator upper = outer_free_().lower_bound(handle(ha.end, 0));
+			std::set<handle >::iterator lower = outer_free_().lower_bound(handle(ha.begin(), ha.begin()));
+			std::set<handle >::iterator upper = outer_free_().lower_bound(handle(ha.end(), ha.end()));
 
 			if (lower != outer_free_().end())
 			{
-				if (lower->begin < ha.end)
+				if (lower->begin() < ha.end())
 				{
 					handle h = *lower;
-					if (h.end >= ha.end)
+					if (h.end() >= ha.end())
 					{
 						outer_free_().erase(lower++);
-						outer_free_().insert(handle(ha.end, h.end));
+						outer_free_().insert(handle(ha.end(), h.end()));
 					}
 				}
 			}
@@ -380,10 +380,10 @@ namespace aio
 			inner_free_().insert(lower, upper);
 			outer_free_().erase(lower, upper);
 
-			if (info.map_space_size < numeric_cast<long_size_t>(ha.end))
+			if (info.map_space_size < numeric_cast<long_size_t>(ha.end()))
 			{
-				inner_free_().insert(handle(info.map_space_size, ha.end));
-				info.map_space_size = ha.end;
+				inner_free_().insert(handle(info.map_space_size, ha.end()));
+				info.map_space_size = ha.end();
 
 			}
 
@@ -410,7 +410,7 @@ namespace aio
 				byte * p_end = itr->first + itr->second.size();
 				AIO_PRE_CONDITION (p >= p_start && p < p_end);
 
-				long_offset_t h_off =  itr->second.begin + (p - p_start);
+				long_offset_t h_off =  itr->second.begin() + (p - p_start);
 				std::unordered_map<long_offset_t, pin_counter>::iterator pos = pin_map.find(h_off);
 				AIO_PRE_CONDITION(pos != pin_map.end());
 				if (--pos->second == 0)
@@ -436,13 +436,13 @@ namespace aio
 				throw std::bad_alloc();
 			}
 
-			if (info.map_file_size < numeric_cast<long_size_t>(h.end))
+			if (info.map_file_size < numeric_cast<long_size_t>(h.end()))
 			{
-				ioctrl_().truncate(h.end);
-				info.map_file_size = h.end;
+				ioctrl_().truncate(h.end());
+				info.map_file_size = h.end();
 			}
 			aio::unique_ptr<io::write_view> region = writer_().view_wr(h);
-			view_regions[h.begin] = region.get();
+			view_regions[h.begin()] = region.get();
 			auto addr = region->address();
 			region.release();
 			info.total_view_size += h.size();
@@ -469,6 +469,7 @@ namespace aio
 		io::read_map& reader_() const { return m_map_file.get<io::read_map>();}
 		io::write_map& writer_() const { return m_map_file.get<io::write_map>();}
 		io::ioctrl& ioctrl_() const { return m_map_file.get<io::ioctrl>();}
+		io::ioinfo& ioinfo_() const { return m_map_file.get<io::ioinfo>();}
 
 		bool no_pinned_memory() const{
 			bool result = true;
@@ -481,19 +482,19 @@ namespace aio
 		}
 
 		void load_() {
-			io::ioctrl& ctrl = ioctrl_();
-			if (ctrl.size() == 0)
+			io::ioinfo& arinfo = ioinfo_();
+			if (arinfo.size() == 0)
 				return;
 			
 			std::size_t tail_size = sizeof(long_offset_t) + sizeof(uint32_t);
-			if (ctrl.size() < tail_size)
+			if (arinfo.size() < tail_size)
 				AIO_THROW(bad_ext_heap_format);
-			auto tail_view = reader_().view_rd(ext_heap::handle(ctrl.size() - tail_size, ctrl.size()));
+			auto tail_view = reader_().view_rd(ext_heap::handle(arinfo.size() - tail_size, arinfo.size()));
 			const uint32_t& sig = *reinterpret_cast<const uint32_t*>(tail_view->address().begin());
 			const long_offset_t& end_pos = *reinterpret_cast<const long_offset_t*>(tail_view->address().begin() + sizeof(uint32_t));
 			if (sig != sig_ext_heap)
 				AIO_THROW(bad_ext_heap_format);
-			auto manager_view = reader_().view_rd(ext_heap::handle(end_pos, ctrl.size() - tail_size));
+			auto manager_view = reader_().view_rd(ext_heap::handle(end_pos, arinfo.size() - tail_size));
 			buffer<byte> buf(manager_view->address());
 
 			io::buffer_in mar(buf);
@@ -502,19 +503,20 @@ namespace aio
 			mar.seek(0);
 			while(items--)
 			{
-				handle h;
 				using namespace sio;
-				ird.get<io::reader>() & h.begin & h.end;
+				long_offset_t b, e;
+				ird.get<io::reader>() & b & e;
+				handle h(b, e);
 				free_space[1].insert(h);
 				info.outer_free_size += h.size() ;
 			}
 
-			handle tail_block(end_pos, ctrl.size());
+			handle tail_block(end_pos, arinfo.size());
 			return_to_outer_(tail_block);
 
 			info.outer_free_size += tail_block.size() ;
-			info.map_file_size  = ctrl.size();
-			info.map_space_size = ctrl.size();
+			info.map_file_size  = arinfo.size();
+			info.map_space_size = arinfo.size();
 		}
 
 		void unload_(){
@@ -533,8 +535,8 @@ namespace aio
 			iterator rbeg(free_space[1].end()), rend(free_space[1].begin());
 			for (; rbeg != rend; ++rbeg)
 			{
-				if (rbeg->end == end_pos)
-					end_pos = rbeg->begin;
+				if (rbeg->end() == end_pos)
+					end_pos = rbeg->begin();
 				else
 					break;
 			}
@@ -546,7 +548,7 @@ namespace aio
 			std::set<handle >::iterator use_end = rbeg.base();
 			for (std::set<handle >::iterator itr = free_space[1].begin(); itr != use_end; ++itr)
 			{
-				ar.get<io::writer>() & itr->begin & itr->end;
+				ar.get<io::writer>() & itr->begin() & itr->end();
 			}
 			ar.get<io::writer>() & sig_ext_heap & end_pos;
 
@@ -563,12 +565,12 @@ namespace aio
 
 			for (auto itr = free_space[0].begin(); itr != free_space[0].end(); ++itr)
 			{
-				std::cerr << "(" << itr->begin << ", " << itr->end << ")";
+				std::cerr << "(" << itr->begin() << ", " << itr->end() << ")";
 			}
 			std::cout << "\nouter:\n";
 			for (auto itr = free_space[1].begin(); itr != free_space[1].end(); ++itr)
 			{
-				std::cerr << "(" << itr->begin << ", " << itr->end << ")";
+				std::cerr << "(" << itr->begin() << ", " << itr->end() << ")";
 			}
 
 		}
@@ -629,9 +631,8 @@ namespace aio
 #endif
 		size = round_size(size);
 
-		handle h;
-		h.begin = m_imp->get_handle(reinterpret_cast<byte*>(p));
-		h.end = h.begin + size;
+		auto beg = m_imp->get_handle(reinterpret_cast<byte*>(p));
+		handle h(beg, beg + size);
 		m_imp->unpin(reinterpret_cast<byte*>(p));
 		m_imp->deallocate(h);
 	}

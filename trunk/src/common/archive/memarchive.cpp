@@ -32,9 +32,9 @@ namespace aio{ namespace io{
 	}
 
 	buffer_rd_view buffer_in::view_rd(ext_heap::handle h) const {
-		AIO_PRE_CONDITION((size_t)h.begin <= (size_t)h.end);
-		AIO_PRE_CONDITION((size_t)h.end <= size());
-		return buffer_rd_view(range<const byte*>(m_data.begin() + h.begin, m_data.begin() + h.end));
+		AIO_PRE_CONDITION((size_t)h.begin() <= (size_t)h.end());
+		AIO_PRE_CONDITION((size_t)h.end() <= size());
+		return buffer_rd_view(range<const byte*>(m_data.begin() + h.begin(), m_data.begin() + h.end()));
 	}
 
 	long_size_t buffer_in::offset() const { return m_pos;}
@@ -89,14 +89,14 @@ namespace aio{ namespace io{
 	}
 
 	buffer_wr_view fixed_buffer_io::view_wr(ext_heap::handle h) {
-		AIO_PRE_CONDITION((size_t)h.begin <= (size_t)h.end);
-		AIO_PRE_CONDITION((size_t)h.end <= size());
-		return buffer_wr_view(range<byte*>(m_data.begin() + h.begin, m_data.begin() + h.end));
+		AIO_PRE_CONDITION((size_t)h.begin() <= (size_t)h.end());
+		AIO_PRE_CONDITION((size_t)h.end() <= size());
+		return buffer_wr_view(range<byte*>(m_data.begin() + h.begin(), m_data.begin() + h.end()));
 	}
 	buffer_rd_view fixed_buffer_io::view_rd(ext_heap::handle h) const{
-		AIO_PRE_CONDITION((size_t)h.begin <= (size_t)h.end);
-		AIO_PRE_CONDITION((size_t)h.end <= size());
-		return buffer_rd_view(range<const byte*>(m_data.begin() + h.begin, m_data.begin() + h.end));
+		AIO_PRE_CONDITION((size_t)h.begin() <= (size_t)h.end());
+		AIO_PRE_CONDITION((size_t)h.end() <= size());
+		return buffer_rd_view(range<const byte*>(m_data.begin() + h.begin(), m_data.begin() + h.end()));
 	}
 
 
@@ -158,9 +158,9 @@ namespace aio{ namespace io{
 	bool buffer_out::writable() const { return true;}
 
 	buffer_wr_view buffer_out::view_wr(ext_heap::handle h) {
-		AIO_PRE_CONDITION((size_t)h.begin <= (size_t)h.end);
-		AIO_PRE_CONDITION((size_t)h.end <= size());
-		return buffer_wr_view(range<byte*>(m_data.begin() + h.begin, m_data.begin() + h.end));
+		AIO_PRE_CONDITION((size_t)h.begin() <= (size_t)h.end());
+		AIO_PRE_CONDITION((size_t)h.end() <= size());
+		return buffer_wr_view(range<byte*>(m_data.begin() + h.begin(), m_data.begin() + h.end()));
 	}
 
 
@@ -204,15 +204,15 @@ namespace aio{ namespace io{
 	}
 
 	buffer_rd_view buffer_io::view_rd(ext_heap::handle h) const{
-		AIO_PRE_CONDITION((size_t)h.begin <= (size_t)h.end);
-		AIO_PRE_CONDITION((size_t)h.end <= size());
-		return buffer_rd_view(range<const byte*>(m_data.begin() + h.begin, m_data.begin() + h.end));
+		AIO_PRE_CONDITION((size_t)h.begin() <= (size_t)h.end());
+		AIO_PRE_CONDITION((size_t)h.end() <= size());
+		return buffer_rd_view(range<const byte*>(m_data.begin() + h.begin(), m_data.begin() + h.end()));
 	}
 
 	buffer_wr_view buffer_io::view_wr(ext_heap::handle h) {
-		AIO_PRE_CONDITION((size_t)h.begin <= (size_t)h.end);
-		AIO_PRE_CONDITION((size_t)h.end <= size());
-		return buffer_wr_view(range<byte*>(m_data.begin() + h.begin, m_data.begin() + h.end));
+		AIO_PRE_CONDITION((size_t)h.begin() <= (size_t)h.end());
+		AIO_PRE_CONDITION((size_t)h.end() <= size());
+		return buffer_wr_view(range<byte*>(m_data.begin() + h.begin(), m_data.begin() + h.end()));
 	}
 
 	range<const byte*> buffer_io::write(const range<const byte*>& r)

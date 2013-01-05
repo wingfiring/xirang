@@ -18,7 +18,7 @@ BOOST_AUTO_TEST_CASE(case_file_mapping_file)
     string file_name =  temp_path + fs::private_::gen_temp_name("/fa");
     {
         io::file file0(file_name, io::of_create_or_open);
-		typedef iref<io::read_map, io::write_map, io::ioctrl> ar_type;
+		typedef file_mapping_heap::ar_type ar_type;
 		ar_type file(file0);
 
         handle ch;

@@ -36,6 +36,7 @@ namespace aio { namespace io{
 
 	const long_size_t unknow_size = -1;
 
+	//reader
 	struct AIO_INTERFACE reader
 	{
 		typedef byte* iterator;
@@ -56,11 +57,12 @@ namespace aio { namespace io{
 	template<typename CoClass>
 	reader_co<CoClass> get_interface_map(reader*, CoClass*);
 
+	//writer
 	struct AIO_INTERFACE writer
 	{
 		typedef const byte* const_iterator;
 		typedef const byte* iterator;
-		virtual range<iterator> write(const range<const_iterator>& r) = 0;
+		virtual range<const_iterator> write(const range<const_iterator>& r) = 0;
 		virtual bool writable() const = 0;
 		virtual void sync() = 0;
 
@@ -81,9 +83,9 @@ namespace aio { namespace io{
 	template<typename CoClass>
 	writer_co<CoClass> get_interface_map(writer*, CoClass*);
 
+	//ioctrl
 	struct AIO_INTERFACE ioctrl{
 		virtual long_size_t truncate(long_size_t size) = 0;
-		virtual long_size_t size() const = 0;
 		virtual ~ioctrl(){}
 	};
 	template<typename CoClass> struct ioctrl_co : public ioctrl
@@ -91,17 +93,26 @@ namespace aio { namespace io{
 		virtual long_size_t truncate(long_size_t size){
 			return get_cobj<CoClass>(this).truncate(size);
 		}
+	};
+	template<typename CoClass>
+	ioctrl_co<CoClass> get_interface_map(ioctrl*, CoClass*);
+
+	//ioinfo
+	struct AIO_INTERFACE ioinfo {
+		virtual long_size_t size() const = 0;
+		virtual ~ioinfo(){}
+	};
+	template<typename CoClass> struct ioinfo_co : public ioinfo{
 		virtual long_size_t size() const{
 			return get_cobj<CoClass>(this).size();
 		}
 	};
 	template<typename CoClass>
-	ioctrl_co<CoClass> get_interface_map(ioctrl*, CoClass*);
+	ioinfo_co<CoClass> get_interface_map(ioinfo*, CoClass*);
 
-
+	//sequence
 	struct AIO_INTERFACE sequence
 	{
-
 		virtual long_size_t offset() const = 0;
 		virtual long_size_t size() const = 0;
 		virtual ~sequence();
@@ -118,6 +129,7 @@ namespace aio { namespace io{
 	template<typename CoClass>
 	sequence_co<CoClass> get_interface_map(sequence*, CoClass*);
 
+	//forward
 	struct AIO_INTERFACE forward : sequence
 	{
 		virtual long_size_t offset() const = 0;
@@ -140,6 +152,7 @@ namespace aio { namespace io{
 	template<typename CoClass>
 	forward_co<CoClass> get_interface_map(forward*, CoClass*);
 
+	//random
 	struct AIO_INTERFACE random : forward
 	{
 		virtual long_size_t offset() const = 0;
@@ -162,6 +175,7 @@ namespace aio { namespace io{
 	template<typename CoClass>
 	random_co<CoClass> get_interface_map(random*, CoClass*);
 
+	//options
 	struct AIO_INTERFACE options{
 		virtual any getopt(int id, const any & optdata = any() ) const = 0;
 		virtual any setopt(int id, const any & optdata,  const any & indata= any()) = 0;
@@ -179,6 +193,7 @@ namespace aio { namespace io{
 	template<typename CoClass>
 	options_co<CoClass> get_interface_map(options*, CoClass*);
 
+	//read_view
 	struct AIO_INTERFACE read_view
 	{
 		virtual range<const byte*> address() const =0;
@@ -193,6 +208,13 @@ namespace aio { namespace io{
 	template<typename CoClass>
 	read_view_co<CoClass> get_interface_map(read_view*, CoClass*);
 
+	struct empty_read_view : read_view
+	{
+		virtual range<const byte*> address() const {
+			return range<const byte*>();
+		}
+	};
+	//write_view
 	struct AIO_INTERFACE write_view
 	{
 		virtual range<byte*> address() const = 0;
@@ -207,6 +229,13 @@ namespace aio { namespace io{
 	template<typename CoClass>
 	write_view_co<CoClass> get_interface_map(write_view*, CoClass*);
 
+	struct empty_write_view : write_view
+	{
+		virtual range<byte*> address() const {
+			return range<byte*>();
+		}
+	};
+	//read_map
 	struct AIO_INTERFACE read_map
 	{
 		virtual unique_ptr<read_view> view_rd(ext_heap::handle h) = 0;
@@ -225,6 +254,7 @@ namespace aio { namespace io{
 	template<typename CoClass>
 	read_map_co<CoClass> get_interface_map(read_map*, CoClass*);
 
+	//write_map
 	struct AIO_INTERFACE write_map
 	{
 		virtual unique_ptr<write_view> view_wr(ext_heap::handle h) = 0;
