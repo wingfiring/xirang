@@ -167,7 +167,7 @@ namespace aio
 		template<typename T, typename Interface> struct get_return_type_imp{ typedef Interface& type;};
 		template<typename T, typename Interface> struct get_return_type_imp<T, opt<Interface>>{ typedef Interface* type;};
 		template<typename T, typename Interface> struct get_return_type_imp<T, noif<Interface>>{ typedef Interface* type;};
-		template<typename T> struct get_return_type_imp<T, interface_not_exist>{ typedef T* type;};
+		template<typename T> struct get_return_type_imp<T, interface_not_exist>{ };
 
 		template<typename T, typename... Args>
 			struct get_return_type : public get_return_type_imp<T, typename private_::find_convertible<T, Args...>::type>
@@ -258,14 +258,19 @@ namespace aio
 		}
 
 		template<typename... OArgs> iauto(iauto<OArgs...>&& rhs) 
-			: iref<Args...>(rhs), target_ptr(std::move(rhs.target_ptr))
+			: iref<Args...>(rhs), target_ptr(std::move(rhs.target_ptr), rhs.get_deletor())
 		{
 		}
 		template<typename U, typename = typename std::enable_if<std::is_rvalue_reference<U&&>::value>::type >
 			iauto(U&& rhs)  
-			: iref<Args...>(new U(std::forward<U>(rhs)))
-			, target_ptr((U*)this->get_target())
+			: iref<Args...>(*(new U(std::forward<U>(rhs))))
+			, target_ptr((U*)this->get_target(), unify_delete<U>())
 		{
+		}
+
+		void release(){
+			target_ptr.release();
+			this->target = 0;
 		}
 
 		unique_ptr<void> target_ptr;

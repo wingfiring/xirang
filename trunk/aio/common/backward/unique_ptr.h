@@ -60,6 +60,30 @@ namespace aio
             delete ptr;
 		}
     };
+    template<>
+    struct unify_delete<void>
+    {
+        unify_delete() : deleter(&destroy_){}
+		template<typename Up, typename = typename
+			std::enable_if<std::is_convertible<Up*, void*>::value>::type>
+			unify_delete(const unify_delete<Up>& rhs) 
+			: deleter((deleter_type)rhs.deleter)
+			{ }
+
+        void operator()(void* ptr) const
+        {
+			deleter(ptr);
+        }
+
+		typedef void (*deleter_type)(void*);
+		deleter_type deleter;
+
+		static void destroy_(void* ptr){
+			AIO_PRE_CONDITION(false && "just a stub, must never be called.");
+            delete (char*)ptr;
+		}
+    };
+
 
     /// 20.7.12.2 unique_ptr for single objects.
     template <typename T, typename Dp = unify_delete<T> >

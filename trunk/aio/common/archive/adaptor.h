@@ -1,11 +1,12 @@
 #ifndef AIO_COMMON_ARCHIVE_ADAPTOR_H
 #define AIO_COMMON_ARCHIVE_ADAPTOR_H
 
-#include <aio/common/interface.h>
 #include <aio/common/iarchive.h>
 
 namespace aio{ namespace io{
 
+	/// \param ArchiveData	archive type, intends to be iref type
+	/// \param ArchiveData	archive type, intends to be iref type
 	template<typename ArchiveData, template<typename> class ... PartialInterfaces>
 		struct combinator : public ArchiveData, 
 		public PartialInterfaces<combinator<ArchiveData, PartialInterfaces...> >...
@@ -25,18 +26,18 @@ namespace aio{ namespace io{
 	{
 		typedef ArchiveType	archive_type;
 
-		proxy_archive(): m_underlying(0){}
-		proxy_archive(archive_type& ar): m_underlying(&ar){}
+		proxy_archive(): m_underlying(){}
+		proxy_archive(archive_type ar): m_underlying(ar){}
 		
-		archive_type& underlying() const{ 
+		const archive_type& underlying() const{ 
 			AIO_PRE_CONDITION(valid());
-			return *m_underlying;
+			return m_underlying;
 		}
 		bool valid() const{
-			return m_underlying != 0;
+			return static_cast<bool>(m_underlying);
 		}
 
-		archive_type* m_underlying;
+		archive_type m_underlying;
 	};
 
 	template<typename Derive> struct proxy_reader_p : reader
@@ -54,7 +55,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -75,11 +76,11 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
-	template<typename Derive> struct proxy_ioctl_p : ioctrl
+	template<typename Derive> struct proxy_ioctrl_p : ioctrl
 	{
 		virtual long_size_t truncate(long_size_t size){
 			return underlying_<ioctrl>().truncate(size);
@@ -87,7 +88,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -99,7 +100,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -114,7 +115,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -132,7 +133,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -150,7 +151,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -165,7 +166,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -177,7 +178,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -189,13 +190,13 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
 	template<typename Derive> struct proxy_read_map_p : read_map
 	{
-		virtual unique_ptr<read_view> view_rd(ext_heap::handle h){
+		virtual iauto<read_view> view_rd(ext_heap::handle h){
 			return underlying_<read_map>().view_rd(h);
 		}
 		virtual long_size_t size() const{
@@ -204,13 +205,13 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
 	template<typename Derive> struct proxy_write_map_p : write_map
 	{
-		virtual unique_ptr<write_view> view_wr(ext_heap::handle h) {
+		virtual iauto<write_view> view_wr(ext_heap::handle h) {
 			return underlying_<write_map>().view_wr(h);
 		}
 		virtual long_size_t size() const{
@@ -222,7 +223,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 	
@@ -270,7 +271,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -293,7 +294,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -312,7 +313,7 @@ namespace aio{ namespace io{
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		Derive& derive_() { return static_cast<Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -328,7 +329,7 @@ namespace aio{ namespace io{
 		private:
 		Derive& derive_() { return static_cast<Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -347,7 +348,7 @@ namespace aio{ namespace io{
 			  , first(first_), last(last_)
 		{
 			AIO_PRE_CONDITION(first <= last);
-			AIO_PRE_CONDITION(this->underlying().template get<sequence>().offset() == first);
+			AIO_PRE_CONDITION(this.underlying().template get<sequence>().offset() == first);
 		}
 
 		long_size_t first;
@@ -379,7 +380,7 @@ namespace aio{ namespace io{
 		Derive& derive_() { return static_cast<Derive&>(*this);}
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -409,7 +410,7 @@ namespace aio{ namespace io{
 		private:
 		Derive& derive_() { return static_cast<Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -442,7 +443,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 	
@@ -462,7 +463,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -480,13 +481,13 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
 	template<typename Derive> struct sub_read_map_p : read_map
 	{
-		virtual unique_ptr<read_view> view_rd(ext_heap::handle h){
+		virtual iauto<read_view> view_rd(ext_heap::handle h){
 			h = ext_heap::handle(h.begin() + derive_().first, h.end() + derive_().first);
 
 			if (h.begin() >= derive_().last)
@@ -502,13 +503,13 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 	
 	template<typename Derive> struct sub_write_map_p : write_map
 	{
-		virtual unique_ptr<write_view> view_rd(ext_heap::handle h){
+		virtual iauto<write_view> view_rd(ext_heap::handle h){
 			h = ext_heap::handle(h.begin() + derive_().first, h.end() + derive_().first);
 
 			if (h.begin() >= derive_().last)
@@ -527,7 +528,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -539,7 +540,7 @@ namespace aio{ namespace io{
 		tail_archive(ArchiveType& ar, long_size_t first_)
 			: base(ar) , first(first_)
 		{
-			AIO_PRE_CONDITION(this->underlying().template get<sequence>().offset() == first);
+			AIO_PRE_CONDITION(this.underlying().template get<sequence>().offset() == first);
 		}
 
 		long_size_t first;
@@ -557,7 +558,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -572,7 +573,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -590,7 +591,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 	
@@ -611,7 +612,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
@@ -632,13 +633,13 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 
 	template<typename Derive> struct tail_read_map_p : read_map
 	{
-		virtual unique_ptr<read_view> view_rd(ext_heap::handle h){
+		virtual iauto<read_view> view_rd(ext_heap::handle h){
 			h = ext_heap::handle(h.begin() + derive_().first, h.end() + derive_().first);
 			return underlying_<read_map>().view_rd(h);
 		}
@@ -651,13 +652,13 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 	
 	template<typename Derive> struct tail_write_map_p : write_map
 	{
-		virtual unique_ptr<write_view> view_rd(ext_heap::handle h){
+		virtual iauto<write_view> view_rd(ext_heap::handle h){
 			h = ext_heap::handle(h.begin() + derive_().first, h.end() + derive_().first);
 
 			if (h.begin() >= derive_().last)
@@ -679,7 +680,7 @@ namespace aio{ namespace io{
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
-			return derive_()->underlying().template get<Interface>(); 
+			return derive_().underlying().template get<Interface>(); 
 		}
 	};
 }}

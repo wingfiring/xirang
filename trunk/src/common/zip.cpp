@@ -97,7 +97,7 @@ namespace aio{ namespace zip{
 
 				while (rest_in_size > 0) { 
 					auto rview = rd.view_rd(handle(in_pos, in_pos + std::min(ViewSize, rest_in_size)));
-					auto bin = rview->address();
+					auto bin = rview.get<io::read_view>().address();
 
 					in_pos += bin.size();
 					rest_in_size -= bin.size();
@@ -107,7 +107,7 @@ namespace aio{ namespace zip{
 
 					do {
 						auto wview = wr.view_wr(handle(out_pos, out_pos + std::min(ViewSize, (rest_out_size == 0 ? ViewSize : rest_out_size))));
-						auto bout = wview->address();
+						auto bout = wview.get<io::write_view>().address();
 
 						zstream.avail_out = uInt(bout.size());
 						zstream.next_out = (Bytef*)bout.begin();

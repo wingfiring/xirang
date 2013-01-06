@@ -27,15 +27,31 @@ namespace aio {namespace fs{
 
     namespace private_{
 
+		struct init_srand{
+			init_srand(){
+				srand(time(0));
+			}
+		};
+		long long rand60(){
+			const static init_srand init_seed;
+			long long ret = 0;
+			for (int i = 0; i < 4; ++i){
+				ret <<= 15;
+				ret += rand();
+			}
+			return ret;
+		}
+
         string gen_temp_name(const_range_string template_)
         {
+
             string_builder name (template_);
-            int x = rand();
-            while(x == 0) x = rand();
+            long long x = rand60();
+            while(x == 0) x = rand60();
 
             while (x > 0)
             {
-                int mod = x % 36;
+                long long mod = x % 36;
                 if (mod < 10)
                     name.push_back(mod + '0');
                 else
@@ -60,8 +76,10 @@ namespace aio {namespace fs{
 			try{
 				copy(from, to);
 				unlink(from.c_str());
-			} catch(...){}
-			return er_system_error;
+			} catch(...){
+				return er_system_error;
+			}
+			return er_ok;
 		}
 		switch(err){
 			case EFAULT:
@@ -352,10 +370,7 @@ namespace aio {namespace fs{
         {
             string file_path = private_::gen_temp_name(prefix);
             if (create_dir(file_path) == er_ok)
-            {
                 return file_path;
-            }
-			else srand(time(0) ^ rand());
         }
 
         AIO_THROW(aio::io::create_failed)("failed to create temp file in directory:")(parent_dir);

@@ -44,5 +44,54 @@ namespace aio{ namespace io{
 		return nsize;
 	}
 
+	long_size_t copy_data(reader& rd, write_map& wr, long_size_t max_size /*  = ~0 */){
+		long_size_t nsize = 0;
+		while (rd.readable() && nsize < max_size)
+		{
+			auto view = wr.view_wr(ext_heap::handle(nsize, nsize + 1024 * 1024));
+			auto buf = view.get<write_view>().address();
+			if (buf.empty())
+				break;
+			auto res = rd.read(buf);
+			nsize += buf.size() - res.size();
+		}
+		return nsize;
+	}
+	long_size_t copy_data(read_map& rd, writer& wr, long_size_t max_size  /* = ~0 */){
+		max_size = std::min(max_size, rd.size());
+
+		long_size_t nsize = 0;
+		while (wr.writable() && nsize < max_size)
+		{
+			auto view = rd.view_rd(ext_heap::handle(nsize, nsize + 1024 * 1024));
+			auto buf = view.get<read_view>().address();
+			if (buf.empty())
+				break;
+			auto res = wr.write(buf);
+			nsize += buf.size() - res.size();
+		}
+		return nsize;
+	}
+	long_size_t copy_data(read_map& rd, write_map& wr, long_size_t max_size /*  = ~0*/ ){
+		max_size = std::min(max_size, rd.size());
+
+		long_size_t nsize = 0;
+		while (nsize < max_size)
+		{
+			auto rview = rd.view_rd(ext_heap::handle(nsize, nsize + 1024 * 1024));
+			auto wview = wr.view_wr(ext_heap::handle(nsize, nsize + 1024 * 1024));
+
+			auto rbuf = rview.get<read_view>().address();
+			auto wbuf = wview.get<write_view>().address();
+			if (rbuf.empty() || wbuf.empty()) break;
+
+			auto s = std::min(rbuf.size(), wbuf.size());
+			std::memcpy(wbuf.begin(), rbuf.begin(), s);
+			nsize += s;
+		}
+		return nsize;
+	}
+
+
 }}
 

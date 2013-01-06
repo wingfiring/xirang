@@ -223,9 +223,8 @@ namespace aio
 				view_map_type::left_iterator  pos = view_map.left.find(*itr);
 				return_to_outer_(pos->first);
 
-				std::unordered_map<long_offset_t, io::write_view*>::iterator itr_view = view_regions.find(pos->first.begin());
+				auto itr_view = view_regions.find(pos->first.begin());
 				AIO_PRE_CONDITION(itr_view != view_regions.end());
-				delete itr_view->second;
 				view_regions.erase(itr_view);
 
 				info.total_view_size -= pos->first.size();
@@ -441,10 +440,9 @@ namespace aio
 				ioctrl_().truncate(h.end());
 				info.map_file_size = h.end();
 			}
-			aio::unique_ptr<io::write_view> region = writer_().view_wr(h);
-			view_regions[h.begin()] = region.get();
-			auto addr = region->address();
-			region.release();
+			auto region = writer_().view_wr(h);
+			auto addr = region.get<io::write_view>().address();
+			view_regions[h.begin()] = std::move(region);
 			info.total_view_size += h.size();
 			return addr;
 		}
@@ -490,12 +488,12 @@ namespace aio
 			if (arinfo.size() < tail_size)
 				AIO_THROW(bad_ext_heap_format);
 			auto tail_view = reader_().view_rd(ext_heap::handle(arinfo.size() - tail_size, arinfo.size()));
-			const uint32_t& sig = *reinterpret_cast<const uint32_t*>(tail_view->address().begin());
-			const long_offset_t& end_pos = *reinterpret_cast<const long_offset_t*>(tail_view->address().begin() + sizeof(uint32_t));
+			const uint32_t& sig = *reinterpret_cast<const uint32_t*>(tail_view.get<io::read_view>().address().begin());
+			const long_offset_t& end_pos = *reinterpret_cast<const long_offset_t*>(tail_view.get<io::read_view>().address().begin() + sizeof(uint32_t));
 			if (sig != sig_ext_heap)
 				AIO_THROW(bad_ext_heap_format);
 			auto manager_view = reader_().view_rd(ext_heap::handle(end_pos, arinfo.size() - tail_size));
-			buffer<byte> buf(manager_view->address());
+			buffer<byte> buf(manager_view.get<io::read_view>().address());
 
 			io::buffer_in mar(buf);
 			iref<io::reader> ird(mar);
@@ -522,8 +520,6 @@ namespace aio
 		void unload_(){
 			view_map.clear();
 
-			for (std::unordered_map<long_offset_t, io::write_view*>::iterator itr = view_regions.begin(); itr != view_regions.end(); ++itr)
-				delete itr->second;
 			view_regions.clear();
 
 			long_offset_t end_pos = info.map_file_size;
@@ -556,7 +552,7 @@ namespace aio
 
 			ioctrl_().truncate(numeric_cast<long_size_t>(end_pos) + war.size());
 			auto manager_view = writer_().view_wr(ext_heap::handle(end_pos, end_pos + war.size()));
-			std::copy(war.data().begin(), war.data().end(), manager_view->address().begin());
+			std::copy(war.data().begin(), war.data().end(), manager_view.get<io::write_view>().address().begin());
 		}
 
 #if 0
@@ -590,7 +586,7 @@ namespace aio
         std::unordered_map<long_offset_t, pin_counter> pin_map;
 
 		//platform data
-		std::unordered_map<long_offset_t, io::write_view*> view_regions;
+		std::unordered_map<long_offset_t, iauto<io::write_view>> view_regions;
 #ifndef MSVC_COMPILER_
 		//TODO for mac std::mutex mutex;
 #else

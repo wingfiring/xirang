@@ -11,22 +11,23 @@
 #include <aio/common/assert.h>
 #include <aio/common/memory.h>
 #include <aio/common/any.h>
-#include <aio/common/backward/unique_ptr.h>
 #include <aio/common/interface.h>
 namespace aio { namespace io{
 
+	/// describe how to open an archive
 	enum open_flag
 	{
-		of_open,
-		of_create,
-		of_create_or_open,
+		of_open,	///< just open an existing archive
+		of_create,	///< just create a non-exsting archive
+		of_create_or_open,	///< as name
 
         of_low_mask = 0xffff,
 
         /// depends on implementation capability. intends to be used to create a tempfile
-        of_remove_on_close = 1 << 16        
+        of_remove_on_close = 1 << 16    ///< remove archive on close.     
 	};
 
+	/// option id
     enum io_option
     {
         ao_default = 0,
@@ -40,7 +41,12 @@ namespace aio { namespace io{
 	struct AIO_INTERFACE reader
 	{
 		typedef byte* iterator;
+
+		/// \param buf should be memory continuous
+		/// \return return rest part of given buf
 		virtual range<iterator> read(const range<iterator>& buf) = 0;
+
+		/// \return not at the end of archive
 		virtual bool readable() const = 0;
 
 		virtual ~reader();
@@ -62,8 +68,13 @@ namespace aio { namespace io{
 	{
 		typedef const byte* const_iterator;
 		typedef const byte* iterator;
+		/// \param buf should be memory continuous
+		/// \return return rest part of given buffer
 		virtual range<const_iterator> write(const range<const_iterator>& r) = 0;
+
 		virtual bool writable() const = 0;
+
+		/// sync buffer, implementationi defines.
 		virtual void sync() = 0;
 
 		virtual ~writer();
@@ -85,6 +96,8 @@ namespace aio { namespace io{
 
 	//ioctrl
 	struct AIO_INTERFACE ioctrl{
+		/// set archive length with given size
+		/// \return the given size or unknow_size if failed 
 		virtual long_size_t truncate(long_size_t size) = 0;
 		virtual ~ioctrl(){}
 	};
@@ -99,6 +112,7 @@ namespace aio { namespace io{
 
 	//ioinfo
 	struct AIO_INTERFACE ioinfo {
+		/// \return archive length
 		virtual long_size_t size() const = 0;
 		virtual ~ioinfo(){}
 	};
@@ -113,7 +127,9 @@ namespace aio { namespace io{
 	//sequence
 	struct AIO_INTERFACE sequence
 	{
+		/// \return current seek position.
 		virtual long_size_t offset() const = 0;
+		/// \return archive length, may return unknow_size.
 		virtual long_size_t size() const = 0;
 		virtual ~sequence();
 	};
@@ -132,8 +148,11 @@ namespace aio { namespace io{
 	//forward
 	struct AIO_INTERFACE forward : sequence
 	{
+		/// \return current seek position.
 		virtual long_size_t offset() const = 0;
+		/// \return archive length, may return unknow_size.
 		virtual long_size_t size() const = 0;
+		/// seek to given position from beginning, and return the given offset or unknow_size if failed
 		virtual long_size_t seek(long_size_t off) = 0;
 		virtual ~forward();
 	};
@@ -155,8 +174,12 @@ namespace aio { namespace io{
 	//random
 	struct AIO_INTERFACE random : forward
 	{
+		/// \return current seek position.
 		virtual long_size_t offset() const = 0;
+		/// \return archive length, may return unknow_size.
 		virtual long_size_t size() const = 0;
+		/// seek to given position from beginning, and return the given offset
+		/// the off may pass over the end.
 		virtual long_size_t seek(long_size_t offset) = 0;
 		virtual ~random();
 	};
@@ -177,7 +200,9 @@ namespace aio { namespace io{
 
 	//options
 	struct AIO_INTERFACE options{
+		/// get an option with given id and option data
 		virtual any getopt(int id, const any & optdata = any() ) const = 0;
+		/// set an option with given id, option data and option data content
 		virtual any setopt(int id, const any & optdata,  const any & indata= any()) = 0;
 		virtual ~options();
 	};
@@ -196,6 +221,7 @@ namespace aio { namespace io{
 	//read_view
 	struct AIO_INTERFACE read_view
 	{
+		/// \return memory continuous block, readonly
 		virtual range<const byte*> address() const =0;
 		virtual ~read_view();
 	};
@@ -217,6 +243,7 @@ namespace aio { namespace io{
 	//write_view
 	struct AIO_INTERFACE write_view
 	{
+		/// \return memory continuous block, read write
 		virtual range<byte*> address() const = 0;
 		virtual ~write_view();
 	};
@@ -238,13 +265,16 @@ namespace aio { namespace io{
 	//read_map
 	struct AIO_INTERFACE read_map
 	{
-		virtual unique_ptr<read_view> view_rd(ext_heap::handle h) = 0;
+		/// get a read_view with given handle, the result should large enough or empty.
+		/// \note implementation should deal with alignment issues
+		virtual iauto<read_view> view_rd(ext_heap::handle h) = 0;
+		/// \return the whole size of the map
 		virtual long_size_t size() const = 0;
 		virtual ~read_map();
 	};
 	template<typename CoClass> struct read_map_co : public read_map
 	{
-		virtual unique_ptr<read_view> view_rd(ext_heap::handle h){
+		virtual iauto<read_view> view_rd(ext_heap::handle h){
 			return get_cobj<CoClass>(this).view_rd(h);
 		}
 		virtual long_size_t size() const{
@@ -257,14 +287,22 @@ namespace aio { namespace io{
 	//write_map
 	struct AIO_INTERFACE write_map
 	{
-		virtual unique_ptr<write_view> view_wr(ext_heap::handle h) = 0;
+		/// get a write_view with given handle, the result should large enough or empty.
+		/// if h is out of range, implementation can decide increase automatically or not.
+		/// \note implementation should deal with alignment issues
+		virtual iauto<write_view> view_wr(ext_heap::handle h) = 0;
+
+		/// \return the current lenght of write map
 		virtual long_size_t size() const = 0;
+
+		/// flush buffer, implementation defines
 		virtual void sync() = 0;
+
 		virtual ~write_map();
 	};
 	template<typename CoClass> struct write_map_co : public write_map
 	{
-		virtual unique_ptr<write_view> view_wr(ext_heap::handle h){
+		virtual iauto<write_view> view_wr(ext_heap::handle h){
 			return get_cobj<CoClass>(this).view_wr(h);
 		}
 		virtual long_size_t size() const{
@@ -278,9 +316,21 @@ namespace aio { namespace io{
 	write_map_co<CoClass> get_interface_map(write_map*, CoClass*);
 
 
+	/// read full buf or reach the end of rd
+	/// \return rest part of given buf
 	extern range<reader::iterator> block_read(reader& rd, const range<reader::iterator>& buf);
+
+	/// write all buf or until wr is not writable
+	/// \return rest part of given buf
 	extern range<writer::iterator> block_write(writer& wr, const range<writer::iterator>& buf);
+
+	/// copy max_size bytes from rd to wr, or !rd.readable() || !wr.writable,
+	/// \return the real copies bytes
 	extern long_size_t copy_data(reader& rd, writer& wr, long_size_t max_size  = ~0 );
+
+	extern long_size_t copy_data(reader& rd, write_map& wr, long_size_t max_size  = ~0 );
+	extern long_size_t copy_data(read_map& rd, writer& wr, long_size_t max_size  = ~0 );
+	extern long_size_t copy_data(read_map& rd, write_map& wr, long_size_t max_size  = ~0 );
 
 	AIO_EXCEPTION_TYPE(read_failed);
 	AIO_EXCEPTION_TYPE(write_failed);
