@@ -46,18 +46,6 @@ namespace aio{ namespace io{
 		range<const byte*> m_data;
 
 	};
-	struct buffer_in_2_read_map_co : public read_map
-	{
-		typedef buffer_in CoClass;
-		virtual iauto<read_view> view_rd(ext_heap::handle h){
-			return iauto<read_view>(get_cobj<CoClass>(this).view_rd(h));
-		}
-		virtual long_size_t size() const{
-			return get_cobj<CoClass>(this).size();
-		}
-	};
-	buffer_in_2_read_map_co get_interface_map(read_map*, buffer_in*);
-
 
 	struct buffer_out	//  writer, random, view
 	{
@@ -79,21 +67,6 @@ namespace aio{ namespace io{
 		size_t m_pos;
 		buffer<byte>& m_data;
 	};
-
-	struct buffer_out_2_write_map_co : public write_map
-	{
-		typedef buffer_out CoClass;
-		virtual iauto<write_view> view_wr(ext_heap::handle h){
-			return iauto<write_view>(get_cobj<CoClass>(this).view_wr(h));
-		}
-		virtual long_size_t size() const{
-			return get_cobj<CoClass>(this).size();
-		}
-		virtual void sync(){
-			get_cobj<CoClass>(this).sync();
-		}
-	};
-	buffer_out_2_write_map_co get_interface_map(write_map*, buffer_out*);
 
 	struct buffer_io // reader, writer, random, const_view, view
 	{
@@ -121,8 +94,6 @@ namespace aio{ namespace io{
 		size_t m_pos;
 		buffer<byte>& m_data;
 	};
-	buffer_in_2_read_map_co get_interface_map(read_map*, buffer_io*);
-	buffer_out_2_write_map_co get_interface_map(write_map*, buffer_io*);
 
 	struct fixed_buffer_io	//  writer, random, view
 	{
@@ -149,8 +120,6 @@ namespace aio{ namespace io{
 		size_t m_pos;
 		range<byte*> m_data;
 	};
-	buffer_in_2_read_map_co get_interface_map(read_map*, fixed_buffer_io*);
-	buffer_out_2_write_map_co get_interface_map(write_map*, fixed_buffer_io*);
 
 	typedef buffer_in mem_reader;
 
@@ -160,7 +129,6 @@ namespace aio{ namespace io{
 		private:
 		buffer<byte> m_data;
 	};
-	buffer_out_2_write_map_co get_interface_map(write_map*, mem_writer*);
 
 	struct mem_archive : buffer_io
 	{
@@ -169,8 +137,6 @@ namespace aio{ namespace io{
 		private:
 		buffer<byte> m_data;
 	};
-	buffer_in_2_read_map_co get_interface_map(read_map*, mem_archive*);
-	buffer_out_2_write_map_co get_interface_map(write_map*, mem_archive*);
 
 	struct zero{
 		zero();
