@@ -5,8 +5,11 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include "precompile.h"
 #include <aio/common/archive/mem_archive.h>
 #include <aio/common/archive/adaptor.h>
+#include <aio/common/archive/string.h>
 
 #include "./iarchive.h"
+
+#include <iostream>
 
 
 BOOST_AUTO_TEST_SUITE(archive_adaptor_suite)
@@ -21,7 +24,7 @@ struct test_adaptor{
 			mar.data().resize(1024);
 			iref <Interface...> someface(mar);
 			typedef ArchiveData<iref<Interface...>> archive_data;
-			auto adapter = combine<archive_data, Partial...>(someface);
+			auto adaptor = combine<archive_data, Partial...>(someface);
 		}
 };
 
@@ -35,8 +38,116 @@ BOOST_AUTO_TEST_CASE(dummy_case)
 	test_adaptor<proxy_archive, forward>::apply<proxy_forward_p>(); 
 	test_adaptor<proxy_archive, io::random>::apply<proxy_random_p>(); 
 	test_adaptor<proxy_archive, read_map>::apply<proxy_read_map_p>(); 
+	test_adaptor<proxy_archive, write_map>::apply<proxy_write_map_p>(); 
+
 	test_adaptor<proxy_archive, reader, io::random>::apply<proxy_reader_p, proxy_forward_p>(); 
 
 
 }
+BOOST_AUTO_TEST_CASE(multiplex_archive_case)
+{
+	mem_archive mar;
+	mar.data().resize(1024);
+	typedef iref <reader,writer, io::random, read_map, write_map> interface_type;
+	interface_type iar(mar);
+
+	typedef multiplex_archive<interface_type> archive_data;
+	auto adaptor = combine<archive_data
+		, multiplex_reader_p
+		, multiplex_writer_p
+		, multiplex_random_p
+		, multiplex_read_map_p
+		, multiplex_write_map_p
+		>(iar, 0);
+
+	auto adaptor2 = combine<archive_data
+		, multiplex_reader_p
+		, multiplex_writer_p
+		, multiplex_random_p
+		, multiplex_read_map_p
+		, multiplex_write_map_p
+		>(iar, 0);
+
+	int var = 42;
+	sio::save(adaptor, var);
+	int var2 = sio::load<int>(adaptor2);
+	BOOST_CHECK(var == var2);
+}
+
+BOOST_AUTO_TEST_CASE(sub_archive_case)
+{
+	mem_archive mar;
+	mar.data().resize(1024);
+	{
+		typedef iref <reader,writer, io::random, read_map, write_map > interface_type;
+		interface_type iar(mar);
+		typedef sub_archive<interface_type> archive_data;
+		auto adaptor = combine<archive_data
+			, sub_reader_p
+			, sub_writer_p
+			, sub_random_p
+			, sub_read_map_p
+			, sub_write_map_p
+			>(iar, 0, 10);
+
+	}
+
+	typedef iref <reader,writer, io::random > interface_type;
+	interface_type iar(mar);
+
+	typedef multiplex_archive<interface_type> mul_archive_data;
+	auto mul_adaptor1 = combine<mul_archive_data
+		, multiplex_reader_p
+		, multiplex_writer_p
+		, multiplex_random_p
+		>(iar, 0);
+
+	auto mul_adaptor2 = mul_adaptor1;
+	interface_type iar1(mul_adaptor1);
+	interface_type iar2(mul_adaptor2);
+
+	typedef sub_archive<interface_type> archive_data;
+	auto adaptor = combine<archive_data
+		, sub_reader_p
+		, sub_writer_p
+		, sub_random_p
+		>(iar1, 0, 10);
+
+	iar2.get<io::random>().seek(4);
+	auto adaptor2 = combine<archive_data
+		, sub_reader_p
+		, sub_writer_p
+		, sub_random_p
+		>(iar2, 4, 10);
+
+	int var = 42;
+	sio::save(adaptor, var);
+	sio::save(adaptor, var);
+	int var2 = sio::load<int>(adaptor2);
+	BOOST_CHECK(var == var2);
+}
+
+BOOST_AUTO_TEST_CASE(tail_archive_case)
+{
+	mem_archive mar;
+	mar.data().resize(1024);
+	typedef iref <reader,writer, io::random, read_map, write_map> interface_type;
+	interface_type iar(mar);
+	mar.seek(1000);
+
+	typedef tail_archive<interface_type> archive_data;
+	auto adaptor = combine<archive_data
+		, tail_reader_p
+		, tail_writer_p
+		, tail_random_p
+		, tail_read_map_p
+		, tail_write_map_p
+		>(iar, 1000);
+
+	std::cout << "size:" << static_cast<io::random&>(adaptor).size() << std::endl;
+
+	BOOST_CHECK(static_cast<io::random&>(adaptor).size() == 24);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
+

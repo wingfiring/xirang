@@ -13,13 +13,13 @@ namespace aio{ namespace io{
 	{
 		typedef typename ArchiveData::archive_type archive_type;
 		template<typename ... Args>
-		combinator(Args... args) : ArchiveData(std::forward<Args>(args)...){}
+		combinator(Args&& ... args) : ArchiveData(std::forward<Args>(args)...){}
 		combinator(){}
 	};
 
-	template<typename ArchiveData, template<typename>class... PartialInterfaces, typename T>
-		static combinator<ArchiveData, PartialInterfaces...> combine(T& ar){
-			return combinator<ArchiveData, PartialInterfaces...>(ar);
+	template<typename ArchiveData, template<typename>class... PartialInterfaces, typename... T>
+		static combinator<ArchiveData, PartialInterfaces...> combine(T&& ... ar){
+			return combinator<ArchiveData, PartialInterfaces...>(std::forward<T>(ar)...);
 		}
 
 	template<typename ArchiveType> struct proxy_archive
@@ -246,11 +246,11 @@ namespace aio{ namespace io{
         Archive& m_ar;
 
         multiplex_offset_tracker(Archive& ar) : m_ar(ar) {
-            m_ar.underlying().seek(m_ar.current);
+            m_ar.underlying().template get<io::random>().seek(m_ar.current);
         }
         ~multiplex_offset_tracker()
         {
-            m_ar.current = m_ar.underlying().offset();
+            m_ar.current = m_ar.underlying().template get<io::random>().offset();
         }
     };
 
@@ -269,7 +269,8 @@ namespace aio{ namespace io{
 		}
 
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
+		Derive& derive_() { return static_cast<Derive&>(*this);}
+		const Derive& derive_() const { return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
 			return derive_().underlying().template get<Interface>(); 
 		}
@@ -292,7 +293,8 @@ namespace aio{ namespace io{
 			underlying_<writer>().sync();
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
+		Derive& derive_() { return static_cast<Derive&>(*this);}
+		const Derive& derive_() const { return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
 			return derive_().underlying().template get<Interface>(); 
 		}
@@ -328,6 +330,7 @@ namespace aio{ namespace io{
 		}
 		private:
 		Derive& derive_() { return static_cast<Derive&>(*this);}
+		const Derive& derive_() const { return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
 			return derive_().underlying().template get<Interface>(); 
 		}
@@ -348,7 +351,7 @@ namespace aio{ namespace io{
 			  , first(first_), last(last_)
 		{
 			AIO_PRE_CONDITION(first <= last);
-			AIO_PRE_CONDITION(this.underlying().template get<sequence>().offset() == first);
+			AIO_PRE_CONDITION(this->underlying().template get<sequence>().offset() == first);
 		}
 
 		long_size_t first;
@@ -362,7 +365,7 @@ namespace aio{ namespace io{
 		virtual range<iterator> read(const range<iterator>& buf) {
 			auto current = underlying_<sequence>().offset();
 			if (current >= derive_().first && current < derive_().last){
-				auto min_size = std::min(buf.size(), derive_().last - current);
+				auto min_size = std::min<long_size_t>(buf.size(), derive_().last - current);
 				range<iterator> sub_buf(buf.begin(), buf.begin() + min_size);
 				return underlying_<reader>().read(sub_buf);
 			}
@@ -392,7 +395,7 @@ namespace aio{ namespace io{
 		virtual range<const_iterator> write(const range<const_iterator>& buf){
 			auto current = underlying_<sequence>().offset();
 			if (current >= derive_().first && current < derive_().last){
-				auto min_size = std::min(buf.size(), derive_().last - current);
+				auto min_size = std::min<long_size_t>(buf.size(), derive_().last - current);
 				range<iterator> sub_buf(buf.begin(), buf.begin() + min_size);
 				return underlying_<writer>().write(sub_buf);
 			}
@@ -409,6 +412,7 @@ namespace aio{ namespace io{
 		}
 		private:
 		Derive& derive_() { return static_cast<Derive&>(*this);}
+		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
 			return derive_().underlying().template get<Interface>(); 
 		}
@@ -490,9 +494,9 @@ namespace aio{ namespace io{
 		virtual iauto<read_view> view_rd(ext_heap::handle h){
 			h = ext_heap::handle(h.begin() + derive_().first, h.end() + derive_().first);
 
-			if (h.begin() >= derive_().last)
+			if (h.begin() > 0 && ((long_size_t)h.begin() >= derive_().last))
 				h = ext_heap::handle();
-			else if(h.end() >= derive_().last)
+			else if(h.end() >0 && ((long_size_t)h.end() >= derive_().last))
 				h = ext_heap::handle(h.begin(), derive_().last);
 
 			return underlying_<read_map>().view_rd(h);
@@ -502,6 +506,7 @@ namespace aio{ namespace io{
 		}
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
+		Derive& derive_() { return static_cast<Derive&>(*this);}
 		template<typename Interface> Interface& underlying_() const{ 
 			return derive_().underlying().template get<Interface>(); 
 		}
@@ -509,12 +514,12 @@ namespace aio{ namespace io{
 	
 	template<typename Derive> struct sub_write_map_p : write_map
 	{
-		virtual iauto<write_view> view_rd(ext_heap::handle h){
+		virtual iauto<write_view> view_wr(ext_heap::handle h){
 			h = ext_heap::handle(h.begin() + derive_().first, h.end() + derive_().first);
 
-			if (h.begin() >= derive_().last)
+			if (h.begin() > 0 && ((long_size_t)h.begin() >= derive_().last))
 				h = ext_heap::handle();
-			else if(h.end() >= derive_().last)
+			else if(h.end() >0 && ((long_size_t)h.end() >= derive_().last))
 				h = ext_heap::handle(h.begin(), derive_().last);
 
 			return underlying_<write_map>().view_wr(h);
@@ -540,7 +545,7 @@ namespace aio{ namespace io{
 		tail_archive(ArchiveType& ar, long_size_t first_)
 			: base(ar) , first(first_)
 		{
-			AIO_PRE_CONDITION(this.underlying().template get<sequence>().offset() == first);
+			AIO_PRE_CONDITION(this->underlying().template get<sequence>().offset() == first);
 		}
 
 		long_size_t first;
@@ -658,13 +663,8 @@ namespace aio{ namespace io{
 	
 	template<typename Derive> struct tail_write_map_p : write_map
 	{
-		virtual iauto<write_view> view_rd(ext_heap::handle h){
+		virtual iauto<write_view> view_wr(ext_heap::handle h){
 			h = ext_heap::handle(h.begin() + derive_().first, h.end() + derive_().first);
-
-			if (h.begin() >= derive_().last)
-				h = ext_heap::handle();
-			else if(h.end() >= derive_().last)
-				h = ext_heap::handle(h.begin(), derive_().last);
 
 			return underlying_<write_map>().view_wr(h);
 		}

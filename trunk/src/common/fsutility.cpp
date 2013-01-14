@@ -18,6 +18,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/tokenizer.hpp>
 #include <aio/common/char_separator.h>
+#include <random>
 
 namespace aio {namespace fs{
     namespace{
@@ -26,32 +27,29 @@ namespace aio {namespace fs{
     }
 
     namespace private_{
+		struct random_generator{
+			random_generator() : m_engin(time(0)){ }
+			unsigned long long yield(){
+				return m_distribution(m_engin);
+			}
 
-		struct init_srand{
-			init_srand(){
-				srand(time(0));
-			}
+			private:
+			std::mt19937_64 m_engin;
+			std::uniform_int_distribution<unsigned long> m_distribution;
+
 		};
-		long long rand60(){
-			const static init_srand init_seed;
-			long long ret = 0;
-			for (int i = 0; i < 4; ++i){
-				ret <<= 15;
-				ret += rand();
-			}
-			return ret;
-		}
 
         string gen_temp_name(const_range_string template_)
         {
+			static random_generator generator;
 
             string_builder name (template_);
-            long long x = rand60();
-            while(x == 0) x = rand60();
+            unsigned long long x = generator.yield();
+            while(x == 0) x = generator.yield();
 
             while (x > 0)
             {
-                long long mod = x % 36;
+                unsigned long long mod = x % 36;
                 if (mod < 10)
                     name.push_back(mod + '0');
                 else
