@@ -211,7 +211,8 @@ namespace aio{ namespace io{
 
 	buffer_wr_view buffer_io::view_wr(ext_heap::handle h) {
 		AIO_PRE_CONDITION((size_t)h.begin() <= (size_t)h.end());
-		AIO_PRE_CONDITION((size_t)h.end() <= size());
+		if ((size_t)h.end() > size())
+			m_data.resize((size_t)h.end());
 		return buffer_wr_view(range<byte*>(m_data.begin() + h.begin(), m_data.begin() + h.end()));
 	}
 

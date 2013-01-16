@@ -5,12 +5,8 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include "precompile.h"
 #include <aio/common/archive/mem_archive.h>
 #include <aio/common/archive/adaptor.h>
-#include <aio/common/archive/string.h>
 
 #include "./iarchive.h"
-
-#include <iostream>
-
 
 BOOST_AUTO_TEST_SUITE(archive_adaptor_suite)
 using namespace aio;
@@ -143,8 +139,6 @@ BOOST_AUTO_TEST_CASE(tail_archive_case)
 		, tail_read_map_p
 		, tail_write_map_p
 		>(iar, 1000);
-
-	std::cout << "size:" << static_cast<io::random&>(adaptor).size() << std::endl;
 
 	BOOST_CHECK(static_cast<io::random&>(adaptor).size() == 24);
 }

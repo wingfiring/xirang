@@ -17,6 +17,7 @@ ADD_TEST(common_test common_test)
 TARGET_LINK_LIBRARIES(
 	common_test
 	aio_common
+	${ZLIB}
 	${BOOST_FILESYSTEM}
 	optimized ${BOOST_TEST}
 	debug ${BOOST_TEST})

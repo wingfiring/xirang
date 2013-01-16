@@ -35,7 +35,7 @@ namespace aio {namespace fs{
 
 			private:
 			std::mt19937_64 m_engin;
-			std::uniform_int_distribution<unsigned long> m_distribution;
+			std::uniform_int_distribution<unsigned long long> m_distribution;
 
 		};
 
