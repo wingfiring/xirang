@@ -19,13 +19,13 @@ BOOST_AUTO_TEST_CASE(deflate_case)
 	iref<reader, writer, read_map> imar(mar);
 	writer& wr = imar.get<writer>();
 
-	for (int i = 0; i < 1000000; ++i){
+	for (int i = 0; i < 100; ++i){
 		unsigned int var = distribution(engin);
 		aio::sio::save(wr, var);
 	}
 
 	mem_archive zipped;
-	iref<writer> zipar(zipped);
+	iref<writer, reader> zipar(zipped);
 	mar.seek(0);
 	auto res = zip::deflate(imar.get<reader>(), zipar.get<writer>());
 	BOOST_CHECK(res.err == zip::ze_ok);
@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(deflate_case)
 
 
 	mem_archive zipped2;
-	iref<write_map> zipar2(zipped2);
+	iref<write_map, read_map> zipar2(zipped2);
 	auto res2 = zip::deflate(imar.get<read_map>(), zipar2.get<write_map>());
 	BOOST_CHECK(res2.err == zip::ze_ok);
 	BOOST_CHECK(res2.in_size == mar.size());
@@ -43,6 +43,28 @@ BOOST_AUTO_TEST_CASE(deflate_case)
 
 	BOOST_CHECK(zipped.data() == zipped2.data());
 
+
+	zipped.seek(0);
+	mem_archive outar1;
+	iref<writer> iout1(outar1);
+	auto res3 = zip::inflate(zipar.get<reader>(), iout1.get<writer>());
+	BOOST_CHECK(res3.err == zip::ze_ok);
+	BOOST_CHECK(res3.in_size == zipped.size());
+	BOOST_CHECK(res3.out_size == mar.size());
+	BOOST_CHECK(res3.out_size == outar1.size());
+	BOOST_CHECK(mar.data() == outar1.data());
+
+
+	zipped2.seek(0);
+	mem_archive outar2;
+	iref<write_map> iout2(outar2);
+	auto res4 = zip::inflate(zipar2.get<read_map>(), iout2.get<write_map>());
+	BOOST_CHECK(res4.err == zip::ze_ok);
+	BOOST_CHECK(res4.in_size == zipped2.size());
+	BOOST_CHECK(res4.out_size == mar.size());
+	outar2.truncate(res4.out_size);
+	BOOST_CHECK(res4.out_size == outar2.size());
+	BOOST_CHECK(mar.data() == outar2.data());
 
 }
 BOOST_AUTO_TEST_SUITE_END()

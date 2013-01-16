@@ -119,8 +119,6 @@ namespace aio{ namespace zip{
 
 			zip_result do_inflate(io::read_map& rd, io::write_map& wr, dict_type dict)
 			{
-				long_size_t in_bytes  = 0;
-				long_size_t out_bytes = 0;
 				typedef ext_heap::handle handle;
 
 				long_size_t in_pos = 0;
@@ -128,51 +126,53 @@ namespace aio{ namespace zip{
 				long_size_t rest_in_size = rd.size();
 				long_size_t rest_out_size = wr.size();
 
-				while (rest_in_size > 0) { 
-					auto rview = rd.view_rd(handle(in_pos, in_pos + std::min(ViewSize, rest_in_size)));
-					auto bin = rview.get<io::read_view>().address();
+				iauto<io::read_view> rview;
+				iauto<io::write_view> wview;
+				range<const byte*> bin;
+				range<byte*> bout;
+				for(;;){
 
-					in_pos += bin.size();
-					rest_in_size -= bin.size();
+					if (rest_in_size > 0 && zstream.avail_in == 0){
+						rview = rd.view_rd(handle(in_pos, in_pos + 
+									std::min(ViewSize, (rest_in_size == 0 ? ViewSize : rest_in_size))));
+						bin = rview.get<io::read_view>().address();
+						zstream.avail_in = uInt(bin.size());
+						zstream.next_in = (Bytef*)bin.begin();
+						in_pos += bin.size();
+						rest_in_size -= bin.size();
+					}
 
-					zstream.avail_in = bin.size();
-					zstream.next_in = (Bytef*)bin.begin();
-
-					do {
-						auto wview = wr.view_wr(handle(out_pos, out_pos + std::min(ViewSize, (rest_out_size == 0 ? ViewSize : rest_out_size))));
-						auto bout = wview.get<io::write_view>().address();
-
+					if (zstream.avail_out == 0){
+						out_pos += bout.size();
+						wview = wr.view_wr(handle(out_pos, out_pos + 
+									std::min(ViewSize, (rest_out_size == 0 ? ViewSize : rest_out_size))));
+						bout = wview.get<io::write_view>().address();
 						zstream.avail_out = uInt(bout.size());
 						zstream.next_out = (Bytef*)bout.begin();
+					}
 
-						auto res = ::inflate(&zstream, Z_NO_FLUSH);
-						in_bytes += bin.size() - zstream.avail_in;
-						out_bytes += bout.size()- zstream.avail_out;
-
-						out_pos += bout.size();
-						if (rest_out_size > 0) {
-							AIO_PRE_CONDITION(rest_out_size >= bout.size());
-							rest_out_size -= bout.size();
-						}
-						switch(res)
-						{
-							case Z_NEED_DICT:
-								{
-									if (dict.empty()) return zip_result{ze_need_dict, in_bytes, out_bytes};
-									auto dic_err = inflateSetDictionary(&zstream, (Bytef*)dict.begin(), dict.size());
-									if (dic_err != Z_OK) return zip_result{ze_data_error, in_bytes, out_bytes};
-								}
-								break;
-							case Z_DATA_ERROR:
-								return zip_result{ze_data_error, in_bytes, out_bytes};
-							case Z_MEM_ERROR:
-								return zip_result{ze_mem_error, in_bytes, out_bytes};
-							case Z_STREAM_END:
-								return zip_result{ze_ok, in_bytes, out_bytes};
-						}
-					} while(zstream.avail_out == 0);
+					auto res = ::inflate(&zstream, Z_NO_FLUSH);
+					auto cur_out_pos = out_pos + (bout.size() - zstream.avail_out);
+					switch(res)
+					{
+						case Z_NEED_DICT:
+							{
+								if (dict.empty()) return zip_result{ze_need_dict, in_pos, cur_out_pos};
+								auto dic_err = inflateSetDictionary(&zstream, (Bytef*)dict.begin(), dict.size());
+								if (dic_err != Z_OK) return zip_result{ze_data_error, in_pos, cur_out_pos};
+							}
+						case Z_OK:
+							break;
+						case Z_DATA_ERROR:
+							return zip_result{ze_data_error, in_pos, cur_out_pos};
+						case Z_MEM_ERROR:
+							return zip_result{ze_mem_error, in_pos, cur_out_pos};
+						case Z_STREAM_END:
+							return zip_result{ze_ok, in_pos, cur_out_pos};
+						default:
+							return zip_result{ze_internal_error, in_pos, cur_out_pos};
+					}
 				}
-				return zip_result{ze_unfinished_data, in_bytes, out_bytes};
 			}
 			~zip_inflater()
 			{
@@ -312,8 +312,7 @@ namespace aio{ namespace zip{
 
 			for(;;){
 
-				if (rest_in_size > 0)
-				{
+				if (rest_in_size > 0 && zstream.avail_in == 0){
 					rview = rd.view_rd(handle(in_pos, in_pos + 
 								std::min(ViewSize, (rest_in_size == 0 ? ViewSize : rest_in_size))));
 					bin = rview.get<io::read_view>().address();
@@ -322,17 +321,26 @@ namespace aio{ namespace zip{
 					in_pos += bin.size();
 					rest_in_size -= bin.size();
 				}
-				else	for(;;)//finish
-				{
-					if (zstream.avail_out == 0){
-						out_pos += bout.size();
-						wview = wr.view_wr(handle(out_pos, out_pos + 
-									std::min(ViewSize, (rest_out_size == 0 ? ViewSize : rest_out_size))));
-						bout = wview.get<io::write_view>().address();
-						zstream.avail_out = uInt(bout.size());
-						zstream.next_out = (Bytef*)bout.begin();
-					}
 
+				if (zstream.avail_out == 0){
+					out_pos += bout.size();
+					wview = wr.view_wr(handle(out_pos, out_pos + 
+								std::min(ViewSize, (rest_out_size == 0 ? ViewSize : rest_out_size))));
+					bout = wview.get<io::write_view>().address();
+					zstream.avail_out = uInt(bout.size());
+					zstream.next_out = (Bytef*)bout.begin();
+				}
+
+				if (zstream.avail_in != 0){
+					auto res = deflate(&zstream, Z_NO_FLUSH);
+
+					if(res == Z_OK || res == Z_BUF_ERROR) 
+						continue;
+					return zip_result{ze_internal_error, in_pos, out_pos + (bout.size() - zstream.avail_out)};
+				}
+
+				if(rest_in_size == 0)//finish
+				{
 					int ret = deflate(&zstream, Z_FINISH);
 
 					if (ret == Z_STREAM_END)
@@ -341,26 +349,6 @@ namespace aio{ namespace zip{
                         continue;
                     else
 						return zip_result{ze_internal_error, in_pos, out_pos + (bout.size() - zstream.avail_out)};
-				}
-
-				for (;;){
-					if (zstream.avail_in == 0)
-						break;
-
-					if (zstream.avail_out == 0){
-						out_pos += bout.size();
-						wview = wr.view_wr(handle(out_pos, out_pos + 
-									std::min(ViewSize, (rest_out_size == 0 ? ViewSize : rest_out_size))));
-						bout = wview.get<io::write_view>().address();
-						zstream.avail_out = uInt(bout.size());
-						zstream.next_out = (Bytef*)bout.begin();
-					}
-
-					auto res = deflate(&zstream, Z_NO_FLUSH);
-
-					if(res == Z_OK || res == Z_BUF_ERROR) 
-						continue;
-					return zip_result{ze_internal_error, in_pos, out_pos + (bout.size() - zstream.avail_out)};
 				}
 			}
         }
