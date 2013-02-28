@@ -29,27 +29,24 @@ namespace aio {namespace fs{
     namespace private_{
 		struct random_generator{
 			random_generator() : m_engin(time(0)){ }
-			unsigned long long yield(){
+			unsigned long yield(){
 				return m_distribution(m_engin);
 			}
 
 			private:
-			std::mt19937_64 m_engin;
-			std::uniform_int_distribution<unsigned long long> m_distribution;
+			std::mt19937 m_engin;
+			std::uniform_int_distribution<unsigned long> m_distribution;
 
 		};
-
-        string gen_temp_name(const_range_string template_)
+        static void gen_temp_name_(string_builder& name)
         {
 			static random_generator generator;
-
-            string_builder name (template_);
-            unsigned long long x = generator.yield();
+            unsigned long x = generator.yield();
             while(x == 0) x = generator.yield();
 
             while (x > 0)
             {
-                unsigned long long mod = x % 36;
+                unsigned long mod = x % 36;
                 if (mod < 10)
                     name.push_back(mod + '0');
                 else
@@ -57,8 +54,20 @@ namespace aio {namespace fs{
 
                 x /= 36;
             }
-            return string(name);
+		}
+
+        string gen_temp_name(const_range_string template_)
+        {
+			string_builder name(template_);
+			gen_temp_name_(name);
+			return string(name);
         }
+        string gen_temp_name_post(const_range_string postfix_){
+			string_builder name;
+			gen_temp_name_(name);
+			name += postfix_;
+			return string(name);
+		}
     }
 #ifdef GNUC_COMPILER_
     fs_error move(const string& from, const string& to)

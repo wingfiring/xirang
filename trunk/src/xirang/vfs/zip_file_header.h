@@ -36,7 +36,6 @@ namespace xirang{ namespace fs{
 			persist(true)
 		{
 		}
-
 	};
 #if 0
 	struct file_header;

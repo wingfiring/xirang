@@ -16,6 +16,7 @@ namespace aio{ namespace fs{
         /// It intends to be used to implement temp file/dir only.
         /// \post return start with template_
         string gen_temp_name(const_range_string template_);
+        string gen_temp_name_post(const_range_string postfix_);
     }
 
 //********************** begin core fs functions

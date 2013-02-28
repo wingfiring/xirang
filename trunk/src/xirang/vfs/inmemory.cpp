@@ -289,6 +289,23 @@ namespace xirang{ namespace fs{
 	{
 		return m_imp->setopt(id, optdata, indata);
 	}
+	void** InMemory::do_create(unsigned long long mask,
+			void** base, aio::unique_ptr<void>& owner, const string& path, int flag){
+		using namespace aio::io;
+
+		void** ret = 0;
+		if (mask & io::get_mask<writer, write_map>::value ){ //write open
+			aio::unique_ptr<buffer_io> ar(new buffer_io(aio::get_cobj<InMemory>(this).create(path, flag)));
+			ret = copy_interface<reader, writer, random, ioctrl, read_map, write_map>::apply(mask, base, *ar, (void*)ar.get()); 
+			aio::unique_ptr<void>(std::move(ar)).swap(owner);
+		}
+		else{ //read open
+			aio::unique_ptr<buffer_in> ar(new buffer_in(aio::get_cobj<InMemory>(this).readOpen(path)));
+			ret = copy_interface<reader, random, ioctrl, read_map>::apply(mask, base, *ar, (void*)ar.get()); 
+			aio::unique_ptr<void>(std::move(ar)).swap(owner);
+		}
+		return ret;
+	}
 
 }}
 

@@ -8,6 +8,7 @@
 #include <boost/tokenizer.hpp>
 #include <algorithm>
 #include <map>
+#include <unordered_map>
 
 namespace xirang{ namespace fs{ 
 	AIO_EXCEPTION_TYPE(empty_local_file_name);
