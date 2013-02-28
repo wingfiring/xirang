@@ -23,8 +23,8 @@ namespace xirang{ namespace fs{
 		virtual fs_error createDir(const  string& path);
 
 		// file operations
-		aio::io::file create(const string& path, int flag);
-		aio::io::file_reader read_open(const string& path);
+		aio::io::file open_create(const string& path, int flag);
+		aio::io::file_reader open(const string& path);
 
 		// \pre !absolute(to)
 		// if from and to in same fs, it may have a more effective implementation
@@ -55,22 +55,7 @@ namespace xirang{ namespace fs{
 		virtual VfsState state(const string& path) const;
 
 		virtual void** do_create(unsigned long long mask,
-				void** base, aio::unique_ptr<void>& owner, const string& path, int flag){
-			using namespace aio::io;
-
-			void** ret = 0;
-			if (mask & io::get_mask<aio::io::writer, aio::io::write_view>::value ){ //write open
-				aio::unique_ptr<aio::io::file> ar(new aio::io::file(aio::get_cobj<LocalFs>(this).create(path, flag)));
-				ret = copy_interface<reader, writer, random, ioctrl, read_map, write_map >::apply(mask, base, *ar, (void*)ar.get()); 
-				aio::unique_ptr<void>(std::move(ar)).swap(owner);
-			}
-			else{ //read open
-				aio::unique_ptr<aio::io::file_reader> ar(new aio::io::file_reader(aio::get_cobj<LocalFs>(this).read_open(path)));
-				ret = copy_interface<reader, random, ioctrl, read_map>::apply(mask, base, *ar, (void*)ar.get()); 
-				aio::unique_ptr<void>(std::move(ar)).swap(owner);
-			}
-			return ret;
-		}
+				void** base, aio::unique_ptr<void>& owner, const string& path, int flag);
 	private:
 		// if r == null, means unmount
 		virtual void setRoot(RootFs* r);

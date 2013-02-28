@@ -6,8 +6,8 @@
 #include <aio/common/string_algo/string.h>
 
 #include <boost/tokenizer.hpp>
-#include <unordered_map>
 #include <algorithm>
+#include <map>
 
 namespace xirang{ namespace fs{ 
 	AIO_EXCEPTION_TYPE(empty_local_file_name);
@@ -15,6 +15,26 @@ namespace xirang{ namespace fs{
 }}
 
 namespace xirang{ namespace fs{ namespace private_{
+	
+	template<typename T> struct raw_fs
+	{
+		std::map<string, T> root;
+
+		bool exists(const string& p) const{
+			return root.find(p) != root.end();
+		}
+	
+		typename std::map<string, T>::iterator begin_child(const string& p){
+			return root.upper_bound(p);
+		}
+		typename std::map<string, T>::iterator end_child(const string& p){
+			static const char slash_add1[] = {'/' + 1, '\0'};
+			string next_name = p + slash_add1;
+			return root.lower_bound(next_name);
+		}
+
+		void add(const string& p, T& data);
+	};
 
 	struct hash_string{
 		size_t operator()(const string& str) const{
@@ -28,7 +48,7 @@ namespace xirang{ namespace fs{ namespace private_{
 
 		string name;
 		file_state type;	//dir or normal
-		std::unordered_map<string, node_type*, hash_string> children;
+		std::map<string, node_type*> children;
 		node_type* parent;
 
 		T data;
@@ -197,7 +217,8 @@ namespace xirang{ namespace fs{ namespace private_{
 	{
 	public:
 		typedef file_node<T> node_type;
-		typedef typename std::unordered_map<string, node_type*, hash_string>::iterator iterator;
+		typedef typename std::map<string, node_type*>::iterator iterator;
+		//typedef typename std::map<string, T>::iterator iterator;
 		FileNodeIterator()
 			: m_itr() 
 		{

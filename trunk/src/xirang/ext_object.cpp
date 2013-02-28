@@ -71,7 +71,7 @@ namespace xirang
 			m_type.methods().destruct(CommonObject(m_type, m_data));
 			m_ext_heap->unpin(m_data);
 			m_ext_heap->deallocate(m_handle);
-			m_handle.clear();
+			m_handle = handle();
 		}
 	}
 

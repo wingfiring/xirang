@@ -45,6 +45,7 @@ namespace aio
 	}
 	long_size_t ext_heap::handle::size() const { return m_end - m_begin;}
 	bool ext_heap::handle::empty() const { return m_begin == m_end; }
+	ext_heap::handle::operator bool() const { return !empty(); }
 	long_offset_t ext_heap::handle::begin() const { return m_begin;}
 	long_offset_t ext_heap::handle::end() const { return m_end;}
 

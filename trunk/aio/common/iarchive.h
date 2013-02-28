@@ -13,6 +13,26 @@
 #include <aio/common/any.h>
 #include <aio/common/interface.h>
 namespace aio { namespace io{
+	namespace private_{
+		template<typename ...T> struct total_size_of;
+		template<> struct total_size_of<> {
+			static const size_t value = 0;
+		};
+
+		template<typename T, typename ... U>
+			struct total_size_of<T, U...> {
+				static const size_t value = sizeof(T) + total_size_of<U...>::value;
+			};
+	}
+
+	template<size_t N> struct skip_n { skip_n(){}};
+	template<typename ... T> struct skip : skip_n<private_::total_size_of<T...>::value> { };
+
+	template<typename Interface, typename Ar> Ar& get_interface(Ar& ar){ return ar;}
+	template<typename Interface, typename ...Io> Interface& get_interface(const iref<Io...>& ar)
+	{ return ar.template get<Interface>();}
+	template<typename Interface, typename ...Io> Interface& get_interface(const iauto<Io...>& ar)
+	{ return ar.template get<Interface>();}
 
 	/// describe how to open an archive
 	enum open_flag
@@ -319,10 +339,22 @@ namespace aio { namespace io{
 	/// read full buf or reach the end of rd
 	/// \return rest part of given buf
 	extern range<reader::iterator> block_read(reader& rd, const range<reader::iterator>& buf);
+	template<typename Ar>
+	typename std::enable_if<!std::is_convertible<Ar&, reader&>::value, range<reader::iterator>>::type
+	block_read(Ar& rd, const range<reader::iterator>& buf){
+		iref<reader> iar(rd);
+		return block_read(get_interface<reader>(iar), buf);
+	}
 
 	/// write all buf or until wr is not writable
 	/// \return rest part of given buf
 	extern range<writer::iterator> block_write(writer& wr, const range<writer::iterator>& buf);
+	template<typename Ar>
+	typename std::enable_if<!std::is_convertible<Ar&, writer&>::value, range<writer::iterator>>::type
+	block_write(Ar& wr, const range<writer::iterator>& buf){
+		iref<writer> iar(wr);
+		return block_write(get_interface<writer>(iar), buf);
+	}
 
 	/// copy max_size bytes from rd to wr, or !rd.readable() || !wr.writable,
 	/// \return the real copies bytes
@@ -332,6 +364,13 @@ namespace aio { namespace io{
 	extern long_size_t copy_data(read_map& rd, writer& wr, long_size_t max_size  = ~0 );
 	extern long_size_t copy_data(read_map& rd, write_map& wr, long_size_t max_size  = ~0 );
 
+	template<typename Input, typename Output, typename InAr, typename OutAr>
+	long_size_t copy_data(InAr& rd, OutAr& wr, long_size_t max_size  = ~0 ){
+		iref<Input> in(rd);
+		iref<Output> out(rd);
+		return copy_data(get_interface<Input>(in), get_interface<Output>(out), max_size);
+	}
+
 	AIO_EXCEPTION_TYPE(read_failed);
 	AIO_EXCEPTION_TYPE(write_failed);
 	AIO_EXCEPTION_TYPE(seek_failed);
@@ -340,6 +379,10 @@ namespace aio { namespace io{
 }
 
 namespace sio{
+	using io::skip;
+	using io::skip_n;
+	using io::get_interface;
+
 	template<typename Ar, typename T>
 		typename std::enable_if<std::is_pod<T>::value, Ar&>::type 
 		save( Ar& wt, const T& t)
@@ -347,8 +390,15 @@ namespace sio{
 			const byte* first = reinterpret_cast<const byte*>(&t);
 			const byte* last = reinterpret_cast<const byte*>(&t + 1);
 
-			io::block_write(wt, make_range(first, last));
+			io::block_write(get_interface<io::writer>(wt), make_range(first, last));
 
+			return wt;
+		}
+	template<typename Ar, size_t N>
+		Ar& save( Ar& wt, skip_n<N> t)
+		{
+			auto& seeker = get_interface<io::sequence>(wt);
+			seeker.seek(seeker.offset() + N);
 			return wt;
 		}
 
@@ -359,15 +409,20 @@ namespace sio{
 			byte* first = reinterpret_cast<byte*>(&t);
 			byte* last = reinterpret_cast<byte*>(&t + 1);
 
-			if (!io::block_read(rd, make_range(first, last)).empty() )
+			if (!io::block_read(get_interface<io::reader>(rd), make_range(first, last)).empty() )
 				AIO_THROW(io::read_failed);
 
 			return rd;
 		}
+	template<typename Ar, size_t N>
+		Ar& load(Ar& rd, skip_n<N> t)
+		{
+			auto& seeker = get_interface<io::sequence>(rd);
+			seeker.seek(seeker.offset() + N);
+			return rd;
+		}
 
-	template<typename T, typename Ar>
-		typename std::enable_if<std::is_base_of<io::reader, Ar>::value, T>::type 
-		load(Ar& rd)
+	template<typename T, typename Ar> T load(Ar& rd)
 		{
 			T t;
 			load(rd, t);
@@ -381,7 +436,7 @@ namespace sio{
 		{
 			const byte* first = reinterpret_cast<const byte*>(buf.data());
 			const byte* last = first + sizeof(T) * buf.size();
-			ar.write(make_range(first, last));
+			get_interface<io::writer>(ar).write(make_range(first, last));
 		}
 		return ar;
 	}
@@ -395,7 +450,7 @@ namespace sio{
 		{   
 			byte* first = reinterpret_cast<byte*>(buf.data());
 			byte* last = first + sizeof(T) * size;
-			ar.read(make_range(first, last));
+			get_interface<io::reader>(ar).read(make_range(first, last));
 		}
 		return ar;
 	}

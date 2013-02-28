@@ -17,7 +17,7 @@ namespace xirang{ namespace fs{
 
 	using boost::numeric_cast;
     using aio::long_size_t;
-
+#if 0
     void setDateTime(file_header& h)
     {
         AIO_PRE_CONDITION(h.mod_time == uint16_t(-1));
@@ -85,10 +85,9 @@ namespace xirang{ namespace fs{
         }
     };
 
-	archive_ptr inflate_header(file_header* fh)
+	archive_ptr inflate_header(file_header* fh, read_map& rmap)
 	{
 		AIO_PRE_CONDITION(fh);
-		AIO_PRE_CONDITION(fh->zip_archive);
 		AIO_PRE_CONDITION(fh->cache_fs);
         AIO_PRE_CONDITION(fh->relative_offset_data != uint32_t(-1));
 
@@ -103,9 +102,6 @@ namespace xirang{ namespace fs{
         aio::archive::writer* wr = par->query_writer();
 		wr->truncate(0);
 
-		aio::archive::random* rdrng = fh->zip_archive->query_random();
-		aio::archive::reader* rd = fh->zip_archive->query_reader();
-		AIO_PRE_CONDITION(rd && rdrng);
 
 		rdrng->seek(fh->relative_offset_data);
 
@@ -122,29 +118,20 @@ namespace xirang{ namespace fs{
         return std::move(par);
 	}
 
-	int load_cd(iarchive& file, aio::buffer<byte>& buf)
+	std::tuple<aio::iauto<aio::io::read_view>, long_size_t> load_cd(aio::io::read_map& file, aio::buffer<byte>& buf)
 	{
-		aio::archive::reader* rd = file.query_reader();
-		AIO_PRE_CONDITION(rd);
-
-		aio::archive::random* rng = file.query_random();
-		AIO_PRE_CONDITION(rng);
-
 		// seek to load central dir end
 		// read the end 64k bytes. central dir end is never larger than 64k
-		long_size_t size = rng->size();
+		long_size_t size = file.size();
 		long_size_t off = size - std::min(size, max_head_size);
-		rng->seek(off);
-
-		buf.resize(numeric_cast<size_t>(size - off));
-		aio::buffer<byte>::iterator  end_itr = block_read(*rd, to_range(buf));
-
-		if(end_itr != buf.end())
-			AIO_THROW(archive_io_fatal_error); //it means hardware failure or other hard error.
+		auto view = file.view_rd(aio::ext_heap::handle(off, size));
+		auto address = view.address();
+		if (address.size() == 0)
+			AIO_THROW(bad_end_central_dir_signature)("end central dir signature is not found");
 
 		// reverse find the signature
 		typedef std::reverse_iterator<const byte*> iterator;
-		iterator rbeg(buf.end()), rend(buf.begin());
+		iterator rbeg(address.end()), rend(address.begin());
 		const byte* sig_beg = reinterpret_cast<const byte*>(&sig_end_central_dir_signature);
 		const byte* sig_end = sig_beg + sizeof(sig_end_central_dir_signature);
 
@@ -153,20 +140,15 @@ namespace xirang{ namespace fs{
 		if (pos == rend) //not found
 			AIO_THROW(bad_end_central_dir_signature)("end central dir signature is not found");
 
+		return std::tuple<aio::iauto<aio::io::read_view>, long_size_t>(std::move(view), pos.base() - address.begin());
+
 		//load offset info
 		aio::archive::buffer_in  mrd(buf);
 		mrd.seek(pos.base() - buf.begin());
 
-		uint16_t skip16;
-		uint16_t number_entries;
-		uint32_t size_central_dir;
-		uint32_t offset_central_dir;
-		mrd & skip16 // "number of this disk: "
-			& skip16 // "number of central start disk: " ;
-			& skip16 // "number of entries on this disk: " 
-			& number_entries
-			& size_central_dir
-			& offset_central_dir;
+		uint16_t number_entries = load<uint16_t>(mrd);
+		uint32_t size_central_dir = load<uint32_t>(mrd);
+		uint32_t offset_central_dir = load<uint32_t>(mrd);
 
 		buf.resize(size_central_dir);
 		rng->seek(offset_central_dir);
@@ -300,7 +282,7 @@ namespace xirang{ namespace fs{
             deflateEnd(&zstream);
         }
     };
-	void copy_entry(file_header& h, aio::archive::writer& wr, aio::archive::random& rng)
+	void copy_entry(file_header& h, aio::io::read_map, aio::io::write_map& wr, aio::archive::random& rng)
 	{
         AIO_PRE_CONDITION (h.type == aiofs::st_regular);
 
@@ -398,6 +380,98 @@ namespace xirang{ namespace fs{
 			& uint32_t(offset_central_dir) 	//4B offset of CD
 			& uint16_t(0)					//2B ZIP file comment length
 			;
+	}
+#endif
+	std::tuple<aio::iauto<aio::io::read_view>, uint32_t> load_cd(aio::io::read_map& file)
+	{
+		AIO_PRE_CONDITION(file.size() > 0);
+
+		typedef std::tuple<aio::iauto<aio::io::read_view>, aio::long_size_t> return_type;
+		// seek to load central dir end
+		// read the end 64k bytes. central dir end is never larger than 64k
+		long_size_t size = file.size();
+		long_size_t off = size - std::min(size, max_head_size);
+		auto view = file.view_rd(aio::ext_heap::handle(off, size));
+		auto address = view.get<aio::io::read_view>().address();
+		if (address.size() == 0)
+			AIO_THROW(archive_io_fatal_error)("failed to read central dir");
+
+		// reverse find the signature
+		typedef std::reverse_iterator<const byte*> iterator;
+		iterator rbeg(address.end()), rend(address.begin());
+		const byte* sig_beg = reinterpret_cast<const byte*>(&sig_end_central_dir_signature);
+		const byte* sig_end = sig_beg + sizeof(sig_end_central_dir_signature);
+		iterator rsbeg(sig_end), rsend(sig_beg);
+		iterator pos = search(rbeg, rend, rsbeg, rsend);
+
+		if (pos == rend) //if not found
+			AIO_THROW(bad_end_central_dir_signature)("end central dir signature is not found");
+
+		// return the view & offset without the central dir signature
+		return return_type(std::move(view), pos.base() - address.begin());
+
+		aio::io::buffer_in mrd(make_range(pos.base(), address.end()));
+		//skip 1.number of disk 2. number of central start disk 3. number of entries on this disk
+		mrd.seek(mrd.offset() + sizeof(uint16_t) * 3); 
+		uint16_t number_entries = aio::sio::load<uint16_t>(mrd);
+		uint32_t size_central_dir = aio::sio::load<uint32_t>(mrd);
+		uint32_t offset_central_dir = aio::sio::load<uint32_t>(mrd);
+
+		aio::ext_heap::handle hcd(offset_central_dir, offset_central_dir + size_central_dir);
+
+		return return_type(file.view_rd(hcd), number_entries);
+	}
+
+	file_header load_header(aio::iref<aio::io::reader, aio::io::random> iar)
+	{
+		aio::io::reader& ar = iar.get<aio::io::reader>();
+		aio::io::random& rng = iar.get<aio::io::random>();
+		//Begin read entry
+
+		uint32_t sig = aio::sio::load<uint32_t>(ar);
+		if(sig != sig_central_file_header)
+			AIO_THROW(bad_central_file_header_signature);
+
+		using namespace aio::sio;
+		uint16_t skip16;
+		file_header h= {};
+		h.dirty = false;
+		h.persist = true;
+
+		ar & skip16 			// version made by
+			& skip16			// version need to extract
+			& h.gp_flag 		// general purpose bit flag
+			& h.compression_method // compression method
+			& h.mod_time		// last mod file time
+            & h.mod_date		// last mod file date
+			& h.in_crc32 			// crc-32
+			& h.compressed_size // compressed size
+			& h.uncompressed_size; // uncompressed size
+		uint16_t fsize = load<uint16_t>(ar); 		// file name length
+		uint16_t efsize = load<uint16_t>(ar); 		// extra field length
+		uint16_t fcsize = load<uint16_t>(ar); 		// file comment length
+		ar & skip16 & skip16;	//skip disk number start & internal file attribute
+		uint32_t ext_attributes = load<uint32_t>(ar);
+		const uint32_t dir_mask = 0x10;//both dos and unix are same
+
+		h.type = ext_attributes & dir_mask 
+			? aiofs::st_dir : aiofs::st_regular; // external file attribute
+
+		ar & h.relative_offset_local_header; // relative offset of local header
+		h.relative_offset_data = h.relative_offset_local_header + msize_local_file_header + fsize + efsize;
+		if (fsize > rng.size() - rng.offset())
+			AIO_THROW(bad_no_enough_head_content);
+
+		aio::string_builder tsz(numeric_cast<size_t>(fsize), char('\0'));
+		ar.read(string_to_range(tsz));
+		h.name = tsz;
+
+		rng.seek(rng.offset() + efsize + fcsize);	// seek to begin of next cd item
+		if (rng.offset() > rng.size())
+			AIO_THROW(bad_no_enough_head_content);
+
+		//End read zip entry
+		return h;
 	}
 
 }}

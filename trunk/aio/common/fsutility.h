@@ -98,6 +98,8 @@ namespace aio{ namespace fs{
     //if p end with '/', remove it.
     string remove_tail_slash(const string& p);
 
+	bool has_tail_slash(const string& p);
+
     // remove all '.' and '..' name from the path.
 	// note: p can contain arbitrary number of "." or ".."
 	// 		path like "/../.." and "../.." are valid

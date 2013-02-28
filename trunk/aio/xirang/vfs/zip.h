@@ -6,11 +6,18 @@
 namespace xirang{ namespace fs{
 
 	class ZipFsImp;
+	enum CachePolicy
+	{
+		cp_flat,
+		cp_tree
+	};
 	class ZipFs : public IVfs
 	{
 	public:
 
-        explicit ZipFs(aio::io::iarchive& file, IVfs& cache, const string& resource = aio::empty_str, bool sync_on_destroy = true);
+        explicit ZipFs(aio::iref<aio::io::read_map> file, IVfs& cache, const string& resource = aio::empty_str, CachePolicy cp = cp_flat);
+        explicit ZipFs(aio::iref<aio::io::read_map, aio::io::write_map> file, IVfs& cache
+				, const string& resource = aio::empty_str, bool sync_on_destroy = true, CachePolicy cp = cp_flat);
 
 		~ZipFs();
 
@@ -22,8 +29,8 @@ namespace xirang{ namespace fs{
 		// \pre !absolute(path)
 		virtual fs_error createDir(const  string& path);
 
-		// file operations
-		virtual archive_ptr create(const string& path, int mode, int flag);
+		virtual void** do_create(unsigned long long mask,
+				void** base, aio::unique_ptr<void>& owner, const string& path, int flag);
 
 		// \pre !absolute(to)
 		// if from and to in same fs, it may have a more effective implementation
@@ -66,6 +73,7 @@ namespace xirang{ namespace fs{
 	AIO_EXCEPTION_TYPE(bad_no_enough_head_content);
 	AIO_EXCEPTION_TYPE(bad_end_central_dir_signature);
 	AIO_EXCEPTION_TYPE(bad_central_dir_offset_or_size);
+	AIO_EXCEPTION_TYPE(bad_central_dir);
 	AIO_EXCEPTION_TYPE(bad_local_file_header_signature);
 	AIO_EXCEPTION_TYPE(bad_local_file_header_offset_or_size);
 	AIO_EXCEPTION_TYPE(archive_io_fatal_error);

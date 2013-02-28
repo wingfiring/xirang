@@ -195,6 +195,9 @@ namespace aio
 			/// \return end == begin
 			bool empty() const;
 
+			/// \return !empty()
+			explicit operator bool() const;
+
 			bool in(const handle& rhs) const;
 			bool contains(const handle& rhs) const;
 			private:

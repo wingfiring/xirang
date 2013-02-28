@@ -391,6 +391,9 @@ namespace aio {namespace fs{
 			? string(make_range(p.begin(), p.end() - 1))
 			: p;
     }
+	bool has_tail_slash(const string& p){
+		return !p.empty() && *(p.end() - 1) == '/';
+	}
 
     string normalize(const string& p)
 	{
