@@ -9,6 +9,7 @@
 #include <aio/xirang/vfs/vfs_common.h>
 #include "zip_file_header.h"
 #include <aio/common/archive/adaptor.h>
+#include <aio/common/deflate.h>
 
 //#include <iostream>
 
@@ -518,13 +519,13 @@ namespace xirang{ namespace fs{
 			aiofs::dir_filename(head.name, &filename);
 			
 			auto dest = temp_file<ioctrl, write_map>(*m_cache, ("?_" + filename), empty_str, of_create, &head.cached_path);
-			ext_heap::handle h(head.relative_offset_data, head.relative_offset_data + head.compressed_size);
-			auto inf = combine<sub_archive<read_map> , sub_read_map_p>(*m_rmap, h);
-			io::read_map& src = inf;
-			auto result = inflate(src, dest.get<io::write_map>());
-			dest.get<io::ioctrl>().truncate(s);
+			ext_heap::handle h(head.relative_offset_data(*m_rmap), head.relative_offset_data(*m_rmap) + head.compressed_size);
+			auto inf = decorate<sub_archive , sub_read_map_p>(m_rmap, h);
+			read_map& src = inf;
+			auto result = aio::zip::inflate(src, dest.get<write_map>());
+			dest.get<ioctrl>().truncate(s);
 			
-			return (result.err == ze_ok) ? aiofs::er_ok: aiofs::er_data_error;
+			return (result.err == aio::zip::ze_ok) ? aiofs::er_ok: aiofs::er_data_error;
 		}
 		// m_file must support reader and random seek
 		void init_()
@@ -552,7 +553,46 @@ namespace xirang{ namespace fs{
 			}
 		}
 
-		void commit_();
+		void commit_()
+		{
+#if 0
+            AIO_PRE_CONDITION(!readonly_());
+
+			archive_ptr tmpzip = temp_file(*m_cache, "TMP", "");
+			writer* wr = tmpzip->query_writer();
+            AIO_PRE_CONDITION(wr);
+
+			aio::archive::random* rng = tmpzip->query_random();
+			AIO_PRE_CONDITION(rng);
+
+			entries_type entries;
+			dump_headers_(m_root_node, entries);
+			std::sort(entries.begin(), entries.end());
+
+			//1. dump entries 
+			for (entries_type::iterator itr = entries.begin(); itr != entries.end(); ++itr)
+			{
+				copy_entry(*itr->second, *wr, *rng);
+			}
+
+
+			//2. dump central dir
+			long_size_t offset_central_dir = rng->offset();
+			for ( entries_type::iterator itr = entries.begin(); itr != entries.end(); ++itr)
+			{
+				write_cd_entry(*itr->second, *wr);
+			}
+			long_size_t size_central_dir = rng->offset() - offset_central_dir;
+
+
+			write_cd_end(*wr, entries.size(), size_central_dir, offset_central_dir);
+
+			//3. copy the tmp back.
+			long_size_t copied_size = copy_archive(*tmpzip, m_file);
+			if (copied_size != rng->size())
+				AIO_THROW(archive_io_fatal_error);
+#endif
+		}
 
         bool readonly_() const{ return m_wmap == 0; }
 

@@ -13,7 +13,6 @@ namespace xirang{ namespace fs{
 	const uint32_t sig_central_file_header = 0x02014b50;
 	const aio::long_size_t max_head_size = 64 * 1024;	//64k
 	const uint32_t sig_local_file_header = 0x04034b50;
-	const uint32_t msize_local_file_header = 30;
 
 	using boost::numeric_cast;
     using aio::long_size_t;
@@ -190,7 +189,7 @@ namespace xirang{ namespace fs{
 		h.type = ext_attributes & dir_mask 
 			? aiofs::st_dir : aiofs::st_regular; // external file attribute
 		ar & h.relative_offset_local_header; // relative offset of local header
-		h.relative_offset_data = h.relative_offset_local_header + msize_local_file_header + fsize + efsize;
+		//h.relative_offset_data = h.relative_offset_local_header + msize_local_file_header + fsize + efsize;
 		if (fsize > ar.size() - ar.offset())
 			AIO_THROW(bad_no_enough_head_content);
 
@@ -282,7 +281,7 @@ namespace xirang{ namespace fs{
             deflateEnd(&zstream);
         }
     };
-	void copy_entry(file_header& h, aio::io::read_map, aio::io::write_map& wr, aio::archive::random& rng)
+	void copy_entry(file_header& h, aio::io::read_map& rd, aio::io::write_map& wr, aio::archive::random& rng)
 	{
         AIO_PRE_CONDITION (h.type == aiofs::st_regular);
 
@@ -310,7 +309,7 @@ namespace xirang{ namespace fs{
 
         if (!h.cached || !h.dirty)
 		{
-			h.zip_archive->query_random()->seek(h.relative_offset_data);
+			h.zip_archive->query_random()->seek(h.relative_offset_data(rd));
 			long_size_t copied_size = copy_data(*h.zip_archive->query_reader(), wr, h.compressed_size);
 			if (copied_size != h.compressed_size)
 				AIO_THROW(archive_io_fatal_error);
@@ -458,7 +457,7 @@ namespace xirang{ namespace fs{
 			? aiofs::st_dir : aiofs::st_regular; // external file attribute
 
 		ar & h.relative_offset_local_header; // relative offset of local header
-		h.relative_offset_data = h.relative_offset_local_header + msize_local_file_header + fsize + efsize;
+		//h.relative_offset_data = h.relative_offset_local_header + msize_local_file_header + fsize + efsize;
 		if (fsize > rng.size() - rng.offset())
 			AIO_THROW(bad_no_enough_head_content);
 

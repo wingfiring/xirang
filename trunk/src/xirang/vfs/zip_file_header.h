@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 namespace xirang{ namespace fs{ 
+	const uint32_t msize_local_file_header = 30;
 
 	struct file_header
 	{
@@ -15,7 +16,7 @@ namespace xirang{ namespace fs{
         uint16_t mod_time, mod_date;
 		uint32_t in_crc32, compressed_size, uncompressed_size;
 		uint32_t relative_offset_local_header;
-		uint32_t relative_offset_data;
+		mutable uint32_t relative_offset_data_;
 		string name, comment;
 
 		file_state type;
@@ -29,7 +30,7 @@ namespace xirang{ namespace fs{
             mod_time(0), mod_date(0), 
 			in_crc32(0), compressed_size(0), uncompressed_size(0),
 			relative_offset_local_header(-1),
-			relative_offset_data(-1),
+			relative_offset_data_(-1),
 
 			type(aiofs::st_invalid),
             dirty(true),
@@ -37,6 +38,17 @@ namespace xirang{ namespace fs{
 		{
 		}
 		bool cached() const { return !cached_path.empty();}
+		uint32_t relative_offset_data(aio::io::read_map& rm) const{
+			if (relative_offset_data_ == uint32_t(-1)){
+				auto offset_of_name_len = relative_offset_local_header + msize_local_file_header - 4;
+				auto view = rm.view_rd(ext_heap::handle(offset_of_name_len, offset_of_name_len + 4));
+				aio::io::buffer_in bin (view.get<aio::io::read_view>().address());
+				auto name_len = aio::sio::load<uint16_t>(bin);
+				auto extra_len = aio::sio::load<uint16_t>(bin);
+				relative_offset_data_ = relative_offset_local_header + msize_local_file_header + name_len + extra_len;
+			}
+			return relative_offset_data_;
+		}
 	};
 #if 0
 	struct file_header;

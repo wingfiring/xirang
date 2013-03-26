@@ -356,7 +356,11 @@ namespace aio{ namespace io{
 	{
 		typedef proxy_archive<ArchiveType> base;
 		sub_archive(): first(0), last(0){}
-		explicit sub_archive(ext_heap::handle h): first(h.begin()), last(h.end()){}
+		template<typename RealArchiveType>
+		explicit sub_archive(RealArchiveType&& ar, ext_heap::handle h) 
+			: base(std::forward<RealArchiveType>(ar)),
+			first(h.begin()), last(h.end())
+		{}
 		template<typename RealArchiveType>
 		sub_archive(RealArchiveType&& ar, long_size_t first_, long_size_t last_)
 			: base(std::forward<RealArchiveType>(ar))
