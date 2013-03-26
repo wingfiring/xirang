@@ -19,11 +19,18 @@ namespace aio{ namespace io{
 			return ar.template get<Interface>();
 		}
 
-		template<typename Interface, typename Archive> Archive& get_i_(Archive* ar){
-			return get_i_(*ar);
+		template<typename Interface, typename Archive> typename std::enable_if<!is_iref<Archive>::value, Archive&>::type get_i_(Archive* ar){
+			return *ar;
 		}
-		template<typename Interface, typename Archive> const Archive& get_i_(const Archive* ar){
-			return get_i_(*ar);
+		template<typename Interface, typename Archive> 
+			const typename std::enable_if<!is_iref<Archive>::value, const Archive&>::type get_i_(const Archive* ar){
+			return *ar;
+		}
+		template<typename Interface, typename ...Interfaces> Interface& get_i_(const iref<Interfaces...>* ar){
+			return ar->template get<Interface>();
+		}
+		template<typename Interface, typename ...Interfaces> Interface& get_i_(const iauto<Interfaces...>* ar){
+			return ar->template get<Interface>();
 		}
 	}
 

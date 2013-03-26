@@ -69,6 +69,14 @@ BOOST_AUTO_TEST_CASE(multiplex_archive_case)
 		, multiplex_write_map_p
 		>(mem_archive(), 0);
 
+	auto adaptor4 = decorate<multiplex_archive
+		, multiplex_reader_p
+		, multiplex_writer_p
+		, multiplex_random_p
+		, multiplex_read_map_p
+		, multiplex_write_map_p
+		>(&mar, 0);
+
 	int var = 42;
 	sio::save(adaptor, var);
 	int var2 = sio::load<int>(adaptor2);
