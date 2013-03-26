@@ -464,7 +464,7 @@ namespace xirang{ namespace fs{
 
 		aio::string_builder tsz(numeric_cast<size_t>(fsize), char('\0'));
 		ar.read(string_to_range(tsz));
-		h.name = tsz;
+		h.name = aio::fs::to_aio_path(tsz.str());
 
 		rng.seek(rng.offset() + efsize + fcsize);	// seek to begin of next cd item
 		if (rng.offset() > rng.size())

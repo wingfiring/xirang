@@ -7,7 +7,6 @@
 
 #include <boost/tokenizer.hpp>
 #include <algorithm>
-#include <map>
 #include <unordered_map>
 
 namespace xirang{ namespace fs{ 
@@ -17,26 +16,6 @@ namespace xirang{ namespace fs{
 
 namespace xirang{ namespace fs{ namespace private_{
 	
-	template<typename T> struct raw_fs
-	{
-		std::map<string, T> root;
-
-		bool exists(const string& p) const{
-			return root.find(p) != root.end();
-		}
-	
-		typename std::map<string, T>::iterator begin_child(const string& p){
-			return root.upper_bound(p);
-		}
-		typename std::map<string, T>::iterator end_child(const string& p){
-			static const char slash_add1[] = {'/' + 1, '\0'};
-			string next_name = p + slash_add1;
-			return root.lower_bound(next_name);
-		}
-
-		void add(const string& p, T& data);
-	};
-
 	struct hash_string{
 		size_t operator()(const string& str) const{
 			return str.hash();
@@ -49,22 +28,16 @@ namespace xirang{ namespace fs{ namespace private_{
 
 		string name;
 		file_state type;	//dir or normal
-		std::map<string, node_type*> children;
+		std::unordered_map<string, std::unique_ptr<node_type>, hash_string> children;
 		node_type* parent;
 
 		T data;
 
-		file_node() :
+		file_node(node_type* parent_ = 0) :
 			type(aiofs::st_dir),
-			parent(0),
+			parent(parent_),
 			data()
 		{}
-
-		~file_node()
-		{
-			for (auto& i : children)
-				delete i.second;
-		}
 	};
 
 	template<typename T> struct locate_result{
@@ -85,7 +58,7 @@ namespace xirang{ namespace fs{ namespace private_{
 		{
 			auto child = pos->children.find(*itr);
 			if (child != pos->children.end())
-				pos = child->second;
+				pos = child->second.get();
 			else
 				break;
 		}
@@ -114,7 +87,7 @@ namespace xirang{ namespace fs{ namespace private_{
 		{
 			auto child = pos->children.find(*itr);
 			if (child != pos->children.end())
-				pos = child->second;
+				pos = child->second.get();
 			else
 				break;
 		}
@@ -147,7 +120,6 @@ namespace xirang{ namespace fs{ namespace private_{
             return aiofs::er_not_empty;
 
 		node->parent->children.erase(node->name);
-		delete node;
 		return aiofs::er_ok;
 	}
 
@@ -173,23 +145,22 @@ namespace xirang{ namespace fs{ namespace private_{
 			auto found = pos->children.find(*name_first);
 			if (found != pos->children.end())
 			{
-				pos = found->second;
+				pos = found->second.get();
 			}
 			else
 			{
 				if (!whole_path && create_times != 0)
 				{
 					pos->parent->children.erase(pos->name);
-					delete pos;
 					return 0;
 				}
 
-				aio::unique_ptr<file_node<T> > fnode(new file_node<T> );
+				std::unique_ptr<file_node<T> > fnode(new file_node<T>(pos));
 				fnode->name = *name_first;
 				fnode->type = aiofs::st_dir;
-				fnode->parent = pos;
-				pos->children[*name_first] = fnode.get();
-				pos = fnode.release();
+				auto& next = pos->children[*name_first];
+				next = std::move(fnode);
+				pos = next.get();
 				++create_times;
 			}
 		}
@@ -204,13 +175,13 @@ namespace xirang{ namespace fs{ namespace private_{
 		AIO_PRE_CONDITION(!aio::contains(pos.not_found, '/'));
 		AIO_PRE_CONDITION(pos.node->children.count(pos.not_found) == 0);
 
-		aio::unique_ptr<file_node<T> > fnode(new file_node<T> );
+		std::unique_ptr<file_node<T> > fnode(new file_node<T>(pos.node));
 		fnode->name = pos.not_found;
 		fnode->type = type;
-		fnode->parent = pos.node;
-		pos.node->children[fnode->name] = fnode.get();
+		auto& new_node = pos.node->children[fnode->name];
+		new_node = std::move(fnode);
 
-		return fnode.release();
+		return new_node.get();
 	}
 
 	template<typename T>
@@ -218,8 +189,7 @@ namespace xirang{ namespace fs{ namespace private_{
 	{
 	public:
 		typedef file_node<T> node_type;
-		typedef typename std::map<string, node_type*>::iterator iterator;
-		//typedef typename std::map<string, T>::iterator iterator;
+		typedef typename std::unordered_map<string, std::unique_ptr<node_type>, hash_string>::iterator iterator;
 		FileNodeIterator()
 			: m_itr() 
 		{

@@ -15,6 +15,7 @@
 namespace xirang{ namespace fs{ 
     using aio::long_size_t;
 	using namespace aio::io;
+	using namespace aio;
 #if 0
 	class ZipFsImp
 	{
@@ -360,6 +361,7 @@ namespace xirang{ namespace fs{
 	class ZipFsImp
 	{
 		public:
+		typedef private_::file_node<file_header> file_node;
 
 		explicit ZipFsImp(read_map* rd, write_map* wr, const string& res, IVfs* host, IVfs& cache, bool sync_on_destroy, CachePolicy cp)
 			: m_rmap(rd), m_wmap(wr), m_cache(&cache), m_resource(res), m_host(host), m_root(0)
@@ -380,11 +382,43 @@ namespace xirang{ namespace fs{
 
 		// common operations of dir and file
 		// \pre !is_absolute(path)
-		fs_error remove(const string& path);
+		fs_error remove(const string& path){
+            AIO_PRE_CONDITION(!is_absolute(path));
+            if (readonly_())
+                return aiofs::er_permission_denied;
+
+            fs_error ret = remove_check(*host(), path);
+			if (ret == aiofs::er_ok)
+			{
+				auto pos = locate(m_root_node, path);
+				AIO_PRE_CONDITION(pos.node);
+                return pos.not_found.empty()
+					? removeNode(pos.node)
+					: aiofs::er_not_found;
+			}
+
+			return ret;
+		}
 
 		// dir operations
 		// \pre !is_absolute(path)
-		fs_error createDir(const  string& path);
+		fs_error createDir(const  string& path){
+			AIO_PRE_CONDITION(!is_absolute(path));
+            if (readonly_())
+                return aiofs::er_permission_denied;
+
+			auto pos = locate(m_root_node, path);
+			if (pos.not_found.empty())
+				return aiofs::er_exist;
+			if (pos.node->type != aiofs::st_dir)
+				return aiofs::er_not_dir;
+
+			if (aio::contains(pos.not_found, '/'))
+				return aiofs::er_not_found;
+
+			create_node(pos, aiofs::st_dir);
+			return aiofs::er_ok;
+		}
 
 		// file operations
 		void** do_create(unsigned long long mask,
@@ -392,9 +426,45 @@ namespace xirang{ namespace fs{
 
 		// \pre !is_absolute(to)
 		// if from and to in same fs, it may have a more effective implementation
-		fs_error copy(const string& from, const string& to);
+		fs_error copy(const string& from, const string& to)
+		{
+            AIO_PRE_CONDITION(!is_absolute(to));
+            if (readonly_())
+                return aiofs::er_permission_denied;
 
-		fs_error truncate(const string& path, aio::long_size_t s);
+			VfsNode from_node = { from, m_host};
+			if (is_absolute(from))
+			{
+				AIO_PRE_CONDITION(mounted());
+				from_node = m_root->locate(from).node;
+			}
+
+			VfsNode to_node = { to, m_host};
+			return xirang::fs::copyFile(from_node, to_node);
+		}
+
+		fs_error truncate(const string& path, aio::long_size_t s)
+		{
+            AIO_PRE_CONDITION(!is_absolute(path));
+            if (readonly_())
+                return aiofs::er_permission_denied;
+
+			auto pos = locate(m_root_node, path);
+
+			if (!pos.not_found.empty())
+				return aiofs::er_not_found;
+			if (pos.node->type != aiofs::st_regular)
+				return aiofs::er_system_error;
+
+			file_header& head = pos.node->data;
+			if (head.cached()){
+				head.dirty = true;
+				return m_cache->truncate(head.cached_path, s);
+			}
+
+			return cache_(head, s);
+		}
+
 		void sync();
 
 		// query
@@ -443,6 +513,19 @@ namespace xirang{ namespace fs{
         }
 
 		private:
+		fs_error cache_(file_header& head, aio::long_size_t s){
+			string filename;
+			aiofs::dir_filename(head.name, &filename);
+			
+			auto dest = temp_file<ioctrl, write_map>(*m_cache, ("?_" + filename), empty_str, of_create, &head.cached_path);
+			ext_heap::handle h(head.relative_offset_data, head.relative_offset_data + head.compressed_size);
+			auto inf = combine<sub_archive<read_map> , sub_read_map_p>(*m_rmap, h);
+			io::read_map& src = inf;
+			auto result = inflate(src, dest.get<io::write_map>());
+			dest.get<io::ioctrl>().truncate(s);
+			
+			return (result.err == ze_ok) ? aiofs::er_ok: aiofs::er_data_error;
+		}
 		// m_file must support reader and random seek
 		void init_()
 		{
@@ -465,41 +548,21 @@ namespace xirang{ namespace fs{
 				if (header.name.empty()) continue;	//bad name
 
 				AIO_PRE_CONDITION(header.persist);
-				m_items_info[header.name] = header;
-				build_dir_(header.name);
+				create_node(m_root_node, header.name, header.type, true);
 			}
-		};
-		void build_dir_(const string& name){
-			aio::string dir = aio::fs::dir_filename(name);
-			if (dir.empty()) return;
-
-			auto pos = m_items_info.lower_bound(dir);
-			AIO_PRE_CONDITION(pos != m_items_info.end());
-			if (pos->second.name == dir) {
-				if (pos->second.type != aio::fs::st_dir)
-					AIO_THROW(bad_central_dir);
-				return;	//parent dir exist
-			}
-
-			file_header& h = m_items_info[dir];
-			h.name = dir;
-			h.type = aio::fs::st_dir;
-			h.persist = false;
-
-			build_dir_(dir);
 		}
 
 		void commit_();
 
         bool readonly_() const{ return m_wmap == 0; }
 
+		file_node m_root_node;
 		read_map* m_rmap;
 		write_map* m_wmap;
 		IVfs* m_cache;
 		const string m_resource;
 		IVfs* m_host;
 		RootFs* m_root;
-		std::map<string, file_header> m_items_info;
 		CachePolicy m_cache_policy;
         bool m_sync_on_destroy;
 

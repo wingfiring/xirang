@@ -38,12 +38,13 @@ namespace aio {namespace fs{
 			std::uniform_int_distribution<unsigned long> m_distribution;
 
 		};
-        static void gen_temp_name_(string_builder& name)
+        static string gen_temp_name_()
         {
 			static random_generator generator;
             unsigned long x = generator.yield();
             while(x == 0) x = generator.yield();
 
+			string_builder name;
             while (x > 0)
             {
                 unsigned long mod = x % 36;
@@ -54,20 +55,16 @@ namespace aio {namespace fs{
 
                 x /= 36;
             }
+			return name.str();
 		}
 
         string gen_temp_name(const_range_string template_)
         {
-			string_builder name(template_);
-			gen_temp_name_(name);
-			return string(name);
+			if (!aio::contains(template_, '?'))	//back compatibility
+				return template_ + gen_temp_name_();
+
+			return aio::replace(string(template_), string("?"), gen_temp_name_());
         }
-        string gen_temp_name_post(const_range_string postfix_){
-			string_builder name;
-			gen_temp_name_(name);
-			name += postfix_;
-			return string(name);
-		}
     }
 #ifdef GNUC_COMPILER_
     fs_error move(const string& from, const string& to)

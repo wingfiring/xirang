@@ -4,40 +4,93 @@
 #include <aio/common/iarchive.h>
 
 namespace aio{ namespace io{
+	namespace io_private_{
+		template<typename Interface, typename Archive> typename std::enable_if<!is_iref<Archive>::value, Archive&>::type get_i_(Archive& ar){
+			return ar;
+		}
+		template<typename Interface, typename Archive> 
+			const typename std::enable_if<!is_iref<Archive>::value, const Archive&>::type get_i_(const Archive& ar){
+			return ar;
+		}
+		template<typename Interface, typename ...Interfaces> Interface& get_i_(const iref<Interfaces...>& ar){
+			return ar.template get<Interface>();
+		}
+		template<typename Interface, typename ...Interfaces> Interface& get_i_(const iauto<Interfaces...>& ar){
+			return ar.template get<Interface>();
+		}
 
-	/// \param ArchiveData	archive type, intends to be iref type
-	/// \param ArchiveData	archive type, intends to be iref type
+		template<typename Interface, typename Archive> Archive& get_i_(Archive* ar){
+			return get_i_(*ar);
+		}
+		template<typename Interface, typename Archive> const Archive& get_i_(const Archive* ar){
+			return get_i_(*ar);
+		}
+	}
+
 	template<typename ArchiveData, template<typename> class ... PartialInterfaces>
-		struct combinator : public ArchiveData, 
-		public PartialInterfaces<combinator<ArchiveData, PartialInterfaces...> >...
+		struct decorator : public ArchiveData, 
+		public PartialInterfaces<decorator<ArchiveData, PartialInterfaces...> >...
 	{
 		typedef typename ArchiveData::archive_type archive_type;
 		template<typename ... Args>
-		combinator(Args&& ... args) : ArchiveData(std::forward<Args>(args)...){}
-		combinator(){}
+		explicit decorator(Args&& ... args) : ArchiveData(std::forward<Args>(args)...){}
+		decorator(){}
 	};
 
-	template<typename ArchiveData, template<typename>class... PartialInterfaces, typename... T>
-		static combinator<ArchiveData, PartialInterfaces...> combine(T&& ... ar){
-			return combinator<ArchiveData, PartialInterfaces...>(std::forward<T>(ar)...);
+	template<typename Decorator> struct get_archive_type;
+
+	template<typename ArchiveData, template<typename> class ... PartialInterfaces>
+	struct get_archive_type<decorator<ArchiveData, PartialInterfaces...>>{
+		typedef typename ArchiveData::archive_type type;
+	};
+
+	template<typename ArchiveData, template<typename>class... PartialInterfaces, typename Ar, typename... T>
+		decorator<ArchiveData, PartialInterfaces...> decorate2(Ar&& ar, T&&... args){
+			return decorator<ArchiveData, PartialInterfaces...>(std::forward<Ar>(ar), std::forward<T>(args)...);
+		}
+	template<template<typename> class ArchiveData, template<typename>class... PartialInterfaces, typename Ar, typename... T>
+		decorator<ArchiveData<typename std::conditional<std::is_pointer<Ar&&>::value || std::is_rvalue_reference<Ar&&>::value,
+				   typename std::remove_reference<Ar>::type,
+				   typename std::add_lvalue_reference<Ar>::type
+					   >::type>, 
+				   PartialInterfaces...>
+		decorate(Ar&& ar, T&&... args){
+			return decorator<ArchiveData<typename std::conditional<std::is_pointer<Ar&&>::value || std::is_rvalue_reference<Ar&&>::value,
+				   typename std::remove_reference<Ar>::type,
+				   typename std::add_lvalue_reference<Ar>::type
+					   >::type>, 
+				   PartialInterfaces...>(std::forward<Ar>(ar), std::forward<T>(args)...);
+		}
+
+#define COMMON_IO_ADAPTOR_HELPER()\
+		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}\
+		Derive& derive_() { return static_cast<Derive&>(*this);}\
+		typedef typename get_archive_type<Derive>::type archive_type_;\
+		template<typename Interface> auto underlying_() const \
+			->decltype(io_private_::get_i_<Interface>(*static_cast<const archive_type_*>(nullptr))) { \
+			return io_private_::get_i_<Interface>(derive_().underlying());\
+		}\
+		template<typename Interface> auto underlying_() \
+			->decltype(io_private_::get_i_<Interface>(*static_cast<archive_type_*>(nullptr))) { \
+			return io_private_::get_i_<Interface>(derive_().underlying());\
 		}
 
 	template<typename ArchiveType> struct proxy_archive
 	{
-		typedef ArchiveType	archive_type;
+		typedef typename std::remove_reference<ArchiveType>::type	archive_type;
 
 		proxy_archive(): m_underlying(){}
-		proxy_archive(archive_type ar): m_underlying(ar){}
+		template<typename RealArchiveType>
+		explicit proxy_archive(RealArchiveType&& ar): m_underlying(std::forward<RealArchiveType>(ar)){}
 		
-		const archive_type& underlying() const{ 
-			AIO_PRE_CONDITION(valid());
+		archive_type& underlying() { 
 			return m_underlying;
 		}
-		bool valid() const{
-			return static_cast<bool>(m_underlying);
+		const archive_type& underlying() const{ 
+			return m_underlying;
 		}
 
-		archive_type m_underlying;
+		ArchiveType m_underlying;
 	};
 
 	template<typename Derive> struct proxy_reader_p : reader
@@ -53,10 +106,7 @@ namespace aio{ namespace io{
 		}
 
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct proxy_writer_p : writer
@@ -74,10 +124,7 @@ namespace aio{ namespace io{
 			underlying_<writer>().sync();
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct proxy_ioctrl_p : ioctrl
@@ -86,10 +133,7 @@ namespace aio{ namespace io{
 			return underlying_<ioctrl>().truncate(size);
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct proxy_ioinfo_p : ioinfo 
@@ -98,10 +142,7 @@ namespace aio{ namespace io{
 			return underlying_<ioinfo>().size();
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct proxy_sequence_p : sequence 
@@ -113,10 +154,7 @@ namespace aio{ namespace io{
 			return underlying_<sequence>().size();
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct proxy_forward_p : forward 
@@ -131,10 +169,7 @@ namespace aio{ namespace io{
 			return underlying_<forward>().seek(off);
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct proxy_random_p : random
@@ -149,10 +184,7 @@ namespace aio{ namespace io{
 			return underlying_<random>().seek(off);
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct proxy_options_p : options
@@ -164,10 +196,7 @@ namespace aio{ namespace io{
 			return underlying_<options>().setopt(id, optdata, indata);
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct proxy_read_view_p : read_view
@@ -176,10 +205,7 @@ namespace aio{ namespace io{
 			return underlying_<read_view>().address();
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct proxy_write_view_p : write_view
@@ -188,10 +214,7 @@ namespace aio{ namespace io{
 			return underlying_<write_view>().address();
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct proxy_read_map_p : read_map
@@ -203,10 +226,7 @@ namespace aio{ namespace io{
 			return underlying_<read_map>().size();
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct proxy_write_map_p : write_map
@@ -221,10 +241,7 @@ namespace aio{ namespace io{
 			return underlying_<write_map>().sync();
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 	
 	template<typename ArchiveType>
@@ -232,8 +249,9 @@ namespace aio{ namespace io{
 	{
 		typedef proxy_archive<ArchiveType> base;
 		multiplex_archive(): current(0){}
-		multiplex_archive(ArchiveType& ar, long_size_t off)
-			: base(ar), current(off)
+		template<typename RealArchiveType>
+		multiplex_archive(RealArchiveType&& ar, long_size_t off)
+			: base(std::forward<RealArchiveType>(ar)), current(off)
 		{}
 		
 		long_size_t current;
@@ -246,11 +264,10 @@ namespace aio{ namespace io{
         Archive& m_ar;
 
         multiplex_offset_tracker(Archive& ar) : m_ar(ar) {
-            m_ar.underlying().template get<io::random>().seek(m_ar.current);
+			io_private_::get_i_<io::random>(m_ar.underlying()).seek(m_ar.current);
         }
-        ~multiplex_offset_tracker()
-        {
-            m_ar.current = m_ar.underlying().template get<io::random>().offset();
+        ~multiplex_offset_tracker() {
+			m_ar.current = io_private_::get_i_<io::random>(m_ar.underlying()).offset();
         }
     };
 
@@ -264,16 +281,13 @@ namespace aio{ namespace io{
 		}
 
 		virtual bool readable() const {
-			underlying_<random>().seek(derive_().current);
+			auto self = const_cast<multiplex_reader_p*>(this);
+			self->underlying_<io::random>().seek(derive_().current);
 			return underlying_<reader>().readable();
 		}
 
 		private:
-		Derive& derive_() { return static_cast<Derive&>(*this);}
-		const Derive& derive_() const { return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct multiplex_writer_p : writer
@@ -286,18 +300,15 @@ namespace aio{ namespace io{
 			return underlying_<writer>().write(r);
 		}
 		virtual bool writable() const{
-			underlying_<random>().seek(derive_().current);
+			auto self = const_cast<multiplex_writer_p*>(this);
+			self->underlying_<random>().seek(derive_().current);
 			return underlying_<writer>().writable();
 		}
 		virtual void sync(){
 			underlying_<writer>().sync();
 		}
 		private:
-		Derive& derive_() { return static_cast<Derive&>(*this);}
-		const Derive& derive_() const { return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct multiplex_random_p : random
@@ -312,11 +323,7 @@ namespace aio{ namespace io{
 			return (derive_().current = underlying_<random>().seek(current));
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		Derive& derive_() { return static_cast<Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct multiplex_ioctrl_p : ioctrl
@@ -329,11 +336,7 @@ namespace aio{ namespace io{
 			return new_size;
 		}
 		private:
-		Derive& derive_() { return static_cast<Derive&>(*this);}
-		const Derive& derive_() const { return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> using multiplex_options_p = proxy_options_p<Derive>;
@@ -346,12 +349,13 @@ namespace aio{ namespace io{
 	{
 		typedef proxy_archive<ArchiveType> base;
 		sub_archive(): first(0), last(0){}
-		sub_archive(ArchiveType& ar, long_size_t first_, long_size_t last_)
-			: base(ar)
+		explicit sub_archive(ext_heap::handle h): first(h.begin()), last(h.end()){}
+		template<typename RealArchiveType>
+		sub_archive(RealArchiveType&& ar, long_size_t first_, long_size_t last_)
+			: base(std::forward<RealArchiveType>(ar))
 			  , first(first_), last(last_)
 		{
 			AIO_PRE_CONDITION(first <= last);
-			AIO_PRE_CONDITION(this->underlying().template get<sequence>().offset() == first);
 		}
 
 		long_size_t first;
@@ -380,11 +384,7 @@ namespace aio{ namespace io{
 		}
 
 		private:
-		Derive& derive_() { return static_cast<Derive&>(*this);}
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct sub_writer_p : writer
@@ -411,11 +411,7 @@ namespace aio{ namespace io{
 			underlying_<writer>().sync();
 		}
 		private:
-		Derive& derive_() { return static_cast<Derive&>(*this);}
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct sub_ioctrl_p : ioctrl
@@ -432,6 +428,7 @@ namespace aio{ namespace io{
 		}
 		private:
 		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
+		Derive& derive_() { return static_cast<Derive&>(*this);}
 	};
 
 	template<typename Derive> struct sub_sequence_p : sequence 
@@ -445,10 +442,7 @@ namespace aio{ namespace io{
 			return derive_().last - derive_().first;
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 	
 	template<typename Derive> struct sub_forward_p : forward 
@@ -465,10 +459,7 @@ namespace aio{ namespace io{
 			return underlying_<forward>().seek(derive_().first + off);
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct sub_random_p : random 
@@ -483,10 +474,7 @@ namespace aio{ namespace io{
 			return underlying_<random>().seek(derive_().first + off);
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct sub_read_map_p : read_map
@@ -505,11 +493,7 @@ namespace aio{ namespace io{
 			return derive_().last - derive_().first;
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		Derive& derive_() { return static_cast<Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 	
 	template<typename Derive> struct sub_write_map_p : write_map
@@ -531,10 +515,7 @@ namespace aio{ namespace io{
 			return underlying_<write_map>().sync();
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename ArchiveType>
@@ -542,8 +523,9 @@ namespace aio{ namespace io{
 	{
 		typedef proxy_archive<ArchiveType> base;
 		tail_archive(): first(0){}
-		tail_archive(ArchiveType& ar, long_size_t first_)
-			: base(ar) , first(first_)
+		template<typename RealArchiveType>
+		tail_archive(RealArchiveType&& ar, long_size_t first_)
+			: base(std::forward<RealArchiveType>(ar)) , first(first_)
 		{
 			AIO_PRE_CONDITION(this->underlying().template get<sequence>().offset() == first);
 		}
@@ -561,10 +543,7 @@ namespace aio{ namespace io{
 			return underlying_<ioctrl>().truncate(size + derive_().first);
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct tail_ioinfo_p : ioinfo 
@@ -576,10 +555,7 @@ namespace aio{ namespace io{
 				: real_size - derive_().first;
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct tail_sequence_p : sequence 
@@ -594,10 +570,7 @@ namespace aio{ namespace io{
 				: real_size - derive_().first;
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 	
 	template<typename Derive> struct tail_forward_p : forward 
@@ -615,10 +588,7 @@ namespace aio{ namespace io{
 			return underlying_<forward>().seek(off + derive_().first);
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct tail_random_p : random 
@@ -636,10 +606,7 @@ namespace aio{ namespace io{
 			return underlying_<random>().seek(off + derive_().first);
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 
 	template<typename Derive> struct tail_read_map_p : read_map
@@ -655,10 +622,7 @@ namespace aio{ namespace io{
 				: real_size - derive_().first;
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
 	
 	template<typename Derive> struct tail_write_map_p : write_map
@@ -678,11 +642,9 @@ namespace aio{ namespace io{
 			return underlying_<write_map>().sync();
 		}
 		private:
-		const Derive& derive_() const{ return static_cast<const Derive&>(*this);}
-		template<typename Interface> Interface& underlying_() const{ 
-			return derive_().underlying().template get<Interface>(); 
-		}
+		COMMON_IO_ADAPTOR_HELPER();
 	};
+#undef COMMON_IO_ADAPTOR_HELPER
 }}
 #endif //end AIO_COMMON_ARCHIVE_ADAPTOR_H
 

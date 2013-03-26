@@ -36,6 +36,7 @@ namespace xirang{ namespace fs{
 			persist(true)
 		{
 		}
+		bool cached() const { return !cached_path.empty();}
 	};
 #if 0
 	struct file_header;

@@ -16,7 +16,6 @@ namespace aio{ namespace fs{
         /// It intends to be used to implement temp file/dir only.
         /// \post return start with template_
         string gen_temp_name(const_range_string template_);
-        string gen_temp_name_post(const_range_string postfix_);
     }
 
 //********************** begin core fs functions
@@ -38,6 +37,7 @@ namespace aio{ namespace fs{
 		er_not_dir,
 		er_permission_denied,
         er_not_empty,
+		er_data_error,
     };
 
     enum file_state

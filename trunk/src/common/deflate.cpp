@@ -1,4 +1,4 @@
-#include <aio/common/zip.h>
+#include <aio/common/deflate.h>
 #include <zlib.h>
 
 namespace aio{ namespace zip{

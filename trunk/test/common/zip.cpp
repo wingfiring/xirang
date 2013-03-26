@@ -3,7 +3,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 */
 
 #include "precompile.h"
-#include <aio/common/zip.h>
+#include <aio/common/deflate.h>
 #include <aio/common/archive/mem_archive.h>
 #include <random>
 
