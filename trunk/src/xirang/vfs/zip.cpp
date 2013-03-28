@@ -22,72 +22,6 @@ namespace xirang{ namespace fs{
 	{
 		public:
 
-		explicit ZipFsImp(read_map* rd, write_map* wr, const string& res, IVfs* host, IVfs& cache, bool sync_on_destroy)
-			: m_rmap(rd), m_wmap(wr), m_cache(&cache), m_resource(res), m_host(host), m_root(0)
-            , m_sync_on_destroy(sync_on_destroy)
-		{
-			AIO_PRE_CONDITION(rd);
-			init_();
-		}
-
-		~ZipFsImp()
-		{
-            if (m_sync_on_destroy && !readonly_()){
-                try {sync(); }
-                catch(...){	}
-            }
-		}
-
-
-		// common operations of dir and file
-		// \pre !is_absolute(path)
-		fs_error remove(const string& path)
-		{
-            AIO_PRE_CONDITION(!is_absolute(path));
-            if (readonly_())
-                return aiofs::er_permission_denied;
-
-			fs_error ret = remove_check(*host(), path);
-			if (ret == aiofs::er_ok)
-			{
-				file_node* pos = locate(m_root_node, path);
-				AIO_PRE_CONDITION(pos);
-                if (pos == &m_root_node)
-                    return aiofs::er_invalid;
-				return removeNode(pos);
-			}
-
-			return ret;
-		}
-
-		// dir operations
-		// \pre !is_absolute(path)
-		fs_error createDir(const  string& path)
-		{
-			AIO_PRE_CONDITION(!is_absolute(path));
-
-            if (readonly_())
-                return aiofs::er_permission_denied;
-
-			if (state(path).state != aiofs::st_not_found)
-				return aiofs::er_exist;
-
-			file_node* pos = private_::create_node(m_root_node, path, aiofs::st_dir, false);
-			if (pos)
-			{
-				pos->data = new file_header;
-				pos->data->type = aiofs::st_dir;
-				pos->data->cache_fs = m_cache;
-				pos->data->name = path;
-
-				pos->data->gp_flag = 0x800;
-				pos->data->compression_method = 0;
-                pos->data->mod_time = -1;
-                pos->data->mod_date = -1;
-			}
-			return pos ?  aiofs::er_ok : aiofs::er_not_found;
-		}
-
 		// file operations
 		void** do_create(unsigned long long mask,
 			void** base, aio::unique_ptr<void>& owner, const string& path, int flag){
@@ -129,66 +63,6 @@ namespace xirang{ namespace fs{
 			return pos->data->cache(m_rmap, m_wmap);
 		}
 
-		// \pre !is_absolute(to)
-		// if from and to in same fs, it may have a more effective implementation
-		fs_error copy(const string& from, const string& to)
-		{
-            AIO_PRE_CONDITION(!is_absolute(to));
-            if (readonly_())
-                return aiofs::er_permission_denied;
-
-			VfsNode from_node = { from, m_host};
-			if (is_absolute(from))
-			{
-				AIO_PRE_CONDITION(mounted());
-				from_node = m_root->locate(from).node;
-			}
-
-			VfsNode to_node = { to, m_host};
-			return xirang::fs::copyFile(from_node, to_node);
-		}
-
-		fs_error truncate(const string& path, aio::long_size_t s)
-		{
-			AIO_PRE_CONDITION(!is_absolute(path));
-            if (readonly_())
-                return aiofs::er_permission_denied;
-
-			file_node* pos = locate(m_root_node, path);
-			if (!pos)
-				return aiofs::er_not_found;
-
-			if (pos->type != aiofs::st_regular)
-				return aiofs::er_not_regular;
-
-			AIO_PRE_CONDITION(pos->data);
-
-			//TODO:optimization for s == 0
-			return pos->data->cache(m_rmap, m_wmap);
-			fs::create<, aio::io::ioctrl>(*pos->data).get<aio::io::ioctrl>().truncate(s);
-			return aiofs::er_ok;
-		}
-
-		void sync() {
-            if (!readonly_())
-			    commit_();
-		}
-
-		// query
-		const string& resource() const{ return m_resource; }
-
-		// volume
-		// if !mounted, return null
-		RootFs* root() const { return m_root;}
-
-		// \post mounted() && root() || !mounted() && !root()
-		bool mounted() const { return m_root != 0; }
-
-		// \return mounted() ? is_absolute() : empty() 
-		string mountPoint() const
-		{
-			return m_root ? m_root->mountPoint(*m_host) : "";
-		}
 
 		// \pre !is_absolute(path)
 		VfsNodeRange children(const string& path) const
@@ -233,118 +107,6 @@ namespace xirang{ namespace fs{
 
 			return st;
 		}
-		//
-		// if r == null, means unmount
-		void setRoot(RootFs* r) {
-			AIO_PRE_CONDITION(!mounted() || r == 0);
-			m_root = r;
-		}
-
-		IVfs* host() const { return m_host;}
-        any getopt(int id, const any & optdata /*= any() */) const 
-        {
-            if (id == vo_readonly)
-                return readonly_();
-            else if (id == vo_sync_on_destroy)
-                return m_sync_on_destroy;
-            return any();
-        }
-
-        any setopt(int id, const any & optdata,  const any & indata/*= any()*/)
-        {
-            if (id == vo_sync_on_destroy)
-            {
-                m_sync_on_destroy = aio::any_cast<bool>(optdata);
-                return true;
-            }
-            return any();
-        }
-
-		private:
-		typedef std::vector<file_header*> entries_type;
-
-		// m_file must support reader and random seek
-		void init_()
-		{
-			if (m_rmap->size() == 0)
-				return;
-
-			aio::iauto<aio::io::read_view> view;
-			aio::long_size_t off = 0;
-			std::tie(view, off) = load_cd(*m_rmap, buf);
-
-			aio::archive::buffer_in mrd(buf);
-
-			for (uint16_t i = 0; i < number_entries; ++i)
-			{
-				aio::unique_ptr<file_header> ph(new file_header);
-				load_header(mrd, *ph);
-
-				//init rest members of header
-				ph->cache_fs = m_cache;
-
-				file_node* pos = create_node(m_root_node, ph->name, ph->type, true);
-				AIO_PRE_CONDITION(pos);
-
-				if (pos->data)
-					AIO_THROW(duplicated_file_name)(ph->name.c_str());
-
-				pos->data = ph.release();
-			}
-		};
-
-
-
-		void dump_headers_(file_node& node, entries_type& entries)
-		{
-            if (node.data && node.data->type == aio::fs::st_regular)
-				entries.push_back(node.data);
-			for (std::map<string, private_::file_node<file_header*>*>::iterator itr = node.children.begin(); itr != node.children.end(); ++itr)
-			{
-				dump_headers_(*itr->second, entries);
-			}
-		}
-
-		void commit_()
-		{
-            AIO_PRE_CONDITION(!readonly_());
-
-			archive_ptr tmpzip = temp_file(*m_cache, "TMP", "");
-			writer* wr = tmpzip->query_writer();
-            AIO_PRE_CONDITION(wr);
-
-			aio::archive::random* rng = tmpzip->query_random();
-			AIO_PRE_CONDITION(rng);
-
-			entries_type entries;
-			dump_headers_(m_root_node, entries);
-			std::sort(entries.begin(), entries.end());
-
-			//1. dump entries 
-			for (entries_type::iterator itr = entries.begin(); itr != entries.end(); ++itr)
-			{
-				copy_entry(*itr->second, *wr, *rng);
-			}
-
-
-			//2. dump central dir
-			long_size_t offset_central_dir = rng->offset();
-			for ( entries_type::iterator itr = entries.begin(); itr != entries.end(); ++itr)
-			{
-				write_cd_entry(*itr->second, *wr);
-			}
-			long_size_t size_central_dir = rng->offset() - offset_central_dir;
-
-
-			write_cd_end(*wr, entries.size(), size_central_dir, offset_central_dir);
-
-			//3. copy the tmp back.
-			long_size_t copied_size = copy_archive(*tmpzip, m_file);
-			if (copied_size != rng->size())
-				AIO_THROW(archive_io_fatal_error);
-		}
-
-        bool readonly_() const{ return m_wmap == 0; }
 
 		io::read_map* m_rmap;
 		io::write_map* m_wmap;
@@ -364,8 +126,8 @@ namespace xirang{ namespace fs{
 		public:
 		typedef private_::file_node<file_header> file_node;
 
-		explicit ZipFsImp(read_map* rd, write_map* wr, const string& res, IVfs* host, IVfs& cache, bool sync_on_destroy, CachePolicy cp)
-			: m_rmap(rd), m_wmap(wr), m_cache(&cache), m_resource(res), m_host(host), m_root(0)
+		explicit ZipFsImp(read_map* rd, write_map* wr, ioctrl* ioc, const string& res, IVfs* host, IVfs& cache, bool sync_on_destroy, CachePolicy cp)
+			: m_rmap(rd), m_wmap(wr), m_ioctrl(ioc), m_cache(&cache), m_resource(res), m_host(host), m_root(0)
 			, m_cache_policy(cp) , m_sync_on_destroy(sync_on_destroy)
 		{
 			AIO_PRE_CONDITION(rd);
@@ -466,7 +228,10 @@ namespace xirang{ namespace fs{
 			return cache_(head, s);
 		}
 
-		void sync();
+		void sync() {
+            if (!readonly_())
+			    commit_();
+		}
 
 		// query
 		const string& resource() const{ return m_resource; }
@@ -489,9 +254,12 @@ namespace xirang{ namespace fs{
 		
 		// \pre !is_absolute(path)
 		VfsState state(const string& path) const;
-		//
+
 		// if r == null, means unmount
-		void setRoot(RootFs* r);
+		void setRoot(RootFs* r) {
+			AIO_PRE_CONDITION(!mounted() || r == 0);
+			m_root = r;
+		}
 
 		IVfs* host() const { return m_host;}
         any getopt(int id, const any & optdata /*= any() */) const 
@@ -553,45 +321,44 @@ namespace xirang{ namespace fs{
 			}
 		}
 
+		typedef std::vector<file_header*> entries_type;
+		void dump_headers_(file_node& node, entries_type& entries)
+		{
+            if (node.data.type == aio::fs::st_regular)
+				entries.push_back(&node.data);
+			for (auto& v : node.children)
+				dump_headers_(*v.second, entries);
+		}
 		void commit_()
 		{
-#if 0
             AIO_PRE_CONDITION(!readonly_());
 
-			archive_ptr tmpzip = temp_file(*m_cache, "TMP", "");
-			writer* wr = tmpzip->query_writer();
-            AIO_PRE_CONDITION(wr);
-
-			aio::archive::random* rng = tmpzip->query_random();
-			AIO_PRE_CONDITION(rng);
+			auto dest = temp_file<read_map, write_map, aio::io::random>(*m_cache, "TMP", empty_str, of_create | of_remove_on_close);
 
 			entries_type entries;
 			dump_headers_(m_root_node, entries);
 			std::sort(entries.begin(), entries.end());
 
 			//1. dump entries 
-			for (entries_type::iterator itr = entries.begin(); itr != entries.end(); ++itr)
-			{
-				copy_entry(*itr->second, *wr, *rng);
+			auto& dest_wmap = dest.get<write_map>();
+			for (auto v : entries){
+				copy_entry(*v, dest_wmap);
 			}
-
 
 			//2. dump central dir
-			long_size_t offset_central_dir = rng->offset();
-			for ( entries_type::iterator itr = entries.begin(); itr != entries.end(); ++itr)
-			{
-				write_cd_entry(*itr->second, *wr);
+			long_size_t offset_central_dir = dest.get<aio::io::random>().offset();
+			for (auto v: entries){
+				write_cd_entry(*v, dest_wmap);
 			}
-			long_size_t size_central_dir = rng->offset() - offset_central_dir;
+			long_size_t size_central_dir = dest.get<aio::io::random>().offset() - offset_central_dir;
 
 
-			write_cd_end(*wr, entries.size(), size_central_dir, offset_central_dir);
+			write_cd_end(dest_wmap, entries.size(), size_central_dir, offset_central_dir);
 
 			//3. copy the tmp back.
-			long_size_t copied_size = copy_archive(*tmpzip, m_file);
-			if (copied_size != rng->size())
+			long_size_t copied_size = copy_data(dest.get<read_map>(), *m_wmap);
+			if (m_ioctrl->truncate(copied_size) != aio::fs::er_ok)
 				AIO_THROW(archive_io_fatal_error);
-#endif
 		}
 
         bool readonly_() const{ return m_wmap == 0; }
@@ -599,6 +366,7 @@ namespace xirang{ namespace fs{
 		file_node m_root_node;
 		read_map* m_rmap;
 		write_map* m_wmap;
+		ioctrl* m_ioctrl;
 		IVfs* m_cache;
 		const string m_resource;
 		IVfs* m_host;
@@ -609,11 +377,11 @@ namespace xirang{ namespace fs{
 	};
 
 	ZipFs::ZipFs(aio::iref<read_map> file, IVfs& cache, const string& resource, CachePolicy cp /* = cp_flat */ )
-		: m_imp (new ZipFsImp(&file.get<read_map>(), 0, resource, this, cache, false, cp))
+		: m_imp (new ZipFsImp(&file.get<read_map>(), 0, 0, resource, this, cache, false, cp))
 	{
 	}
-	ZipFs::ZipFs(aio::iref<read_map, write_map> file, IVfs& cache, const string& resource, bool sync_on_destroy, CachePolicy cp)
-		: m_imp (new ZipFsImp(&file.get<read_map>(), &file.get<write_map>(), resource, this, cache, sync_on_destroy, cp))
+	ZipFs::ZipFs(aio::iref<read_map, write_map, ioctrl> file, IVfs& cache, const string& resource, bool sync_on_destroy, CachePolicy cp)
+		: m_imp (new ZipFsImp(&file.get<read_map>(), &file.get<write_map>(), &file.get<ioctrl>(),resource, this, cache, sync_on_destroy, cp))
 	{
 	}
 	ZipFs::~ZipFs()

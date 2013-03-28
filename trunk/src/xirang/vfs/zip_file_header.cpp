@@ -421,7 +421,7 @@ namespace xirang{ namespace fs{
 		return return_type(file.view_rd(hcd), number_entries);
 	}
 
-	file_header load_header(aio::iref<aio::io::reader, aio::io::random> iar)
+	file_header load_header(const aio::iref<aio::io::reader, aio::io::random>& iar)
 	{
 		aio::io::reader& ar = iar.get<aio::io::reader>();
 		aio::io::random& rng = iar.get<aio::io::random>();

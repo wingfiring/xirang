@@ -16,7 +16,7 @@ namespace xirang{ namespace fs{
 	public:
 
         explicit ZipFs(aio::iref<aio::io::read_map> file, IVfs& cache, const string& resource = aio::empty_str, CachePolicy cp = cp_flat);
-        explicit ZipFs(aio::iref<aio::io::read_map, aio::io::write_map> file, IVfs& cache
+        explicit ZipFs(aio::iref<aio::io::read_map, aio::io::write_map, aio::io::ioctrl> file, IVfs& cache
 				, const string& resource = aio::empty_str, bool sync_on_destroy = true, CachePolicy cp = cp_flat);
 
 		~ZipFs();
