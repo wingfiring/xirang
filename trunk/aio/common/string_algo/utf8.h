@@ -7,6 +7,7 @@
 
 //STL
 #include <iterator>
+#include <type_traits> //for: make_unsigned
 
 #ifdef MSVC_COMPILER_
 #pragma warning(disable: 4333 4244)
@@ -42,16 +43,21 @@ namespace aio{ namespace utf8 {
 		};
 	}
 
+	template<typename T>
+	typename std::make_unsigned<T>::type to_unsigned(T t){
+		typedef typename std::make_unsigned<T>::type return_type;
+		return static_cast<return_type>(t);
+	}
+
 	template<typename InputIter, typename OutputIter>
 		std::pair<InputIter, OutputIter> encode(range<InputIter> in, OutputIter out)
 		{
 			InputIter iin = in.begin();
-			typedef unsigned long  in_value_type;
             
 			typedef unsigned long value_type;
 			for (; iin != in.end(); ++iin, ++out)
 			{
-				value_type ch = *iin;
+				value_type ch = to_unsigned(*iin);
 				if (ch < 0x80)
 				{
 					//U+00000000 – U+0000007F	0xxxxxxx

@@ -111,7 +111,6 @@ namespace fs
 				if((mask & io::get_mask<Interfaces...>::value) != mask)
 					AIO_THROW(unsupport_interface);
 
-				typedef typename private_::sorted_iref<Interfaces...>::type iref_type;
 				typedef typename private_::sorted_iref<Interfaces...>::sorted_seq seq;
 
 				return private_::copy_interface_helper<seq>::template copy(mask, ret, ref, this_);

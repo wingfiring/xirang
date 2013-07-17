@@ -595,7 +595,6 @@ namespace aio
 		const basic_string<CharT>& lhs, 
 		const basic_range_string<const CharT>& rhs)
 	{
-		typedef typename basic_string<CharT>::traits_type traits_type;
 		typedef  basic_string<CharT> string_type;
 		return string_type::concate(lhs.c_str(), lhs.size(), 
 			rhs.data(), rhs.size(), lhs.get_heap());
@@ -606,7 +605,6 @@ namespace aio
 		const basic_range_string<const CharT>& lhs, 
 		const basic_string<CharT>& rhs)
 	{
-		typedef typename basic_string<CharT>::traits_type traits_type;
 		typedef  basic_string<CharT> string_type;
 		return string_type::concate(lhs.data(), lhs.size(), 
 			rhs.c_str(), rhs.size(), rhs.get_heap());
@@ -617,7 +615,6 @@ namespace aio
 		const basic_range_string<const CharT>& lhs, 
 		const basic_range_string<const CharT>& rhs)
 	{
-		typedef typename basic_string<CharT>::traits_type traits_type;
 		typedef  basic_string<CharT> string_type;
 		return string_type::concate(lhs.data(), lhs.size(), 
 			rhs.data(), rhs.size(), memory::get_global_heap());

@@ -12,4 +12,9 @@ AUX_SOURCE_DIRECTORY(${AIO_ROOT}/src/common/archive DIR_SRCS)
 #add library file
 ADD_LIBRARY(aio_common STATIC ${DIR_SRCS})
 
+TARGET_LINK_LIBRARIES(
+	aio_common
+	${BOOST_SYSTEM}
+	)
+
 

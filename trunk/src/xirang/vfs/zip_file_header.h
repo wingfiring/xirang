@@ -56,8 +56,7 @@ namespace xirang{ namespace fs{
 	std::tuple<aio::iauto<aio::io::read_view>, uint32_t> load_cd(aio::io::read_map& file);
 	file_header load_header(const aio::iref<aio::io::reader, aio::io::random>& iar);
 
-	void copy_entry(file_header& h, aio::io::write_map& dest);
-
+	void append_entry(IVfs& cache, file_header& h, aio::io::write_map& dest);
 	void write_cd_entry(file_header& h, aio::io::write_map& wr);
 	void write_cd_end(aio::io::write_map& wr, size_t num_entries, aio::long_size_t size_central_dir, aio::long_size_t offset_central_dir);
 }}

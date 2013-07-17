@@ -538,7 +538,6 @@ namespace aio{ namespace io{
 		tail_archive(RealArchiveType&& ar, long_size_t first_)
 			: base(std::forward<RealArchiveType>(ar)) , first(first_)
 		{
-			AIO_PRE_CONDITION(this->underlying().template get<sequence>().offset() == first);
 		}
 
 		long_size_t first;

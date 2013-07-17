@@ -13,7 +13,6 @@ BOOST_AUTO_TEST_SUITE(iterator_suite)
 using namespace aio;
 BOOST_AUTO_TEST_CASE(test_output)
 {
-	typedef std::vector<int>::iterator vec_iterator;
 	typedef output_iterator< default_itr_traits<int>> itr_type;
 	itr_type it;
 	BOOST_CHECK(!it.valid());

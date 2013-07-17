@@ -17,109 +17,6 @@ namespace xirang{ namespace fs{
     using aio::long_size_t;
 	using namespace aio::io;
 	using namespace aio;
-#if 0
-	class ZipFsImp
-	{
-		public:
-
-		// file operations
-		void** do_create(unsigned long long mask,
-			void** base, aio::unique_ptr<void>& owner, const string& path, int flag){
-			AIO_PRE_CONDITION(!is_absolute(path));
-
-			file_node* pos = locate(m_root_node, path);
-			const bool for_write = mask & io::get_mask<aio::io::writer, aio::io::write_view>::value;
-
-            if ((readonly_() && for_write)
-                || (pos && flag == of_create)
-					|| (!pos && flag == of_open)
-                    || (pos && pos->type != aiofs::st_regular)
-                    )
-				return 0;
-
-			if (!pos){
-				pos = private_::create_node(m_root_node, path, aiofs::st_regular, false);
-				if (pos && pos->type == aiofs::st_regular)
-				{
-					if (!pos->data)
-
-					{
-						pos->data = new file_header;
-						pos->data->type = aiofs::st_regular;
-						pos->data->cache_fs = m_cache;
-						pos->data->name = path;
-
-						pos->data->gp_flag = 0x806;
-						pos->data->compression_method = 8;
-					}
-				}
-				else 
-					return 0;
-			}
-			AIO_PRE_CONDITION(pos);
-
-			AIO_PRE_CONDITION(for_write || flag == of_open);
-			pos->data->mod_time = -1;
-			return pos->data->cache(m_rmap, m_wmap);
-		}
-
-
-		// \pre !is_absolute(path)
-		VfsNodeRange children(const string& path) const
-		{
-			file_node* pos = locate(const_cast<file_node&>(m_root_node), path);
-			typedef private_::FileNodeIterator<file_header*> FileIterator;
-			if (pos && pos->type == aiofs::st_dir)
-			{
-				std::map<string, private_::file_node<file_header*>*>::iterator beg = pos->children.begin();
-				std::map<string, private_::file_node<file_header*>*>::iterator end = pos->children.end();
-				return VfsNodeRange(
-                    VfsNodeRange::iterator(FileIterator(beg, m_host)),
-					VfsNodeRange::iterator(FileIterator(end, m_host))
-						);
-			}
-			return VfsNodeRange();
-		}
-
-		// \pre !is_absolute(path)
-		VfsState state(const string& path) const
-		{
-			ZipFsImp* self = const_cast<ZipFsImp*>(this);
-			file_node* pnode = locate(self->m_root_node, path);
-			VfsState st = {
-				{path, m_host},
-				aiofs::st_not_found, 0
-			};
-			if (pnode)	//found
-			{
-				st.state = pnode->type;
-				if (st.state == aiofs::st_regular)
-				{
-                    VfsState stc = m_cache->state(path);
-                    if (stc.state == aiofs::st_regular)
-                    {
-                        st.size = stc.size;
-                    }
-                    else
-						st.size = pnode->data->uncompressed_size;
-				}
-			}
-
-			return st;
-		}
-
-		io::read_map* m_rmap;
-		io::write_map* m_wmap;
-		IVfs* m_cache;
-
-		const string m_resource;
-		IVfs* m_host;
-		RootFs* m_root;
-		file_node m_root_node;
-
-        bool m_sync_on_destroy;
-	};
-#endif
 
 	class ZipFsImp
 	{
@@ -185,7 +82,44 @@ namespace xirang{ namespace fs{
 
 		// file operations
 		void** do_create(unsigned long long mask,
-			void** base, aio::unique_ptr<void>& owner, const string& path, int flag);
+			void** base, aio::unique_ptr<void>& owner, const string& path, int flag){
+			AIO_PRE_CONDITION(!is_absolute(path));
+
+			auto pos = locate(m_root_node, path);
+			const bool for_write = mask & io::get_mask<aio::io::writer, aio::io::write_view>::value;
+
+			bool exist = pos.not_found.empty();
+			if ((readonly_() && for_write)
+					|| (!exist && flag == of_open)
+					|| (exist && (flag == of_create || pos.node->type != aiofs::st_regular))
+			   )
+				return 0;
+
+			if (!exist){
+				pos.node = private_::create_node(pos, aiofs::st_regular);
+				exist = (pos.node != nullptr);
+				if (!exist) return 0;
+
+				AIO_PRE_CONDITION(pos.node->type == aiofs::st_regular);
+				auto & data = pos.node->data;
+
+				data.type = aiofs::st_regular;
+				data.name = path;
+
+				data.gp_flag = 0x806;
+				data.compression_method = 8;
+			}
+
+			AIO_PRE_CONDITION(for_write || flag == of_open);
+			pos.node->data.mod_time = -1;
+			//FIXME: support CachePolicy
+			if(pos.node->data.cached_path.empty() && cache_(pos.node->data) != aiofs::er_ok)
+				return 0;
+
+			//FIXME: support CachePolicy and of_remove_on_close
+			return m_cache->do_create(mask, base, owner, pos.node->data.cached_path, flag|of_create_or_open);
+		}
+
 
 		// \pre !is_absolute(to)
 		// if from and to in same fs, it may have a more effective implementation
@@ -250,10 +184,50 @@ namespace xirang{ namespace fs{
 		}
 
 		// \pre !is_absolute(path)
-		VfsNodeRange children(const string& path) const;
+		VfsNodeRange children(const string& path) const
+		{
+			auto pos = locate(const_cast<file_node&>(m_root_node), path);
+			typedef private_::FileNodeIterator<file_header> FileIterator;
+			if (pos.not_found.empty() && pos.node->type == aiofs::st_dir)
+			{
+				auto beg = pos.node->children.begin();
+				auto end = pos.node->children.end();
+				return VfsNodeRange(
+                    VfsNodeRange::iterator(FileIterator(beg, m_host)),
+					VfsNodeRange::iterator(FileIterator(end, m_host))
+						);
+			}
+			return VfsNodeRange();
+		}
+
 		
 		// \pre !is_absolute(path)
-		VfsState state(const string& path) const;
+		VfsState state(const string& path) const
+		{
+			ZipFsImp* self = const_cast<ZipFsImp*>(this);
+			auto pnode = locate(self->m_root_node, path);
+
+			VfsState st = {
+				{path, m_host},
+				aiofs::st_not_found, 0
+			};
+			if (pnode.not_found.empty())
+			{
+				st.state = pnode.node->type;
+				if (st.state == aiofs::st_regular)
+				{
+                    VfsState stc = m_cache->state(path);
+                    if (stc.state == aiofs::st_regular)
+                    {
+                        st.size = stc.size;
+                    }
+                    else
+						st.size = pnode.node->data.uncompressed_size;
+				}
+			}
+
+			return st;
+		}
 
 		// if r == null, means unmount
 		void setRoot(RootFs* r) {
@@ -282,11 +256,28 @@ namespace xirang{ namespace fs{
         }
 
 		private:
+		fs_error cache_(file_header& head){
+			string filename;
+			aiofs::dir_filename(head.name, &filename);
+			
+			auto dest = temp_file<ioctrl, write_map>(*m_cache, ("?_" + filename), empty_str, of_create, &head.cached_path);
+			if (head.relative_offset_local_header == uint32_t(-1))
+				return aiofs::er_ok;
+
+			ext_heap::handle h(head.relative_offset_data(*m_rmap), head.relative_offset_data(*m_rmap) + head.compressed_size);
+			auto inf = decorate<sub_archive , sub_read_map_p>(m_rmap, h);
+			read_map& src = inf;
+			auto result = aio::zip::inflate(src, dest.get<write_map>());
+			
+			return (result.err == aio::zip::ze_ok) ? aiofs::er_ok: aiofs::er_data_error;
+		}
+
 		fs_error cache_(file_header& head, aio::long_size_t s){
 			string filename;
 			aiofs::dir_filename(head.name, &filename);
 			
 			auto dest = temp_file<ioctrl, write_map>(*m_cache, ("?_" + filename), empty_str, of_create, &head.cached_path);
+
 			ext_heap::handle h(head.relative_offset_data(*m_rmap), head.relative_offset_data(*m_rmap) + head.compressed_size);
 			auto inf = decorate<sub_archive , sub_read_map_p>(m_rmap, h);
 			read_map& src = inf;
@@ -342,7 +333,7 @@ namespace xirang{ namespace fs{
 			//1. dump entries 
 			auto& dest_wmap = dest.get<write_map>();
 			for (auto v : entries){
-				copy_entry(*v, dest_wmap);
+				append_entry(*m_cache, *v, dest_wmap);
 			}
 
 			//2. dump central dir

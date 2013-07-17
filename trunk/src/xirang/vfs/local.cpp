@@ -107,12 +107,12 @@ namespace xirang{ namespace fs{
 		void** ret = 0;
 		if (mask & io::get_mask<aio::io::writer, aio::io::write_view>::value ){ //write open
 			aio::unique_ptr<aio::io::file> ar(new aio::io::file(aio::get_cobj<LocalFs>(this).open_create(path, flag)));
-			ret = copy_interface<reader, writer, random, ioctrl, read_map, write_map >::apply(mask, base, *ar, (void*)ar.get()); 
+			ret = copy_interface<reader, writer, aio::io::random, ioctrl, read_map, write_map >::apply(mask, base, *ar, (void*)ar.get()); 
 			aio::unique_ptr<void>(std::move(ar)).swap(owner);
 		}
 		else{ //read open
 			aio::unique_ptr<aio::io::file_reader> ar(new aio::io::file_reader(aio::get_cobj<LocalFs>(this).open(path)));
-			ret = copy_interface<reader, random, ioctrl, read_map>::apply(mask, base, *ar, (void*)ar.get()); 
+			ret = copy_interface<reader, aio::io::random, ioctrl, read_map>::apply(mask, base, *ar, (void*)ar.get()); 
 			aio::unique_ptr<void>(std::move(ar)).swap(owner);
 		}
 		return ret;

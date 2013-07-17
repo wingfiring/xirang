@@ -436,7 +436,7 @@ namespace sio{
 		{
 			const byte* first = reinterpret_cast<const byte*>(buf.data());
 			const byte* last = first + sizeof(T) * buf.size();
-			get_interface<io::writer>(ar).write(make_range(first, last));
+			get_interface<aio::io::writer>(ar).write(make_range(first, last));
 		}
 		return ar;
 	}
@@ -450,19 +450,19 @@ namespace sio{
 		{   
 			byte* first = reinterpret_cast<byte*>(buf.data());
 			byte* last = first + sizeof(T) * size;
-			get_interface<io::reader>(ar).read(make_range(first, last));
+			get_interface<aio::io::reader>(ar).read(make_range(first, last));
 		}
 		return ar;
 	}
 
 	template<typename Ar, typename T>  
-		typename std::enable_if<std::is_base_of<io::reader, Ar>::value, Ar&>::type 
+		typename std::enable_if<std::is_base_of<aio::io::reader, Ar>::value, Ar&>::type 
 		operator&(Ar& ar, T& t){	//load
 			return load(ar, t);
 		}
 
 	template<typename Ar, typename T>  
-		typename std::enable_if<std::is_base_of<io::writer, Ar>::value, Ar&>::type 
+		typename std::enable_if<std::is_base_of<aio::io::writer, Ar>::value, Ar&>::type 
 		operator&(Ar& ar, const T& t){	//load
 			return save(ar, t);
 		}

@@ -16,7 +16,6 @@ namespace xirang{ namespace fs{
 
 	using boost::numeric_cast;
     using aio::long_size_t;
-#if 0
     void setDateTime(file_header& h)
     {
         AIO_PRE_CONDITION(h.mod_time == uint16_t(-1));
@@ -26,6 +25,7 @@ namespace xirang{ namespace fs{
         h.mod_time = (ptm->tm_hour << 11) + (ptm->tm_min << 5) + (ptm->tm_sec >> 1);
     }
 
+#if 0
     struct zip_inflater
     {
         z_stream zstream;
@@ -281,60 +281,6 @@ namespace xirang{ namespace fs{
             deflateEnd(&zstream);
         }
     };
-	void copy_entry(file_header& h, aio::io::read_map& rd, aio::io::write_map& wr, aio::archive::random& rng)
-	{
-        AIO_PRE_CONDITION (h.type == aiofs::st_regular);
-
-		long_size_t local_header_off = rng.offset();
-        if (h.mod_time == uint16_t(-1))
-            setDateTime(h);
-
-		wr & sig_local_file_header 	//4B signature
-			& uint16_t(20)			//2B version need to extract
-			& h.gp_flag 			//2B general propose bit flag
-			& h.compression_method	//2B
-            & h.mod_time			//2B modified time TODO: imp
-            & h.mod_date			//2B modified date
-			& h.in_crc32				//4B will be modified in update_local_header
-			& h.compressed_size		//4B same as above
-			& h.uncompressed_size	//4B same as above
-			& uint16_t(h.name.size())	//2B file name length
-			& uint16_t(0)			//2B extra fileld length
-			;
-        aio::range<aio::buffer<byte>::const_iterator> cname = string_to_c_range(h.name);
-        aio::archive::writer::const_iterator name_pos = block_write(wr, cname);
-		if (name_pos != cname.end())
-			AIO_THROW(archive_io_fatal_error);
-		long_size_t local_data_off = rng.offset();
-
-        if (!h.cached || !h.dirty)
-		{
-			h.zip_archive->query_random()->seek(h.relative_offset_data(rd));
-			long_size_t copied_size = copy_data(*h.zip_archive->query_reader(), wr, h.compressed_size);
-			if (copied_size != h.compressed_size)
-				AIO_THROW(archive_io_fatal_error);
-		}
-        else 
-		{
-            zip_defalter defalter;
-
-            aio::archive::archive_ptr hcache = h.cache(no_edit);
-			aio::archive::reader* rd = hcache->query_reader();
-            h.in_crc32 = defalter.do_deflate(*rd, wr);
-            h.compressed_size = defalter.zstream.total_out;
-			h.uncompressed_size = defalter.zstream.total_in;
-
-			long_size_t pos = rng.offset();
-			rng.seek(local_header_off + 14); //offset of in_crc32
-
-			wr & h.in_crc32 & h.compressed_size & h.uncompressed_size;
-			rng.seek(pos);
-		}
-
-		h.relative_offset_local_header = numeric_cast<uint32_t>(local_header_off);
-		h.relative_offset_data = numeric_cast<uint32_t>(local_data_off);
-	}
-
 	void write_cd_entry(file_header& h, aio::archive::writer& wr)
 	{
         AIO_PRE_CONDITION (h.type == aiofs::st_regular);
@@ -472,6 +418,75 @@ namespace xirang{ namespace fs{
 		//End read zip entry
 		return h;
 	}
+	void append_entry(IVfs& cache, aio::io::read_map& zipf, file_header& h, aio::io::write_map& dest)
+	{
+        AIO_PRE_CONDITION (h.type == aiofs::st_regular);
+
+		long_size_t local_header_off = dest.size();
+        if (h.mod_time == uint16_t(-1))
+            setDateTime(h);
+
+
+		aio::io::mem_archive mar;
+		using namespace aio::sio;
+		mar & sig_local_file_header 	//4B signature
+			& uint16_t(20)			//2B version need to extract
+			& h.gp_flag 			//2B general propose bit flag
+			& h.compression_method	//2B
+            & h.mod_time			//2B modified time TODO: imp
+            & h.mod_date			//2B modified date
+			& h.in_crc32				//4B will be modified in update_local_header
+			& h.compressed_size		//4B same as above
+			& h.uncompressed_size	//4B same as above
+			& uint16_t(h.name.size())	//2B file name length
+			& uint16_t(0)			//2B extra fileld length
+			;
+        aio::range<aio::buffer<byte>::const_iterator> cname = string_to_c_range(h.name);
+        aio::archive::writer::const_iterator name_pos = block_write(wr, cname);
+		if (name_pos != cname.end())
+			AIO_THROW(archive_io_fatal_error);
+		long_size_t local_data_off = dest.offset();
+		auto head_wr = decorate<tail_archive, tail_write_map_p>(dest, local_header_off);
+		if(copy_data(mar, head_wr) != mar.size())
+				AIO_THROW(archive_io_fatal_error);
+
+        if (!h.cached || !h.dirty)
+		{
+			auto sub_src = decorate<sub_archive, sub_read_map_p>(zipf, local_header_off, local_header_off + h.compressed_size);
+			auto data_wr = decorate<tail_archive, tail_write_map_p>(dest, local_data_off);
+			long_size_t copied_size = copy_data(sub_src, data_wr);
+			if (copied_size != h.compressed_size)
+				AIO_THROW(archive_io_fatal_error);
+		}
+        else 
+		{
+			auto src = cache.create<aio::io::read_map>(h.cached_path);
+			auto data_wr = decorate<tail_archive, tail_write_map_p>(dest, local_data_off);
+
+			auto result = deflate(src, data_wr);
+
+
+            h.in_crc32 = crc32(src.get<aio::io::read_map>());
+            h.compressed_size = result.out_size;
+			h.uncompressed_size = result.in_size;
+
+			long_size_t pos = rng.offset();
+			rng.seek(local_header_off + 14); //offset of in_crc32
+
+			auto head_range = head_wr.address();
+			head_range
+			buffer_out bout();
+
+			wr & h.in_crc32 & h.compressed_size & h.uncompressed_size;
+			rng.seek(pos);
+		}
+
+		h.relative_offset_local_header = numeric_cast<uint32_t>(local_header_off);
+		h.relative_offset_data = numeric_cast<uint32_t>(local_data_off);
+	}
+
+	//void write_cd_entry(file_header& h, aio::io::write_map& wr);
+	//void write_cd_end(aio::io::write_map& wr, size_t num_entries, aio::long_size_t size_central_dir, aio::long_size_t offset_central_dir);
 
 }}
 

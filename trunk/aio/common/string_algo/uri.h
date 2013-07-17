@@ -88,7 +88,6 @@ namespace aio { namespace uri {
 		for (; iin != iend ; ++iin, ++iout)
 		{
 			typedef typename std::iterator_traits<InputIter>::value_type  in_value_type;
-			typedef typename aio::long_size_t unsigned_in_value_type;
 			in_value_type ch = *iin;
 			if (ch == '%')
 			{
