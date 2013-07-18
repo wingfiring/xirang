@@ -101,7 +101,7 @@ namespace fs
 					*ret++ = *(void**)&ref.template get<T>();
 					*ret++ = this_;
 				}
-				return copy_interface_helper<Interfaces...>::template copy(mask, ret, ref, this_);
+				return copy_interface_helper<aio::mpl::seq<Interfaces...> >::template copy(mask, ret, ref, this_);
 			}
 		};
 	}

@@ -296,17 +296,18 @@ namespace xirang{ namespace fs{
 		void** ret = 0;
 		if (mask & io::get_mask<writer, write_map>::value ){ //write open
 			aio::unique_ptr<buffer_io> ar(new buffer_io(aio::get_cobj<InMemory>(this).create(path, flag)));
-			ret = copy_interface<reader, writer, random, ioctrl, read_map, write_map>::apply(mask, base, *ar, (void*)ar.get()); 
+			aio::iref<reader, writer, aio::io::random, ioctrl, read_map, write_map> ifile(*ar);
+			ret = copy_interface<reader, writer, aio::io::random, ioctrl, read_map, write_map>::apply(mask, base, ifile, (void*)ar.get()); 
 			aio::unique_ptr<void>(std::move(ar)).swap(owner);
 		}
 		else{ //read open
 			aio::unique_ptr<buffer_in> ar(new buffer_in(aio::get_cobj<InMemory>(this).readOpen(path)));
-			ret = copy_interface<reader, random, ioctrl, read_map>::apply(mask, base, *ar, (void*)ar.get()); 
+			aio::iref<reader, aio::io::random, read_map> ifile(*ar);
+			ret = copy_interface<reader, aio::io::random, read_map>::apply(mask, base, ifile, (void*)ar.get()); 
 			aio::unique_ptr<void>(std::move(ar)).swap(owner);
 		}
 		return ret;
 	}
-
 }}
 
 
