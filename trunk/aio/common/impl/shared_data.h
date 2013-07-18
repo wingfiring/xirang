@@ -2,7 +2,7 @@
 #define AIO_IMP_SHARED_DATA_H
 
 #include <aio/common/config.h>
-#include <aio/common/atomic.h>
+#include <aio/common/backward/atomic.h>
 
 namespace aio{ namespace private_{
 	template<typename T> struct shared_data

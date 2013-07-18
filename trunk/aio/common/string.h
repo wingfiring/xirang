@@ -5,7 +5,7 @@
 
 #include <aio/common/config.h>
 #include <aio/common/memory.h>
-#include <aio/common/atomic.h>
+#include <aio/common/backward/atomic.h>
 #include <aio/common/range.h>
 #include <aio/common/buffer.h>
 
