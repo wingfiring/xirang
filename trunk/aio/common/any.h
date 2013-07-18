@@ -3,7 +3,6 @@
 #ifndef AIO_COMMON_ANY_H
 #define AIO_COMMON_ANY_H
 
-#include <algorithm>
 #include <typeinfo>
 #include <aio/common/exception.h>
 
