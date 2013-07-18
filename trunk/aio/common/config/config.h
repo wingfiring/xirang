@@ -36,6 +36,7 @@ namespace compiler{
 	struct mrc_or_sc_compiler : compiler_tag{};
 	struct ibmcpp_compiler : compiler_tag{};
 	struct msvc_compiler : compiler_tag{};
+	struct clang_compiler : compiler_tag{};
 }
 
 namespace stdlib{
@@ -50,6 +51,7 @@ namespace stdlib{
 	struct ibmcpp_stdlib : stdlib_tag {};
 	struct msipl_stdlib : stdlib_tag {};
 	struct dinkumware_stdlib : stdlib_tag {};
+	struct libcpp_stdlib : stdlib_tag {};	//for clang
 }}
 
 #if defined(linux) || defined(__linux) || defined(__linux__)
@@ -168,6 +170,10 @@ namespace stdlib{
 #	define MSVC_COMPILER_	1
 #	define COMPILER_TYPE msvc_compiler
 
+#elif defined __clang__ 
+#	define CLANG_COMPILER_ 1
+#	define COMPILER_TYPE clang_compiler
+
 #else
 
 #  error "Unknown compiler"
@@ -211,6 +217,10 @@ namespace stdlib{
 #elif (defined(_YVALS) && !defined(__IBMCPP__)) || defined(_CPPLIB_VER)
 #	define DINKUMWARE_STDLIB_	1
 #	define STDLIB_TYPE dinkumware_stdlib
+
+#elif defined(_LIBCPP_VERSION)
+#	define LIBCPP_STD_LIB_	1
+#	define STDLIB_TYPE libcpp_stdlib
 
 #elif defined (BOOST_ASSERT_CONFIG)
 #  error "Unknown standard library"
