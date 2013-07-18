@@ -440,8 +440,7 @@ namespace xirang
 
 	NamespaceBuilder::~NamespaceBuilder()
 	{
-		if (m_imp)
-			delete m_imp;
+		if (m_imp) aio::check_delete(m_imp);
 	}
 
 	NamespaceBuilder& NamespaceBuilder::name(const string& n)

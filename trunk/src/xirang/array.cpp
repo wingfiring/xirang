@@ -61,7 +61,7 @@ namespace xirang
 		if (m_imp)
 		{
 			clear();
-			delete m_imp;
+			aio::check_delete(m_imp);
 		}
 	}
 

@@ -224,7 +224,7 @@ namespace xirang{ namespace fs{
 		: m_imp(new InMemoryImp(resource, this))
 	{}
 
-	InMemory::~InMemory() { delete m_imp;}
+	InMemory::~InMemory() { aio::check_delete(m_imp);}
 
 	// common operations of dir and file
 	// \pre !absolute(path)

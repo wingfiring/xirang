@@ -14,8 +14,8 @@
 #	define AIO_COMM_API 
 #endif
 
-template<typename T>
-inline void unuse(const T&) {}
+template<typename... T>
+inline void unuse(const T& ...) {}
 
 namespace aio{
 	template<typename T> constexpr T const& const_max(T const& a, T const& b) {
@@ -27,6 +27,12 @@ namespace aio{
 
 	struct null_type;
 	struct empty_type{};
+
+	template<typename T>
+		void check_delete(T* p){
+			static_assert(sizeof(T) > 0, "Must not delete a incomplete type");
+			delete p;
+		}
 }
 
 #endif //end AIO_COMMON_CONFIG_H

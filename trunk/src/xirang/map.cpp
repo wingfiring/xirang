@@ -198,7 +198,7 @@ namespace xirang
 	Map::const_iterator::~const_iterator() 
 	{
 		if (valid())
-			delete m_imp;
+			aio::check_delete(m_imp);
 	}
 
 	Map::const_iterator::value_type Map::const_iterator::first() const
@@ -325,7 +325,7 @@ namespace xirang
 		if (valid())
 		{
 			clear();
-			delete m_imp;
+			aio::check_delete(m_imp);
 		}
 	}
 

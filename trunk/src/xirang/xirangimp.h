@@ -66,7 +66,7 @@ namespace xirang
 					NamespaceImp* pChild = iter->second;
 					destroyObj_(*pChild);
 					pImp->children.erase(iter);		
-					delete pChild;
+					aio::check_delete(pChild);
 					return true;
 				}
 				return false;
@@ -93,7 +93,7 @@ namespace xirang
 						end(pImp->children.end()); itr != end; ++itr)
 				{
 					destroyObj_(*itr->second);
-					delete itr->second;
+					aio::check_delete(itr->second);
 				}
 				pImp->children.clear();
 			}

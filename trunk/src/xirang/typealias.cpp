@@ -55,7 +55,7 @@ namespace xirang
 	TypeAliasBuilder::~TypeAliasBuilder()
 	{
 		if (m_imp)
-			delete m_imp;
+			aio::check_delete(m_imp);
 	}
 	TypeAliasBuilder& TypeAliasBuilder::name(const string& alias)
 	{
@@ -79,7 +79,7 @@ namespace xirang
 		tmp->parent = 0;
 		tmp->type= 0;
 		if (m_imp)
-			delete m_imp;
+			aio::check_delete(m_imp);
 		m_imp = tmp;
 
 		return *this;

@@ -33,7 +33,7 @@ namespace aio {
 
         ~any()
         {
-            delete content;
+            check_delete(content);
         }
 
     public: // modifiers

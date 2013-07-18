@@ -29,7 +29,7 @@ namespace xirang
 				for (ns_iterator itr(children.begin()),
 						end(children.end()); itr != end; ++itr)
 				{
-					delete itr->second;
+					aio::check_delete(itr->second);
 				}
                 children.clear();
 
@@ -37,12 +37,12 @@ namespace xirang
 				for (std::map < string, TypeImp* >::iterator itr(types.begin()),
 						end(types.end()); itr != end; ++itr)
 				{
-					delete itr->second;
+					aio::check_delete(itr->second);
 				}
 				types.clear();
 
                 for (std::map < string, TypeAliasImp * >::iterator itr = alias.begin(); itr != alias.end(); ++itr)
-                    delete itr->second;
+                    aio::check_delete(itr->second);
 				alias.clear();
 
 				parent = 0;

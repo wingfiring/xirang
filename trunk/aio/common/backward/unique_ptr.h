@@ -17,8 +17,7 @@ namespace aio
 
         void operator()(T* ptr_) const
         {
-            static_assert(sizeof(T)>0, "can't delete pointer to incomplete type");
-            delete ptr_;
+            check_delete(ptr_);
         }
     };
 
@@ -56,8 +55,7 @@ namespace aio
 		deleter_type deleter;
 
 		static void destroy_(T* ptr){
-            static_assert(sizeof(T)>0, "can't delete pointer to incomplete type");
-            delete ptr;
+            check_delete(ptr);
 		}
     };
     template<>
@@ -80,7 +78,7 @@ namespace aio
 
 		static void destroy_(void* ptr){
 			AIO_PRE_CONDITION(false && "just a stub, must never be called.");
-            delete (char*)ptr;
+            check_delete( (char*)ptr);
 		}
     };
 

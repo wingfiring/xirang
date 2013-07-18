@@ -371,7 +371,7 @@ namespace xirang
 	TypeBuilder::~TypeBuilder()
 	{
 		if (m_imp)
-			delete m_imp;
+			aio::check_delete(m_imp);
 	}
 
 	TypeBuilder& TypeBuilder::name(const string& name)
@@ -504,7 +504,7 @@ namespace xirang
         tmp->methods = methods == 0? &DefaultMethods() : methods;
 
 		if (m_imp)
-			delete m_imp;
+			aio::check_delete(m_imp);
 		m_imp = tmp;
         
         tmp->methods->beginLayout(m_imp->payload, m_offset, m_imp->alignment, m_imp->isPod);

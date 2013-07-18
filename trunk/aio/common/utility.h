@@ -51,7 +51,7 @@ namespace aio
 		explicit init_ptr(T* p = 0)
 		{
 			if (m_p)
-				delete p;
+				check_delete(p);
 			else
 				m_p = p;
 
@@ -60,7 +60,7 @@ namespace aio
 		~init_ptr()
 		{
 			if (m_p)
-				delete m_p;
+				check_delete(m_p);
 			m_p = 0;
 		}
 

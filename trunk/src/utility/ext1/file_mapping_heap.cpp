@@ -601,7 +601,7 @@ namespace aio
 
 	file_mapping_heap::~file_mapping_heap()
 	{
-		delete m_imp;
+		check_delete(m_imp);
 	}
 
 	void* file_mapping_heap::malloc(std::size_t size, std::size_t alignment, const void* hint )

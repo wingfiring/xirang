@@ -46,7 +46,7 @@ namespace aio
 		explicit default_deletorT(Args && ... arg) : Base(arg ... ) {}
 		virtual void destroy()
 		{
-			delete this;
+			check_delete(this);
 		}
 	};
 

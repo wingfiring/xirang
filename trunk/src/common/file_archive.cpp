@@ -248,7 +248,7 @@ namespace aio{ namespace io{
 		: m_imp(new file_imp(path, of_open, read_only))
 	{
 	}
-	file_reader::~file_reader() { delete m_imp;}
+	file_reader::~file_reader() { check_delete(m_imp);}
 
 	range<file_reader::iterator> file_reader::read(const range<file_reader::iterator>& buf)
 	{
@@ -270,7 +270,7 @@ namespace aio{ namespace io{
 		: m_imp(new file_imp(path, of, read_write))
 	{}
 
-	file_writer::~file_writer() 	{ delete m_imp;}
+	file_writer::~file_writer() 	{ check_delete(m_imp);}
 
 	range<file_writer::const_iterator> file_writer::write(
 			const range<file_writer::const_iterator>& r)
@@ -289,7 +289,7 @@ namespace aio{ namespace io{
 	file::file(const string& path, int of)
 		: m_imp(new file_imp(path, of, read_write))
 	{}
-	file::~file()	{ delete m_imp;}
+	file::~file()	{ check_delete(m_imp);}
 
 	range<file::iterator> file::read(
 			const range<file::iterator>& buf)

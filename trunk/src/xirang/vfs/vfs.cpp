@@ -207,7 +207,7 @@ namespace xirang{ namespace fs{
 
 	RootFs::~RootFs()
 	{
-		delete m_imp;
+		aio::check_delete(m_imp);
 	}
 
 	// \pre dir must be absolute name

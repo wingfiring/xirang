@@ -14,7 +14,7 @@ namespace xirang
 
 	Xirang::~Xirang ()
 	{
-		delete m_imp;
+		aio::check_delete(m_imp);
 	}
 
 	const string & Xirang::name () const
