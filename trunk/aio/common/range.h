@@ -19,7 +19,7 @@ namespace aio
 		range() : m_beg(), m_end() {}
 
 		template<typename OtherItr>
-		range(const OtherItr& first, const OtherItr& last) 
+		explicit range(const OtherItr& first, const OtherItr& last) 
 			: m_beg(first), m_end(last) {}
 
 		template<typename Cont> 
@@ -46,7 +46,7 @@ namespace aio
 		bool empty() const { return begin() == end();}
 		size_type size() const { return std::distance(begin(), end());}
 
-		/* explicit */ operator bool() const { return begin() != end();}
+		explicit operator bool() const { return begin() != end();}
 
 		void swap(range& rhs)
 		{

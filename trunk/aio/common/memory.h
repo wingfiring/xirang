@@ -35,9 +35,9 @@ namespace aio
 
 		/// free the memory block allocated by current handler instance or equivalent
 		/// \param p head address of memory block
-		/// \param alignment the alignment of allocated memory block. Default is 1, alignment must be 2^N 
-		/// \param size size of memory block. if size equals to -1, means unknown size and heap imp should check the size. The check may be slow.
-		/// \pre size should match the malloc call or -1, and p should belong to this heap
+		/// \param alignment the alignment of allocated memory block. Default is 1, alignment must be 2^N, 0 means unknown
+		/// \param size size of memory block. if size equals to 0, means unknown size and heap imp should check the size. The check may be slow.
+		/// \pre size and alignment should match the malloc call or 0, and p should belong to this heap
 		/// \throw nothrow
 		/// \note if p is null, do nothing.
 		virtual void free(void* p, std::size_t size, std::size_t alignment ) = 0;
@@ -56,6 +56,13 @@ namespace aio
 		virtual ~heap();
 	};
 
+	template<typename T> T* malloc_obj(heap& h){
+		return h.malloc(sizeof(T), alignof(T), 0);
+	}
+	template<typename T> void free_obj(heap& h, T* p){
+		h.free(p, sizeof(T), alignof(T);
+	}
+
 	template<typename T>
 	struct heap_deletor
 	{
@@ -71,10 +78,13 @@ namespace aio
 	template<typename T>
 	struct uninitialized_heap_ptr
 	{
-		uninitialized_heap_ptr(T* p, heap& h) : m_p(p), m_heap(&h){}
+		explicit uninitialized_heap_ptr(heap& h) 
+			: m_p(malloc_obj<T>(h))
+			, m_heap(&h)
+		{}
+		explicit uninitialized_heap_ptr(T* p, heap& h) : m_p(p), m_heap(&h){}
 		~uninitialized_heap_ptr(){
-			if (m_p)
-				m_heap->free(m_p, sizeof(T), std::alignment_of<T>::value);
+			if (m_p) free_obj(*m_heap, m_p);
 		}
 
 		T* release()
@@ -98,7 +108,7 @@ namespace aio
 		template<typename ... Args>
 		pointer_type create(Args && ... args)
 		{
-			uninitialized_heap_ptr<T> p (m_heap->malloc(sizeof(T), alignof(T), 0), *m_heap);
+			uninitialized_heap_ptr<T> p (*m_heap);
 			new (p.get()) T(args ...);
 			return pointer_type(p.release(), heap_deletor<T>(*m_heap));
 		}
@@ -166,10 +176,34 @@ namespace aio
 
 	typedef unsigned long long long_size_t;
 	typedef long long long_offset_t;
+	struct offset_range {
+		long_offset_t begin() const;
+		long_offset_t end() const;
+
+		/// the default begin and end are zero
+		handle();
+		/// \pre b <= e
+		explicit handle(long_offset_t b, long_offset_t e);
+
+		/// \return end - begin
+		long_size_t size() const;
+
+		/// \return end == begin
+		bool empty() const;
+
+		/// \return !empty()
+		explicit operator bool() const;
+
+		bool in(const handle& rhs) const;
+		bool contains(const handle& rhs) const;
+		private:
+		long_offset_t m_begin, m_end;
+	};
 
 	struct AIO_INTERFACE ext_heap : public heap
 	{
 	public: //heap methods
+		typedef offset_range handle;
 		virtual void* malloc(std::size_t size, std::size_t alignment, const void* hint ) = 0;
 
 		virtual void free(void* p, std::size_t size, std::size_t alignment ) = 0;
@@ -180,29 +214,6 @@ namespace aio
 		virtual bool equal_to(const heap& rhs) const = 0;
 
 	public:
-		struct handle {
-			long_offset_t begin() const;
-			long_offset_t end() const;
-
-			/// the default begin and end are zero
-			handle();
-			/// \pre b <= e
-			handle(long_offset_t b, long_offset_t e);
-
-			/// \return end - begin
-			long_size_t size() const;
-
-			/// \return end == begin
-			bool empty() const;
-
-			/// \return !empty()
-			explicit operator bool() const;
-
-			bool in(const handle& rhs) const;
-			bool contains(const handle& rhs) const;
-			private:
-			long_offset_t m_begin, m_end;
-		};
 
 		/// allocate a block in external heap
 		virtual handle allocate(std::size_t size, std::size_t alignment, handle hint) = 0;
@@ -421,9 +432,9 @@ namespace aio
 		typename DestroyPolicy = simple_destruct,
 		template <class> class Alloc = abi_allocator
 		>
-	class rollback
+	class mem_multiple_initilizer
 	{
-		DISABLE_CLONE(rollback);
+		DISABLE_CLONE(mem_multiple_initilizer);
 	public:
 		typedef T element_type;			///< value type
 		typedef Alloc<T> allocator_type;		///< allocator type		
@@ -434,7 +445,7 @@ namespace aio
 		typedef DestroyPolicy	destruct_policy;
 		typedef std::size_t size_type;
 
-		typedef rollback<T, DestroyPolicy, Alloc> self_type;
+		typedef mem_multiple_initilizer<T, DestroyPolicy, Alloc> self_type;
 
 		/** \ctor it accepts head pointer of an uninitialized array and allocator objects reference.
 			\param al reference of allocator
@@ -442,7 +453,7 @@ namespace aio
 			\pre p != 0
 			@throw	nothrow
 		*/
-		explicit rollback(allocator_type& al, pointer p, const destruct_policy& dsp = destruct_policy())
+		explicit mem_multiple_initilizer(allocator_type& al, pointer p, const destruct_policy& dsp = destruct_policy())
 			: m_alloc(al), m_pt(p), m_size(0), m_destructor(dsp)
 		{
 			AIO_PRE_CONDITION(p != 0);
@@ -452,7 +463,7 @@ namespace aio
 		/// if not committed, it'll destruct all initialized elements.
 		/// if all seccess before leaving scope. user should call commit().
 		/// \see commit
-		~rollback()
+		~mem_multiple_initilizer()
 		{
 			if (m_size > 0)
 				destroy_();
@@ -481,7 +492,7 @@ namespace aio
 
 		/// increase initialized elements counter
 		/// \pre !committed()
-		rollback& operator++() { 
+		mem_multiple_initilizer& operator++() { 
 			AIO_PRE_CONDITION(m_pt != 0);
 			++m_size;
 			return *this;
@@ -489,7 +500,7 @@ namespace aio
 
 		/// increase initialized elements counter
 		/// \pre !committed()
-		rollback& operator++(int) { 
+		mem_multiple_initilizer& operator++(int) { 
 			AIO_PRE_CONDITION(m_pt != 0);
 			++m_size;
 			return *this;
@@ -497,7 +508,7 @@ namespace aio
 
 		/// decrease initialized elements counter
 		/// \pre !committed() && size() > 0
-		rollback& operator--() { 
+		mem_multiple_initilizer& operator--() { 
 			AIO_PRE_CONDITION(m_pt != 0);
 			AIO_PRE_CONDITION(m_size > 0);
 			--m_size;
@@ -506,7 +517,7 @@ namespace aio
 
 		/// decrease initialized elements counter
 		/// \pre !committed() && size() > 0
-		rollback& operator--(int) { 
+		mem_multiple_initilizer& operator--(int) { 
 			AIO_PRE_CONDITION(m_pt != 0);
 			AIO_PRE_CONDITION(m_size > 0);
 			--m_size;
@@ -683,7 +694,7 @@ namespace aio
 
 		typedef allocator_ptr self_type;	///< allocator_ptr self type
 		typedef DestructPolicy destruct_policy;	///< destroy policy
-		typedef rollback<T, destruct_policy, Alloc> rollback_type;
+		typedef mem_multiple_initilizer<T, destruct_policy, Alloc> initializer_type;
 
 		/**
 		@construct
@@ -699,7 +710,7 @@ namespace aio
 			{
 				AIO_PRE_CONDITION(m_size > 0);
 
-				rollback_type rb(m_alloc, m_pt);
+				initializer_type rb(m_alloc, m_pt);
 				pointer p = m_pt;
 				for (size_type i = 0; i < m_size; ++p, ++i, ++rb)
 					m_alloc.construct(p, var);
@@ -721,7 +732,7 @@ namespace aio
 			{
 				AIO_PRE_CONDITION(m_size > 0);
 
-				rollback_type rb(m_alloc, m_pt);
+				initializer_type rb(m_alloc, m_pt);
 				pointer p = m_pt;
 				element_type var;
 				for (size_type i = 0; i < m_size; ++p, ++i, ++rb)
@@ -745,7 +756,7 @@ namespace aio
 			{
 				AIO_PRE_CONDITION(m_size > 0);
 
-				rollback_type rb(m_alloc, m_pt);
+				initializer_type rb(m_alloc, m_pt);
 				pointer p = m_pt;
 				for (size_type i = 0; i < m_size; ++p, ++i, ++rb, ++itr)
 					m_alloc.construct(p, *itr);

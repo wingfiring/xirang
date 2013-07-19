@@ -17,7 +17,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/tokenizer.hpp>
-#include <aio/common/char_separator.h>
+#include <aio/common/string_algo/char_separator.h>
 #include <random>
 
 namespace aio {namespace fs{

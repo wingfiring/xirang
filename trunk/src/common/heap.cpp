@@ -39,21 +39,4 @@ namespace aio
 	{
 		return typeid(*this) == typeid(rhs);
 	}
-	ext_heap::handle::handle() : m_begin(0), m_end(0){}
-	ext_heap::handle::handle(long_offset_t b, long_offset_t e) : m_begin(b), m_end(e){
-		AIO_PRE_CONDITION(b <= e);
-	}
-	long_size_t ext_heap::handle::size() const { return m_end - m_begin;}
-	bool ext_heap::handle::empty() const { return m_begin == m_end; }
-	ext_heap::handle::operator bool() const { return !empty(); }
-	long_offset_t ext_heap::handle::begin() const { return m_begin;}
-	long_offset_t ext_heap::handle::end() const { return m_end;}
-
-	bool ext_heap::handle::in(const ext_heap::handle& h) const { 
-		return m_begin >= h.begin()
-			&& m_end <= h.end();
-	}
-	bool ext_heap::handle::contains(const ext_heap::handle& h) const { 
-		return h.in(*this);
-	}
 }

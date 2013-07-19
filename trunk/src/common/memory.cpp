@@ -41,29 +41,29 @@ namespace aio
             }
 
         public:
-            virtual handle allocate(std::size_t size, std::size_t alignment, handle hint) {
+            virtual offset_range allocate(std::size_t size, std::size_t alignment, offset_range hint) {
                 AIO_PRE_CONDITION(false && "not implemented");
-                return handle();
+                return offset_range();
             }
 
-            virtual void deallocate(handle p) {
+            virtual void deallocate(offset_range p) {
                 AIO_PRE_CONDITION(false && "not implemented");
             }
 
-            virtual void* track_pin(handle h) {
+            virtual void* track_pin(offset_range h) {
                 AIO_PRE_CONDITION(false && "not implemented");
                 return 0;
             }
-            virtual void* pin(handle h) {
+            virtual void* pin(offset_range h) {
                 AIO_PRE_CONDITION(false && "not implemented");
                 return 0;
             }
 
-            virtual int track_pin_count(handle h) const{
+            virtual int track_pin_count(offset_range h) const{
                 AIO_PRE_CONDITION(false && "not implemented");
                 return 0;
             }
-            virtual int view_pin_count(handle h) const{
+            virtual int view_pin_count(offset_range h) const{
                 AIO_PRE_CONDITION(false && "not implemented");
                 return 0;
             }
@@ -77,17 +77,17 @@ namespace aio
                 return 0;
             }
 
-            virtual std::size_t write(handle h, const void* src, std::size_t n){
+            virtual std::size_t write(offset_range h, const void* src, std::size_t n){
                 AIO_PRE_CONDITION(false && "not implemented");
                 return 0;
             }
 
-            virtual std::size_t read(handle, void* dest, std::size_t){
+            virtual std::size_t read(offset_range, void* dest, std::size_t){
                 AIO_PRE_CONDITION(false && "not implemented");
                 return 0;
             }
 
-            virtual void sync(handle h){
+            virtual void sync(offset_range h){
                 AIO_PRE_CONDITION(false && "not implemented");
             }
         };
@@ -128,6 +128,23 @@ namespace aio
 		}
 	}
 
+	offset_range::offset_range() : m_begin(0), m_end(0){}
+	offset_range::offset_range(long_offset_t b, long_offset_t e) : m_begin(b), m_end(e){
+		AIO_PRE_CONDITION(b <= e);
+	}
+	long_size_t offset_range::size() const { return m_end - m_begin;}
+	bool offset_range::empty() const { return m_begin == m_end; }
+	offset_range::operator bool() const { return !empty(); }
+	long_offset_t offset_range::begin() const { return m_begin;}
+	long_offset_t offset_range::end() const { return m_end;}
+
+	bool offset_range::in(const offset_range& h) const { 
+		return m_begin >= h.begin()
+			&& m_end <= h.end();
+	}
+	bool offset_range::contains(const offset_range& h) const { 
+		return h.in(*this);
+	}
 
 }
 

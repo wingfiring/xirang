@@ -197,7 +197,7 @@ namespace xirang{ namespace fs{
 
         any getopt(int id, const any & optdata) const {
             if (id == vo_readonly)
-                return m_readonly;
+                return any(m_readonly);
             return any();
         }
 

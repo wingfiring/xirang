@@ -7,7 +7,7 @@
 #include "impaccessor.h"
 
 #include <boost/tokenizer.hpp>
-#include <aio/common/char_separator.h>
+#include <aio/common/string_algo/char_separator.h>
 
 namespace xirang
 {

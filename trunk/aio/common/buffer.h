@@ -13,6 +13,8 @@
 
 namespace aio
 {
+	/// this class is designed for perfoemance, and the resize don't construct the elements.
+	/// so the element type can only be POD type.
 	template<typename T>
 	class buffer
 	{
@@ -33,7 +35,8 @@ namespace aio
 		typedef pointer iterator;
 		typedef const_pointer const_iterator;
 
-		explicit buffer()
+		///\post empty()
+		buffer()
 			: m_heap(&memory::get_global_heap())
 			, m_capacity(0)
 			, m_size(0)
@@ -73,8 +76,7 @@ namespace aio
 			}
 		}
 
-		buffer(const buffer& rhs
-				, heap& h)
+		buffer(const buffer& rhs, heap& h)
 			: m_heap(&h)
 			, m_capacity(0)
 			, m_size(rhs.size)
@@ -90,8 +92,7 @@ namespace aio
 			}
 		}
 
-		buffer(size_type count, T ch
-				, heap& h = memory::get_global_heap())
+		buffer(size_type count, T ch, heap& h = memory::get_global_heap())
 			: m_heap(&h)
 			, m_capacity(0)
 			, m_size(count)
@@ -104,9 +105,8 @@ namespace aio
 				std::fill(m_data, m_data + m_size, ch);
 			}
 		}
-		template<typename ForwardIterator>
-		buffer(const range<ForwardIterator>& r
-				, heap& h = memory::get_global_heap())
+		template<typename Range>
+		buffer(const Range& r, heap& h = memory::get_global_heap())
 			: m_heap(&h)
 			, m_capacity(0)
 			, m_size(0)
@@ -147,8 +147,8 @@ namespace aio
 			return *this;
 		}
 
-		template<typename ForwardIterator>
-		buffer& assign(const range<ForwardIterator>& r)
+		template<typename Range>
+		buffer& assign(const Range& r)
 		{
 			buffer(r, *m_heap).swap(*this);
 			return *this;
@@ -194,8 +194,8 @@ namespace aio
 			}
 		}
 		//insert
-		template<typename ForwardIterator>
-		buffer& insert(iterator pos, const range<ForwardIterator>& r)
+		template<typename Range>
+		buffer& insert(iterator pos, const Range& r)
 		{
 			difference_type len = std::distance(r.begin(), r.end());
 			AIO_PRE_CONDITION(len >= 0);
@@ -252,8 +252,8 @@ namespace aio
 			return insert(end(), count, ch);
 		}
 
-		template<typename ForwardIterator>
-		buffer& append(const range<ForwardIterator>& r)
+		template<typename Range>
+		buffer& append(const Range& r)
 		{
 			return insert(end(), r);
 		}
@@ -291,9 +291,9 @@ namespace aio
 			return r.begin();
 		}
 
-		template<typename ForwardIterator>
+		template<typename Range>
 		buffer& replace(const range<iterator>& r,
-				const range<ForwardIterator>& f)
+				const Range& f)
 		{
 			AIO_PRE_CONDITION(r.begin() <= r.end());
 			AIO_PRE_CONDITION(r.begin() >= begin() && r.begin() <= end());

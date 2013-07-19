@@ -34,7 +34,7 @@ namespace aio
 	void aio_assert(const char_utf8* expr, const char_utf8* sourcefile, 
 			const char_utf8* function, int line, const char_utf8* message) 
 	{
-		fprintf(stderr, "%s:%d %s:%s %s\n", sourcefile, line, function, expr, message);
+		fprintf(stderr, "Assert failed: %s:%d %s:%s %s\n", sourcefile, line, function, expr, message);
 		std::abort();
 	}
 

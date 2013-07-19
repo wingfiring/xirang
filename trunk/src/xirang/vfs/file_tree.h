@@ -2,7 +2,7 @@
 #define SRC_XIRANG_VFS_FILE_TREE_H
 
 #include <aio/xirang/vfs.h>
-#include <aio/common/char_separator.h>
+#include <aio/common/string_algo/char_separator.h>
 #include <aio/common/string_algo/string.h>
 
 #include <boost/tokenizer.hpp>
