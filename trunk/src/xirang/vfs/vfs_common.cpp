@@ -8,7 +8,7 @@ namespace xirang{ namespace fs{
 		if (fs.mounted())
 		{
 			string mount_point = fs.root()->mountPoint(fs);
-			if (fs.root()->containMountPoint(mount_point + path))
+			if (fs.root()->containMountPoint(mount_point << path))
 				return aio::fs::er_busy_mounted;
 		}
 

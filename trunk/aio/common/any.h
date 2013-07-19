@@ -16,7 +16,7 @@ namespace aio {
         {}
 
         template<typename ValueType>
-        explicit any(const ValueType & value)
+        any(const ValueType & value)
           : content(new holder<ValueType>(value))
         {}
 

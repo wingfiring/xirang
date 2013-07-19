@@ -15,44 +15,23 @@ using namespace aio;
 typedef boost::mpl::list<char, wchar_t> test_types;
 
 template<typename T>
-struct test_data;
-
-template<>
-struct test_data<char>
-{
-	typedef const char* result;
-	static result abcd() { return "abcd";}
-	static result qwerty(){ return "qwerty";}
-	static result abcd_qwerty(){ return "abcdqwerty";}
-	
-};
-template<>
-struct test_data<wchar_t>
-{
-	typedef const wchar_t* result;
-	static result abcd() { return L"abcd";}
-	static result qwerty(){ return L"qwerty";}
-	static result abcd_qwerty(){ return L"abcdqwerty";}	
-};
-
-template<typename T>
 struct test_data2;
 template<>
 struct test_data2<const char>
 {
 	typedef basic_range_string<const char> result;
-	static result abcd() { return result("abcd");}
-	static result qwerty(){ return result("qwerty");}
-	static result abcd_qwerty(){ return result("abcdqwerty");}
+	static result abcd() { return literal("abcd");}
+	static result qwerty(){ return literal("qwerty");}
+	static result abcd_qwerty(){ return literal("abcdqwerty");}
 	
 };
 template<>
 struct test_data2<const wchar_t>
 {
 	typedef basic_range_string<const wchar_t> result;
-	static result abcd() { return result(L"abcd");}
-	static result qwerty(){ return result(L"qwerty");}
-	static result abcd_qwerty(){ return result(L"abcdqwerty");}	
+	static result abcd() { return literal(L"abcd");}
+	static result qwerty(){ return literal(L"qwerty");}
+	static result abcd_qwerty(){ return literal(L"abcdqwerty");}	
 };
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(basic_range_string_case, T, test_types)
@@ -94,7 +73,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(basic_range_string_case, T, test_types)
 BOOST_AUTO_TEST_CASE_TEMPLATE(basic_string_case, T, test_types)
 {
 	typedef basic_string<T> cstring;
-	typedef test_data<T> data;
+	typedef test_data2<const T> data;
 
 	cstring empty;
 
@@ -116,15 +95,15 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(basic_string_case, T, test_types)
 	BOOST_CHECK(abcd < qwerty);
 	BOOST_CHECK(abcd < data::qwerty());
 	BOOST_CHECK(qwerty == qwerty);
-	BOOST_CHECK((abcd + qwerty) == data::abcd_qwerty());
-	BOOST_CHECK((abcd + data::qwerty()) == data::abcd_qwerty());
-	BOOST_CHECK((data::abcd() + qwerty) == data::abcd_qwerty());
+	BOOST_CHECK(cstring(abcd << qwerty) == data::abcd_qwerty());
+	BOOST_CHECK(cstring(abcd << data::qwerty()) == data::abcd_qwerty());
+	BOOST_CHECK(cstring(data::abcd() << qwerty) == data::abcd_qwerty());
 
 	swap(abcd, qwerty);
 
 	BOOST_CHECK(abcd == data::qwerty());
 
-	cstring range_ctor(make_range(data::abcd_qwerty(), data::abcd_qwerty() + 4));
+	cstring range_ctor(make_range(data::abcd_qwerty().begin(), data::abcd_qwerty().begin() + 4));
 	BOOST_CHECK(range_ctor == qwerty);
 	
 }

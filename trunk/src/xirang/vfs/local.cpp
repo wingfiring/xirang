@@ -78,7 +78,7 @@ namespace xirang{ namespace fs{
             return ret;
         if (path.empty())
             return aio::fs::er_invalid;
-        return aio::fs::remove(m_resource + path);
+        return aio::fs::remove(m_resource << path);
 	}
 
 	// dir operations
@@ -86,18 +86,18 @@ namespace xirang{ namespace fs{
 	fs_error LocalFs::createDir(const  string& path){
         if (path.empty())
             return aio::fs::er_invalid;
-		return aio::fs::create_dir(m_resource + path);
+		return aio::fs::create_dir(m_resource << path);
 	}
 
 	aio::io::file LocalFs::open_create(const string& path, int flag) {
         AIO_PRE_CONDITION(!is_absolute(path));
-        string real_path = m_resource + path;
+        string real_path = m_resource << path;
         return aio::io::file(real_path, flag);
 
 	}
 	aio::io::file_reader LocalFs::open(const string& path){
         AIO_PRE_CONDITION(!is_absolute(path));
-        string real_path = m_resource + path;
+        string real_path = m_resource << path;
         return aio::io::file_reader(real_path);
 	}
 	void** LocalFs::do_create(unsigned long long mask,
@@ -137,8 +137,8 @@ namespace xirang{ namespace fs{
 
 	fs_error LocalFs::truncate(const string& path, aio::long_size_t s) {
 		AIO_PRE_CONDITION(!is_absolute(path));
-			string real_path = m_resource + path;
-            return aio::fs::truncate(m_resource + path, s);
+			string real_path = m_resource << path;
+            return aio::fs::truncate(m_resource << path, s);
 	}
 
 	void LocalFs::sync() { 
@@ -167,7 +167,7 @@ namespace xirang{ namespace fs{
         VfsState st = state(path);
         if (st.state == aiofs::st_dir)
         {
-            string real_path = m_resource + path;
+            string real_path = m_resource << path;
             return VfsNodeRange(
                 VfsNodeRange::iterator(LocalFileIterator(real_path, const_cast<LocalFs*>(this))),
                 VfsNodeRange::iterator(LocalFileIterator())
@@ -180,7 +180,7 @@ namespace xirang{ namespace fs{
 	VfsState LocalFs::state(const string& path) const {
         AIO_PRE_CONDITION(!is_absolute(path));
 
-        string real_path = m_resource + path;
+        string real_path = m_resource << path;
 
         aio::fs::fstate st = aio::fs::state(real_path);
         VfsState fst =

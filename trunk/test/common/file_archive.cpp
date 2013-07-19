@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE(file_archive_wchar_case)
 {
     //prepare
     aio::string tmp = aio::fs::temp_dir();
-    aio::string file_name = tmp + "/\xd0\xa0\xd0\xb0\xd0\xb7\xd0\xbd\xd0\xbe\xd0\xb5";
+    aio::string file_name = tmp << literal("/\xd0\xa0\xd0\xb0\xd0\xb7\xd0\xbd\xd0\xbe\xd0\xb5");
 
     const string text="This is file archive UT content. --over--";
     file wr(file_name, of_create_or_open);
@@ -44,8 +44,8 @@ BOOST_AUTO_TEST_CASE(file_archive)
 {
 	//prepare
 
-    string temp_path = fs::temp_dir("tfar_");
-	string file_name =  temp_path + fs::private_::gen_temp_name("/fa");
+    string temp_path = fs::temp_dir(literal("tfar_"));
+	string file_name =  temp_path << fs::private_::gen_temp_name(literal("/fa"));
 
 
 	const string text="This is file archive UT content. --over--";

@@ -266,7 +266,7 @@ namespace xirang{ namespace fs{
         if (vfs.state(parent_dir).state != aio::fs::st_dir)
             AIO_THROW(aio::io::create_failed)("failed to locate the temp directory:")(parent_dir);
 
-        string prefix =  parent_dir.empty() ? string(template_) : append_tail_slash(parent_dir) + template_;
+        string prefix =  parent_dir.empty() ? string(template_) : append_tail_slash(parent_dir) << template_;
 
         const int max_try = 100;
         for(int i = 0; i < max_try ; ++i)
@@ -291,7 +291,7 @@ namespace xirang{ namespace fs{
             }
             for (std::vector<VfsNode>::iterator itr = files.begin(); itr != files.end(); ++itr)
             {
-                aio::string newpath = pathprefix + (*itr).path;
+                aio::string newpath = pathprefix << (*itr).path;
                 fs_error ret = recursive_remove(*itr->owner_fs, newpath);
                 if (ret != aio::fs::er_ok)
                     return ret;
@@ -312,13 +312,13 @@ namespace xirang{ namespace fs{
         string mpath;
         if (itr != tokens.end() && itr->empty())
         {
-            mpath = "/";
+            mpath = aio::literal("/");
             ++itr;
         }
 
 		for (; itr != tokens.end(); ++itr)
 		{
-            mpath = mpath + *itr ;
+            mpath = mpath << *itr ;
             aio::fs::file_state st = vfs.state(mpath).state;
             if (st == aio::fs::st_not_found)
             {
@@ -331,7 +331,7 @@ namespace xirang{ namespace fs{
                 return aio::fs::er_invalid;
             }
 
-            mpath = mpath + "/";
+            mpath = mpath << aio::literal("/");
 		}
 		return aio::fs::er_ok;
     }

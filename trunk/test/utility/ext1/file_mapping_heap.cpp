@@ -14,8 +14,8 @@ using namespace aio;
 BOOST_AUTO_TEST_CASE(case_file_mapping_file)
 {
 	typedef ext_heap::handle handle;
-    string temp_path = fs::temp_dir("tfmap_");
-    string file_name =  temp_path + fs::private_::gen_temp_name("/fa");
+    string temp_path = fs::temp_dir(literal("tfmap_"));
+    string file_name =  temp_path << fs::private_::gen_temp_name(literal("/fa"));
     {
         io::file file0(file_name, io::of_create_or_open);
 		typedef file_mapping_heap::ar_type ar_type;

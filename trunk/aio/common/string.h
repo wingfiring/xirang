@@ -10,6 +10,7 @@
 #include <aio/common/buffer.h>
 
 #include <aio/common/impl/shared_data.h>
+#include <aio/common/operators.h>
 
 //STL
 #include <iosfwd>
@@ -24,14 +25,22 @@ namespace aio
 	//force the signature independs on std::char_traits, 
 	//because thre real signature of std::char_traits maybe changed
 	template<typename CharT>
-	struct char_traits	
-	{
+	struct char_traits{
 		typedef std::char_traits<typename std::remove_cv<CharT>::type> type;
+	};
+	template<typename T, typename U>
+	struct concator;
+
+	template<typename T> struct is_concator{ 
+		static const bool value = false;
+	};
+	template<typename T, typename U> struct is_concator<concator<T, U>>{ 
+		static const bool value = true;
 	};
 
 	//this class intends to hold literal string
 	template< typename CharT >
-	class basic_range_string
+	class basic_range_string : totally_ordered<basic_range_string<CharT>>
 	{
 	public:
 		typedef typename char_traits<CharT>::type traits_type;	//std::basic_string comptible
@@ -63,21 +72,23 @@ namespace aio
 			AIO_PRE_CONDITION(first == last || first != 0);
 		}
 
+		// convert non-const to const 
+		template<typename UCharT>
+			basic_range_string (const basic_range_string<UCharT>& rhs)
+			: m_beg(rhs.begin()), m_end(rhs.end())
+			{}
+
+
 		/// \ctor 
-		basic_range_string(pointer str) 
+		explicit basic_range_string(pointer str) 
 			: m_beg(str), m_end(str + traits_type::length(str))
 		{
 			AIO_PRE_CONDITION(str != 0);
 		}
 
-		template<std::size_t Size>
-		basic_range_string( char_type (&str)[Size])
-			: m_beg(str), m_end(str + Size - 1)
-		{ }
-
 		/// \ctor
 		/// \pre  size == 0 || str != 0
-		basic_range_string(pointer str, size_type size)
+		explicit basic_range_string(pointer str, size_type size)
 			: m_beg(str), m_end(str + size)
 		{
 			AIO_PRE_CONDITION(size == 0 || str != 0);
@@ -88,27 +99,6 @@ namespace aio
 		basic_range_string(const range<pointer>& r)
 			: m_beg(r.begin()), m_end(r.end())
 		{ }
-
-		template<typename UCharT>
-		basic_range_string (const basic_range_string<UCharT>& rhs)
-			: m_beg(rhs.begin()), m_end(rhs.end())
-		{}
-
-		template<std::size_t Size>
-		basic_range_string& operator=(char_type(&str)[Size])
-		{ 
-			m_beg = str;
-			m_end = str + Size - 1;
-			return *this;
-		}
-
-		template<typename UCharT>
-		basic_range_string& operator=(const basic_range_string<UCharT>& rhs)
-		{
-			m_beg = rhs.m_beg;
-			m_end = rhs.m_end;
-			return *this;
-		}
 
 		/// \return true if size() == 0
 		bool empty() const { return m_beg == m_end; }
@@ -138,6 +128,18 @@ namespace aio
 			lhs.swap(rhs);
 		}
 
+		friend	bool operator < (const basic_range_string<CharT>& lhs
+		, const basic_range_string<CharT>& rhs) {
+				return basic_range_string<CharT>::compare(
+						lhs.data(), lhs.size(), rhs.data(), rhs.size()) < 0;
+		}
+		friend bool operator == (const basic_range_string<CharT>& lhs
+				, const basic_range_string<CharT>& rhs)
+		{
+			return basic_range_string<CharT>::compare(
+					lhs.data(), lhs.size(), rhs.data(), rhs.size()) == 0;
+		}
+
 		/// if equal, return 0. if lhs < rhs, return negtive, otherwise return > 0
 		static int compare(const_pointer lhs, size_type lhs_size, 
 			const_pointer rhs, size_type rhs_size)
@@ -160,143 +162,36 @@ namespace aio
 		pointer m_beg;
 		pointer m_end;
 	};
+	template<typename CharT, std::size_t N>
+		basic_range_string<CharT> literal(CharT(&src) [N]){
+			return basic_range_string<CharT>(src, N-1);
+		}
+
+	template<typename CharT, std::size_t N>
+		basic_range_string<const CharT> literal(const CharT(&src) [N]){
+			return basic_range_string<const CharT>(src, N-1);
+		}
 
 	template<typename CharT>
-	bool operator < (const basic_range_string<CharT>& lhs
-		, const basic_range_string<CharT>& rhs)
-	{
-		return basic_range_string<CharT>::compare(
-			lhs.data(), lhs.size(), rhs.data(), rhs.size()) < 0;
-	}
+		basic_range_string<CharT> as_range_string(CharT* src){
+			AIO_PRE_CONDITION(src);
+			return basic_range_string<CharT>(src);
+		}
 
 	template<typename CharT>
-	bool operator < (const CharT* lhs, const basic_range_string<CharT>& rhs)
-	{
-		AIO_PRE_CONDITION(lhs != 0);
-		typedef typename basic_range_string<CharT>::traits_type traits_type;
-		return basic_range_string<CharT>::compare(
-			lhs, traits_type::length(lhs), rhs.data(), rhs.size()) < 0;
-	}
-
-	template<typename CharT>
-	bool operator < (const basic_range_string<CharT>&lhs, const CharT* rhs)
-	{
-		AIO_PRE_CONDITION(rhs != 0);
-		typedef typename basic_range_string<CharT>::traits_type traits_type;
-
-		return basic_range_string<CharT>::compare(
-			lhs.data(), lhs.size(), rhs, traits_type::length(rhs)) < 0;
-	}
-
-	template<typename CharT>
-	bool operator == (const basic_range_string<CharT>& lhs
-		, const basic_range_string<CharT>& rhs)
-	{
-		return basic_range_string<CharT>::compare(
-			lhs.data(), lhs.size(), rhs.data(), rhs.size()) == 0;
-	}
-
-	template<typename CharT>
-	bool operator == (const CharT* lhs, const basic_range_string<CharT>& rhs)
-	{
-		AIO_PRE_CONDITION(lhs != 0);
-		typedef typename basic_range_string<CharT>::traits_type traits_type;
-
-		return basic_range_string<CharT>::compare(
-			lhs, traits_type::length(lhs), rhs.data(), rhs.size()) == 0;
-	}
-
-	template<typename CharT>
-	bool operator == (const basic_range_string<CharT>& lhs, const CharT* rhs)
-	{
-		AIO_PRE_CONDITION(rhs != 0);
-		return rhs == lhs;
-	}
-
-	template<typename CharT>
-	bool operator <= (const basic_range_string<CharT>& lhs
-		, const basic_range_string<CharT>& rhs)
-	{
-		return !(rhs < lhs);
-	}
-
-	template<typename CharT>
-	bool operator <= (const CharT* lhs, const basic_range_string<CharT>& rhs)
-	{
-		return !(rhs < lhs);
-	}
-
-	template<typename CharT>
-	bool operator <= (const basic_range_string<CharT>& lhs, const CharT* rhs)
-	{
-		return !(rhs < lhs);
-	}
-
-	template<typename CharT>
-	bool operator > (const basic_range_string<CharT>& lhs
-		, const basic_range_string<CharT>& rhs)
-	{
-		return rhs < lhs;
-	}
-
-	template<typename CharT>
-	bool operator > (const CharT* lhs, const basic_range_string<CharT>& rhs)
-	{
-		return rhs < lhs;
-	}
-
-	template<typename CharT>
-	bool operator > (const basic_range_string<CharT>& lhs, const CharT* rhs)
-	{
-		return rhs < lhs;
-	}
-
-	template<typename CharT>
-	bool operator >= (const basic_range_string<CharT>& lhs
-		, const basic_range_string<CharT>& rhs)
-	{
-		return !(lhs < rhs);
-	}
-
-	template<typename CharT>
-	bool operator >= (const CharT* lhs, const basic_range_string<CharT>& rhs)
-	{
-		return !(lhs < rhs);
-	}
-
-	template<typename CharT>
-	bool operator >= (const basic_range_string<CharT>& lhs, const CharT* rhs)
-	{
-		return !(lhs < rhs);
-	}
-
-	template<typename CharT>
-	bool operator != (const basic_range_string<CharT>& lhs
-		, const basic_range_string<CharT>& rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	template<typename CharT>
-	bool operator != (const CharT* lhs, const basic_range_string<CharT>& rhs)
-	{
-		return !(lhs == rhs);
-	}	
-
-	template<typename CharT>
-	bool operator != (const basic_range_string<CharT>& lhs, const CharT* rhs)
-	{
-		return !(lhs == rhs);
-	}
+		basic_range_string<const CharT> as_range_string(const CharT* src){
+			return basic_range_string<const CharT>(src);
+		}
 
 	typedef basic_range_string<const char> const_range_string;
 	typedef basic_range_string<const wchar_t> const_wrange_string;
 	typedef basic_range_string<char> range_string;
 	typedef basic_range_string<wchar_t> wrange_string;
 
+
 	///This class intends to be used to hold an immutable string
 	template < typename CharT >
-	class basic_string
+	class basic_string : totally_ordered<basic_range_string<CharT>>
 	{
 		AIO_ENABLE_TEST;
 	public:
@@ -319,7 +214,6 @@ namespace aio
 		static const size_type npos = size_type(-1);
 
 	private:
-		heap* m_heap;
 		typedef private_::shared_data<CharT> data_type;
 		data_type* m_data;
 
@@ -335,14 +229,15 @@ namespace aio
 				reinterpret_cast<data_type* >(hp.malloc(
 					sizeof(data_type) +  sizeof(CharT) * n 
 				, sizeof(std::size_t), 0));
+			p->heap_ptr = &hp;
 			p->counter.value = 1;
 			p->size = n;
 			return p;
 		}
-		data_type* new_data(const_pointer s, size_type n){
+		data_type* new_data(heap& hp, const_pointer s, size_type n){
 			AIO_PRE_CONDITION(s != 0 && n > 0);
 
-			data_type* p = new_data2(*m_heap, n);
+			data_type* p = new_data2(hp, n);
 			traits_type::copy(p->data, s, n);
 			p->data[n] = CharT();	// for range string, it is not a null-terminate string
             p->hash_self();
@@ -351,8 +246,8 @@ namespace aio
 
 		struct internal_{};
 
-		basic_string(data_type* buffer, heap& h, internal_ )
-			: m_heap(&h), m_data(buffer)
+		basic_string(data_type* buffer, internal_ )
+			: m_data(buffer)
 		{}
 
 		void add_ref_(){
@@ -361,50 +256,55 @@ namespace aio
 		void release_ref_(){
 			if(0 == m_data->release())
 			{
-				m_heap->free(m_data, sizeof(data_type) +  sizeof(CharT) * m_data->size, sizeof(std::size_t));
+				get_heap().free(m_data, sizeof(data_type) +  sizeof(CharT) * m_data->size, sizeof(std::size_t));
 			}
 			m_data = 0;
 		}
 	public:
 
 		basic_string()
-			: m_heap(&memory::get_global_heap()), m_data(0){}
+			: m_data(0){}
 
-		explicit basic_string(heap & h )
-			: m_heap(&h), m_data(0){}
-
-		basic_string(const basic_range_string<const CharT>& src) 
-			: m_heap(&memory::get_global_heap())
+		template<typename CharU>
+		basic_string(const basic_range_string<CharU>& src) 
+			: m_data(0)
 		{
-			m_data = src.size() > 0 ? new_data(src.data(), src.size()) : 0;
+			m_data = src.size() > 0 ? new_data(get_heap(), src.data(), src.size()) : 0;
 		}
 
-		basic_string(const basic_range_string<const CharT>& src
+		template<typename CharU>
+		basic_string(const basic_range_string<const CharU>& src
 					 , heap& h) 
-		: m_heap(&h)
+			: m_data(0)
 		{
-			m_data = src.size() > 0 ? new_data(src.data(), src.size()) : 0;
+			m_data = src.size() > 0 ? new_data(h, src.data(), src.size()) : 0;
 		}
 		
 		basic_string(const_pointer src) 
-			: m_heap(&memory::get_global_heap()), m_data(0)
+			: m_data(0)
 		{
 			AIO_PRE_CONDITION(src != 0);
 			size_type len = traits_type::length(src);
-			m_data = len > 0 ? new_data(src, len) : 0;
+			m_data = len > 0 ? new_data(get_heap(), src, len) : 0;
 		}
 
 		basic_string(const_pointer src
 					 , heap& h) 
-		: m_heap(&h), m_data(0)
+		: m_data(0)
 		{
 			AIO_PRE_CONDITION(src != 0);
 			size_type len = traits_type::length(src);
-			m_data = len > 0 ? new_data(src, len) : 0;
+			m_data = len > 0 ? new_data(h, src, len) : 0;
 		}
 		
+		basic_string(basic_string&& rhs) 
+			: m_data(rhs.m_data)
+		{
+			rhs.m_data = 0;
+		}
+
 		basic_string(const basic_string& rhs) 
-			: m_heap(&rhs.get_heap()), m_data(rhs.m_data)
+			: m_data(rhs.m_data)
 		{
 			if (!empty())
 			{
@@ -412,16 +312,16 @@ namespace aio
 			}
 		}
 
-		template<typename ForwardIterator>
-		basic_string(const range<ForwardIterator>& r) 
-			: m_heap(&memory::get_global_heap()), m_data(0)
+		template<typename Range, typename Enable = typename std::enable_if<!is_concator<Range>::value, void>::type>
+		explicit basic_string(const Range& r) 
+			: m_data(0)
 		{
 			size_type len = std::distance(r.begin(), r.end());
 			if (len > 0)
 			{
-				m_data  = new_data2(*m_heap, len);
+				m_data  = new_data2(get_heap(), len);
 				pointer p = m_data->data;
-				for (ForwardIterator itr = r.begin(); itr != r.end(); ++itr, ++p)
+				for (auto itr = r.begin(); itr != r.end(); ++itr, ++p)
 				{
 					*p = *itr;
 				}
@@ -430,17 +330,16 @@ namespace aio
 			}
 		}
 
-		template<typename ForwardIterator>
-		basic_string(const range<ForwardIterator>& r
-					 , heap& h) 
-		: m_heap(&h), m_data(0)
+		template<typename Range, typename Enable = typename std::enable_if<!is_concator<Range>::value, void>::type>
+		explicit basic_string(const Range& r , heap& h) 
+		: m_data(0)
 		{
 			size_type len = std::distance(r.begin(), r.end());
 			if (len > 0)
 			{
-				m_data  = new_data2(*m_heap, len);
+				m_data  = new_data2(h, len);
 				pointer p = m_data->data;
-				for (ForwardIterator itr = r.begin(); itr != r.end(); ++itr, ++p)
+				for (auto itr = r.begin(); itr != r.end(); ++itr, ++p)
 				{
 					*p = *itr;
 				}
@@ -452,7 +351,12 @@ namespace aio
 		basic_string& operator=(const basic_string& rhs)
 		{
 			if (this->m_data != rhs.m_data)
-				basic_string(rhs, get_heap()).swap(*this);
+				basic_string(rhs).swap(*this);
+			return *this;
+		}
+		basic_string& operator=(basic_string&& rhs) 
+		{
+			basic_string(std::move(rhs)).swap(*this);
 			return *this;
 		}
 
@@ -468,8 +372,8 @@ namespace aio
 			basic_string(rhs, get_heap()).swap(*this);
 			return *this;
 		}
-		template<typename ForwardIterator>
-		basic_string& operator=(const range<ForwardIterator>& r)
+		template<typename Range, typename Enable = typename std::enable_if<!is_concator<Range>::value, void>::type>
+		basic_string& operator=(const Range& r)
 		{
 			basic_string(r, get_heap()).swap(*this);
 			return *this;
@@ -492,7 +396,6 @@ namespace aio
 		void swap(basic_string& rhs)
 		{
 			using std::swap;
-			swap(m_heap, rhs.m_heap);
 			swap(m_data, rhs.m_data);
 		}
 
@@ -522,7 +425,9 @@ namespace aio
 			return m_data->data[index];
 		}
 
-		heap& get_heap() const { return *m_heap;}
+		heap& get_heap() const { 
+			return empty() ? memory::get_global_heap() : *m_data->heap_ptr;
+		}
 
 		static basic_string concate(const_pointer lhs, size_type lhs_size, 
 			const_pointer rhs, size_type rhs_size, heap& h)
@@ -541,105 +446,86 @@ namespace aio
                 buffer->hash_self();
 			}
 
-			return basic_string(buffer, h, internal_());
+			return basic_string(buffer, internal_());
 		}
+		template<typename T, typename U>
+		friend struct concator;
 	};
 
-    
+	template<typename T, typename U>
+	struct concator{
+
+		const T* left;
+		const U* right;
+
+		template<typename CharT>
+		operator basic_string<CharT>() const{
+			basic_string<CharT> ret;
+			auto ptr = ret.new_data2(ret.get_heap(), size());
+			std::size_t pos = 0;
+			pos = copy_(ptr->data, 0, this);
+
+			AIO_POST_CONDITION(pos == size());
+			ptr->data[pos] = CharT(0);
+
+			ret.m_data = ptr;
+			return std::move(ret);
+		}
+		std::size_t size() const{
+			return left->size() + right->size();
+		}
+		private:
+
+		template<typename CharT, typename Range>
+		static std::size_t copy_(CharT* buf, std::size_t pos, const Range* s){
+			std::copy(s->begin(), s->end(), buf + pos);
+			return pos + s->size();
+		}
+		template<typename CharT, typename CT, typename CU>
+		static std::size_t copy_(CharT* buf, std::size_t pos, const concator<CT, CU>* s){
+			pos = s->copy_(buf, pos, s->left);
+			return s->copy_(buf, pos, s->right);
+		}
+
+		explicit concator(const T& lhs, const U& rhs) 
+			: left(&lhs), right(&rhs)
+		{}
+
+		template<typename Str1, typename Str2>
+		friend concator<Str1, Str2 > operator<< (const Str1& lhs, const Str2&  rhs);
+
+		template<typename CT, typename CU, typename Str>
+		friend concator<concator<CT, CU>, Str> operator<< (concator<CT, CU>&& lhs, const Str& rhs);
+		
+		template<typename Str, typename CT, typename CU>
+		friend concator<Str, concator<CT,CU> > operator<< (const Str& lhs, concator<CT, CU>&& rhs);
+		
+		template<typename CT1, typename CU1, typename CT2, typename CU2>
+		friend concator<concator<CT1, CT2>, concator<CT2,CU2> > operator<< (concator<CT1, CU1>&& lhs, concator<CT2, CU2>&& rhs);
+
+		concator& operator=(const concator& ) = delete;
+	};
+	template<typename Str1, typename Str2>
+	concator<Str1, Str2 > operator<< (const Str1& lhs, const Str2&  rhs){
+		return concator<Str1, Str2>(lhs, rhs);
+	}
+	template<typename CT, typename CU, typename Str>
+	concator<concator<CT, CU>, Str> operator<< (concator<CT, CU>&& lhs, const Str& rhs){
+		return concator<concator<CT,CU>, Str>(lhs, rhs);
+	}
+	template<typename Str, typename CT, typename CU>
+	concator<Str, concator<CT,CU> > operator<< (const Str& lhs, concator<CT, CU>&& rhs){
+		return concator<Str, concator<CT, CU> >(lhs, rhs);
+	}
+	template<typename CT1, typename CU1, typename CT2, typename CU2>
+	concator<concator<CT1, CT2>, concator<CT2,CU2> > operator<< (concator<CT1, CU1>&& lhs, concator<CT2, CU2>&& rhs){
+		return concator<concator<CT1, CU1>, concator<CT2, CU2> >(lhs, rhs);
+	}
 
 	template<typename CharT>
 	void swap(basic_string<CharT>& lhs, basic_string<CharT>& rhs)
 	{
 		lhs.swap(rhs);
-	}
-
-
-	template<typename CharT>
-	basic_string<CharT> operator+(
-		const basic_string<CharT>& lhs, 
-		const basic_string<CharT>& rhs)
-	{
-		typedef  basic_string<CharT> string_type;
-		return string_type::concate(lhs.c_str(), lhs.size(), 
-			rhs.c_str(), rhs.size(), lhs.get_heap());
-	}
-
-	template<typename CharT>
-	basic_string<CharT> operator+(
-		const basic_string<CharT>& lhs, 
-		const CharT* rhs)
-	{
-		AIO_PRE_CONDITION(rhs != 0);
-
-		typedef typename basic_string<CharT>::traits_type traits_type;
-		typedef  basic_string<CharT> string_type;
-		return string_type::concate(lhs.c_str(), lhs.size(), 
-			rhs, traits_type::length(rhs), lhs.get_heap());
-	}
-
-	template<typename CharT>
-	basic_string<CharT> operator+(
-		const CharT* lhs, 
-		const basic_string<CharT>& rhs)
-	{
-		AIO_PRE_CONDITION(lhs != 0);
-
-		typedef typename basic_string<CharT>::traits_type traits_type;
-		typedef  basic_string<CharT> string_type;
-		return string_type::concate(lhs, traits_type::length(lhs), 
-			rhs.c_str(), rhs.size(), rhs.get_heap());
-	}
-
-	template<typename CharT>
-	basic_string<CharT> operator+(
-		const basic_string<CharT>& lhs, 
-		const basic_range_string<const CharT>& rhs)
-	{
-		typedef  basic_string<CharT> string_type;
-		return string_type::concate(lhs.c_str(), lhs.size(), 
-			rhs.data(), rhs.size(), lhs.get_heap());
-	}
-
-	template<typename CharT>
-	basic_string<CharT> operator+(
-		const basic_range_string<const CharT>& lhs, 
-		const basic_string<CharT>& rhs)
-	{
-		typedef  basic_string<CharT> string_type;
-		return string_type::concate(lhs.data(), lhs.size(), 
-			rhs.c_str(), rhs.size(), rhs.get_heap());
-	}
-
-	template<typename CharT>
-	basic_string<CharT> operator+(
-		const basic_range_string<const CharT>& lhs, 
-		const basic_range_string<const CharT>& rhs)
-	{
-		typedef  basic_string<CharT> string_type;
-		return string_type::concate(lhs.data(), lhs.size(), 
-			rhs.data(), rhs.size(), memory::get_global_heap());
-	}
-
-	template<typename CharT>
-	basic_string<CharT> operator+(
-		const CharT* lhs, 
-		const basic_range_string<const CharT>& rhs)
-	{
-		typedef typename basic_string<CharT>::traits_type traits_type;
-		typedef  basic_string<CharT> string_type;
-		return string_type::concate(lhs, traits_type::length(lhs), 
-			rhs.data(), rhs.size(), memory::get_global_heap());
-	}
-
-	template<typename CharT>
-	basic_string<CharT> operator+(
-		const basic_range_string<const CharT>& lhs, 
-		const CharT* rhs)
-	{
-		typedef typename basic_string<CharT>::traits_type traits_type;
-		typedef  basic_string<CharT> string_type;
-		return string_type::concate(lhs.data(), lhs.size(), 
-			rhs, traits_type::length(rhs), memory::get_global_heap());
 	}
 
 	template<typename CharT>
@@ -648,22 +534,6 @@ namespace aio
         typedef basic_range_string<const CharT> range_type;
         return lhs.c_str() != rhs.c_str()
             && static_cast<range_type>(lhs) < static_cast<range_type>(rhs);
-	}
-
-	template<typename CharT>
-	bool operator < (const CharT* lhs, const basic_string<CharT>& rhs)
-	{
-		AIO_PRE_CONDITION(lhs != 0);
-		typedef basic_range_string<const CharT> range_type;
-		return lhs != rhs.c_str() && static_cast<range_type>(lhs) < static_cast<range_type>(rhs);
-	}
-
-	template<typename CharT>
-	bool operator < (const basic_string<CharT>&lhs, const CharT* rhs)
-	{
-		AIO_PRE_CONDITION(rhs != 0);
-		typedef basic_range_string<const CharT> range_type;
-		return lhs.c_str() != rhs && static_cast<range_type>(lhs) < static_cast<range_type>(rhs);
 	}
 
 	template<typename CharT>
@@ -721,7 +591,7 @@ namespace aio
 	bool operator == (const basic_string<CharT>& lhs, 
 		const basic_range_string<const CharT>& rhs)
 	{
-		return rhs == lhs;
+		return rhs == basic_range_string<const CharT>(lhs);
 	}
 
 	template<typename CharT>

@@ -26,18 +26,18 @@ BOOST_AUTO_TEST_CASE(tempfile_case)
     }
     BOOST_CHECK(state(tmppath).state == aio::fs::st_not_found);
 
-    BOOST_CHECK_THROW(temp_file("test", "path/not/exist"),  aio::io::create_failed);
+    BOOST_CHECK_THROW(temp_file(literal("test"), literal("path/not/exist")),  aio::io::create_failed);
 
-    BOOST_CHECK_THROW(temp_dir("test", "path/not/exist"),  aio::io::create_failed);
+    BOOST_CHECK_THROW(temp_dir(literal("test"), literal("path/not/exist")),  aio::io::create_failed);
 
     aio::string tmpfilepath2;
     {
         tmppath  = temp_dir(prefix);
         BOOST_CHECK(!tmppath.empty());
-        BOOST_CHECK_NO_THROW(temp_file("test", tmppath));
+        BOOST_CHECK_NO_THROW(temp_file(literal("test"), tmppath));
         BOOST_CHECK(state(tmppath).state == aio::fs::st_dir);
 
-        temp_file("test", tmppath, 0, &tmpfilepath2);
+        temp_file(literal("test"), tmppath, 0, &tmpfilepath2);
     }
     BOOST_CHECK(state(tmpfilepath2).state == aio::fs::st_regular);
     aio::fs::remove(tmpfilepath2);
@@ -50,102 +50,102 @@ BOOST_AUTO_TEST_CASE(tempfile_case)
 
 BOOST_AUTO_TEST_CASE(recursive_create_dir_case)
 {
-    aio::string tmpdir  = temp_dir("tmp");
-    BOOST_CHECK(recursive_create_dir(tmpdir + "/a/b/c") == aio::fs::er_ok);
+    aio::string tmpdir  = temp_dir(literal("tmp"));
+    BOOST_CHECK(recursive_create_dir(tmpdir << literal("/a/b/c")) == aio::fs::er_ok);
 
-    BOOST_CHECK_NO_THROW(recursive_create(tmpdir + "/x/y/z", aio::io::of_create));
+    BOOST_CHECK_NO_THROW(recursive_create(tmpdir << literal("/x/y/z"), aio::io::of_create));
     recursive_remove(tmpdir);
 }
 
 BOOST_AUTO_TEST_CASE(append_tail_slash_case)
 {
-    BOOST_CHECK(append_tail_slash("/a/b") == "/a/b/");
-    BOOST_CHECK(append_tail_slash("/a/b/") == "/a/b/");
+    BOOST_CHECK(append_tail_slash(literal("/a/b")) == literal("/a/b/"));
+    BOOST_CHECK(append_tail_slash(literal("/a/b/")) == literal("/a/b/"));
 }
 
 BOOST_AUTO_TEST_CASE(remove_tail_slash_case)
 {
-    BOOST_CHECK(remove_tail_slash("/a/b") == "/a/b");
-    BOOST_CHECK(remove_tail_slash("/a/b/") == "/a/b");
+    BOOST_CHECK(remove_tail_slash(literal("/a/b")) == literal("/a/b"));
+    BOOST_CHECK(remove_tail_slash(literal("/a/b/")) == literal("/a/b"));
 }
 
 BOOST_AUTO_TEST_CASE(normalize_case)
 {
-    BOOST_CHECK(normalize("made/everything/simple/..") == "made/everything/");
-    BOOST_CHECK(normalize("made/everything/../simple") == "made/simple");
-    BOOST_CHECK(normalize("made/everything/../simple/") == "made/simple/");
+    BOOST_CHECK(normalize(literal("made/everything/simple/..")) == literal("made/everything/"));
+    BOOST_CHECK(normalize(literal("made/everything/../simple")) == literal("made/simple"));
+    BOOST_CHECK(normalize(literal("made/everything/../simple/")) == literal("made/simple/"));
 
-    BOOST_CHECK(normalize("/made/everything/../simple/") == "/made/simple/");
-    BOOST_CHECK(normalize("//made/everything/../simple/") == "//made/simple/");
+    BOOST_CHECK(normalize(literal("/made/everything/../simple/")) == literal("/made/simple/"));
+    BOOST_CHECK(normalize(literal("//made/everything/../simple/")) == literal("//made/simple/"));
 }
 
 BOOST_AUTO_TEST_CASE(is_normalized_case)
 {   
-    BOOST_CHECK(!is_normalized("made/everything/../simple"));
-    BOOST_CHECK(is_normalized("made/simple/"));
+    BOOST_CHECK(!is_normalized(literal("made/everything/../simple")));
+    BOOST_CHECK(is_normalized(literal("made/simple/")));
 }
 BOOST_AUTO_TEST_CASE(is_filename_case)
 {   
-    BOOST_CHECK(!is_filename("made/everything/../simple"));
-    BOOST_CHECK(is_filename("simple"));
+    BOOST_CHECK(!is_filename(literal("made/everything/../simple")));
+    BOOST_CHECK(is_filename(literal("simple")));
 }
 
 BOOST_AUTO_TEST_CASE(to_aio_native_path_case)
 {   
 #ifndef MSVC_COMPILER_
-    BOOST_CHECK(to_native_path("made/everything/../simple") == "made/everything/../simple");
+    BOOST_CHECK(to_native_path(literal("made/everything/../simple")) == literal("made/everything/../simple"));
 #else
-    BOOST_CHECK(to_native_path("made/everything/../simple") == "made\\everything\\..\\simple");
+    BOOST_CHECK(to_native_path(literal("made/everything/../simple")) == literal("made\\everything\\..\\simple"));
 #endif
-    BOOST_CHECK(to_aio_path("made\\everything\\..\\simple") == "made/everything/../simple");
+    BOOST_CHECK(to_aio_path(literal("made\\everything\\..\\simple")) == literal("made/everything/../simple"));
 }
 
 BOOST_AUTO_TEST_CASE(dir_filename_case)
 {   
     aio::string file;
-    aio::string dir = dir_filename("a/b/d", &file);
-    BOOST_CHECK(dir == "a/b");
-    BOOST_CHECK(file == "d");
+    aio::string dir = dir_filename(literal("a/b/d"), &file);
+    BOOST_CHECK(dir == literal("a/b"));
+    BOOST_CHECK(file == literal("d"));
 
-    dir = dir_filename("a/b/d/", &file);
-    BOOST_CHECK(dir == "a/b/d");
+    dir = dir_filename(literal("a/b/d/"), &file);
+    BOOST_CHECK(dir == literal("a/b/d"));
     BOOST_CHECK(file.empty());
 
-    dir = dir_filename("/a/b/d/", &file);
-    BOOST_CHECK(dir == "/a/b/d");
+    dir = dir_filename(literal("/a/b/d/"), &file);
+    BOOST_CHECK(dir == literal("/a/b/d"));
     BOOST_CHECK(file.empty());
 
-    BOOST_CHECK(dir_filename("abc", &file).empty()) ;
-    BOOST_CHECK(file == "abc");
+    BOOST_CHECK(dir_filename(literal("abc"), &file).empty()) ;
+    BOOST_CHECK(file == literal("abc"));
 }
 BOOST_AUTO_TEST_CASE(ext_filename_case)
 {   
     aio::string file;
-    aio::string ext = ext_filename("a.b", &file);
-    BOOST_CHECK(ext == "b");
-    BOOST_CHECK(file == "a");
+    aio::string ext = ext_filename(literal("a.b"), &file);
+    BOOST_CHECK(ext == literal("b"));
+    BOOST_CHECK(file == literal("a"));
 
-    ext = ext_filename("a.b.", &file);
+    ext = ext_filename(literal("a.b."), &file);
     BOOST_CHECK(ext.empty());
-    BOOST_CHECK(file == "a.b");
+    BOOST_CHECK(file == literal("a.b"));
 
-    ext = ext_filename("a", &file);
+    ext = ext_filename(literal("a"), &file);
     BOOST_CHECK(ext.empty());
-    BOOST_CHECK(file == "a");
+    BOOST_CHECK(file == literal("a"));
 
-    ext = ext_filename("a.", &file);
+    ext = ext_filename(literal("a."), &file);
     BOOST_CHECK(ext.empty());
-    BOOST_CHECK(file == "a");
+    BOOST_CHECK(file == literal("a"));
 
-    ext = ext_filename(".a", &file);
-    BOOST_CHECK(ext == "a");
+    ext = ext_filename(literal(".a"), &file);
+    BOOST_CHECK(ext == literal("a"));
     BOOST_CHECK(file.empty());
 }
 BOOST_AUTO_TEST_CASE(recreate_file_case)
 {
     aio::string tmppath;
 	{
-		aio::io::file file = temp_file("test", 0, &tmppath);
+		aio::io::file file = temp_file(literal("test"), 0, &tmppath);
 		aio::buffer<aio::byte> data;
 		data.resize(100);
 		BOOST_CHECK(file.write(to_range(data)).empty());

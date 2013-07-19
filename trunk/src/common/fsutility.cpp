@@ -22,8 +22,8 @@
 
 namespace aio {namespace fs{
     namespace{
-        const aio::const_range_string onedot = ".";
-        const aio::const_range_string twodot = "..";
+        const auto onedot = literal(".");
+        const auto twodot = literal("..");
     }
 
     namespace private_{
@@ -61,7 +61,7 @@ namespace aio {namespace fs{
         string gen_temp_name(const_range_string template_)
         {
 			if (!aio::contains(template_, '?'))	//back compatibility
-				return template_ + gen_temp_name_();
+				return template_ << gen_temp_name_();
 
 			return aio::replace(string(template_), string("?"), gen_temp_name_());
         }
@@ -367,7 +367,7 @@ namespace aio {namespace fs{
         if (state(parent_dir).state != st_dir)
             AIO_THROW(aio::io::create_failed)("failed to locate the temp directory:")(parent_dir);
 
-        string prefix =  append_tail_slash(parent_dir) + template_;
+        string prefix =  append_tail_slash(parent_dir) << template_;
 
         const int max_try = 100;
         for(int i = 0; i < max_try ; ++i)
@@ -388,7 +388,7 @@ namespace aio {namespace fs{
     string append_tail_slash(const string& p)
 	{
 		return p.empty() || *(p.end() - 1) != '/'
-			? p + "/"
+			? p << literal("/")
 			: p;
 	}
 
@@ -490,7 +490,7 @@ namespace aio {namespace fs{
             file_range rf = children(path);
             aio::string pathprefix = append_tail_slash(path);
             for (file_range::iterator itr = rf.begin(); itr != rf.end(); ++itr){
-                recursive_remove(pathprefix + *itr);
+                recursive_remove(pathprefix << *itr);
             }
         }
         
@@ -528,7 +528,7 @@ namespace aio {namespace fs{
                 return er_invalid;
             }
 
-            mpath = mpath.push_back('/');
+            mpath.push_back('/');
 		}
 		return er_ok;
     }

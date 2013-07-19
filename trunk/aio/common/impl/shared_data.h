@@ -4,9 +4,14 @@
 #include <aio/common/config.h>
 #include <aio/common/backward/atomic.h>
 
-namespace aio{ namespace private_{
+#include <aio/common/config/abi_prefix.h>
+namespace aio{ 
+	class heap;
+	namespace private_{
+
 	template<typename T> struct shared_data
 	{
+		heap* heap_ptr;
 		atomic::atomic_t<std::size_t> counter;
         std::size_t hash;
 		std::size_t size;
@@ -35,5 +40,6 @@ namespace aio{ namespace private_{
         }
 	};
 }}
+#include <aio/common/config/abi_suffix.h>
 
 #endif //end AIO_IMP_SHARED_DATA_H

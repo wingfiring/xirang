@@ -17,56 +17,57 @@ namespace xirang
         
 		struct TypeDesc
 		{
-			const char* name;
+			aio::const_range_string name;
 			TypeMethods* methods;
 		};
 
+		using aio::literal;
+
 		TypeDesc g_systype_table[] =
 		{
-			{"bool", 	getPrimitiveMethods<bool>()},
-            {"short", 	getPrimitiveMethods<short>()},
-            {"ushort", 	getPrimitiveMethods<unsigned short>()},
-            {"int", 	getPrimitiveMethods<int>()},
-            {"uint", 	getPrimitiveMethods<unsigned int>()},
-            {"long", 	getPrimitiveMethods<long>()},
-            {"ulong", 	getPrimitiveMethods<unsigned long>()},
-            {"longlong", 	getPrimitiveMethods<long long>()},
-            {"ulonglong", 	getPrimitiveMethods<unsigned long long>()},
+			{literal("bool"), 	getPrimitiveMethods<bool>()},
+            {literal("short"), 	getPrimitiveMethods<short>()},
+            {literal("ushort"), 	getPrimitiveMethods<unsigned short>()},
+            {literal("int"), 	getPrimitiveMethods<int>()},
+            {literal("uint"), 	getPrimitiveMethods<unsigned int>()},
+            {literal("long"), 	getPrimitiveMethods<long>()},
+            {literal("ulong"), 	getPrimitiveMethods<unsigned long>()},
+            {literal("longlong"), 	getPrimitiveMethods<long long>()},
+            {literal("ulonglong"), 	getPrimitiveMethods<unsigned long long>()},
 
-			{"float",	getPrimitiveMethods<float>()},
-			{"double",	getPrimitiveMethods<double>()},
+			{literal("float"),	getPrimitiveMethods<float>()},
+			{literal("double"),	getPrimitiveMethods<double>()},
 
-			{"int8", 	getPrimitiveMethods<int8_t>()},
-			{"uint8", 	getPrimitiveMethods<uint8_t>()},
-			{"int16",	getPrimitiveMethods<int16_t>()},
-			{"uint16",	getPrimitiveMethods<uint16_t>()},
-			{"int32",	getPrimitiveMethods<int32_t>()},
-			{"uint32",	getPrimitiveMethods<uint32_t>()},
-			{"int64",	getPrimitiveMethods<int64_t>()},
-			{"uint64",	getPrimitiveMethods<uint64_t>()},
+			{literal("int8"), 	getPrimitiveMethods<int8_t>()},
+			{literal("uint8"), 	getPrimitiveMethods<uint8_t>()},
+			{literal("int16"),	getPrimitiveMethods<int16_t>()},
+			{literal("uint16"),	getPrimitiveMethods<uint16_t>()},
+			{literal("int32"),	getPrimitiveMethods<int32_t>()},
+			{literal("uint32"),	getPrimitiveMethods<uint32_t>()},
+			{literal("int64"),	getPrimitiveMethods<int64_t>()},
+			{literal("uint64"),	getPrimitiveMethods<uint64_t>()},
 
-			{"byte",	getPrimitiveMethods<unsigned char>()},
+			{literal("byte"),	getPrimitiveMethods<unsigned char>()},
 
-			{"pointer",	getPrimitiveMethods<void*>()},
-			{"type",	getPrimitiveMethods<Type>()},
+			{literal("pointer"),	getPrimitiveMethods<void*>()},
+			{literal("type"),	getPrimitiveMethods<Type>()},
 
-			{"string",	getPrimitiveMethods<string>()},
+			{literal("string"),	getPrimitiveMethods<string>()},
 
-            {"byte_buffer", getPrimitiveMethods<aio::byte_buffer>()},
-            {0,0}
+            {literal("byte_buffer"), getPrimitiveMethods<aio::byte_buffer>()},
+            {literal(""),0}
 		};
 	}
 
     
 
-	typedef aio::basic_range_string<const char> literal;
 	void SetupXirang(Xirang& xr)
 	{
         Namespace root = xr.root();
 
         Namespace sys = NamespaceBuilder().name("sys").adoptBy(root);
 
-		for (TypeDesc* itr(g_systype_table); itr->name != 0; ++itr)
+		for (TypeDesc* itr(g_systype_table); !itr->name.empty(); ++itr)
 		{
             Type t = TypeBuilder(itr->methods)
                 .name(itr->name)
@@ -75,7 +76,7 @@ namespace xirang
 
             TypeAliasBuilder()
                 .name(itr->name)
-                .typeName(literal(".sys.") + literal(itr->name))
+                .typeName(aio::literal(".sys.") << itr->name)
                 .setType(t)
                 .adoptBy(root);
 		}

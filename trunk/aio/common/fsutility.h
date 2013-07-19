@@ -77,13 +77,13 @@ namespace aio{ namespace fs{
 // temp file related 
 
     // \throw aio::io::create_failed
-	io::file temp_file(const_range_string template_ = "tmpf", int flag = io::of_remove_on_close, string* result_path = 0);
+	io::file temp_file(const_range_string template_ = literal("tmpf"), int flag = io::of_remove_on_close, string* result_path = 0);
 
     // \throw aio::io::create_failed
 	io::file temp_file(const_range_string template_, const_range_string parent_dir, int flag = io::of_remove_on_close, string* result_path = 0);
 
     // \throw aio::io::create_failed
-    string temp_dir(const_range_string template_ = "tmpd");
+    string temp_dir(const_range_string template_ = literal("tmpd"));
     
     // \throw aio::io::create_failed
     string temp_dir(const_range_string template_, const_range_string parent_dir);
