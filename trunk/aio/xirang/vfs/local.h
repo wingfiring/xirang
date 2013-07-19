@@ -2,7 +2,7 @@
 #define AIO_XIRANG_VFS_LOCAL_FS
 
 #include <aio/xirang/vfs.h>
-#include <aio/common/archive/file_archive.h>
+#include <aio/common/io/file.h>
 
 namespace xirang{ namespace fs{
 

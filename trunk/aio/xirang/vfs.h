@@ -2,7 +2,7 @@
 #define AIO_XIRANG_VFS_H
 
 #include <aio/xirang/xrbase.h>
-#include <aio/common/iarchive.h>
+#include <aio/common/io.h>
 #include <aio/common/fsutility.h>
 #include <aio/common/mpl.h>
 

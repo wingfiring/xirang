@@ -2,7 +2,7 @@
 #include <aio/common/archive/mem_archive.h>
 #include <aio/xirang/vfs/zip.h>
 #include <aio/xirang/vfs/inmemory.h>
-#include <aio/common/archive/adaptor.h>
+#include <aio/common/io/adaptor.h>
 
 #include "./vfs.h"
 
@@ -11,10 +11,10 @@ BOOST_AUTO_TEST_CASE(zipfs_case)
 {
     using namespace xirang::fs;
     using namespace xirang;
-    using aio::archive::archive_mode;
-    using aio::archive::open_flag;
+    using aio::io::archive_mode;
+    using aio::io::open_flag;
 
-    aio::archive::mem_read_write_archive ar;
+    aio::io::mem_read_write_archive ar;
     {
         InMemory cache;
         ZipFs vfs(ar, cache, "test zipfs");
@@ -28,8 +28,8 @@ BOOST_AUTO_TEST_CASE(zipfs_case)
         tester.test_modification(vfs);
     }
     {
-        using namespace aio::archive;
-        typedef multiplex_deletor<multiplex_reader<multiplex_random<multiplex_base<reader, aio::archive::random, aio::ideletor> > > > multiplex_read_archive;
+        using namespace aio::io;
+        typedef multiplex_deletor<multiplex_reader<multiplex_random<multiplex_base<reader, aio::io::random, aio::ideletor> > > > multiplex_read_archive;
         multiplex_read_archive ar2(&ar);
         InMemory cache;
         ZipFs vfs(ar2, cache);

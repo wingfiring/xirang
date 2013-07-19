@@ -3,7 +3,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 */
 
 #include "precompile.h"
-#include <aio/common/archive/file_archive.h>
+#include <aio/common/io/file.h>
 #include <aio/common/fsutility.h>
 #include <aio/common/assert.h>
 #include <aio/common/string_algo/utf8.h>

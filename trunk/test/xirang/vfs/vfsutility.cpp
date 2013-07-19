@@ -5,8 +5,8 @@
 BOOST_AUTO_TEST_SUITE(vfs_suite)
 using namespace xirang::fs;
 using namespace xirang;
-using aio::archive::archive_mode;
-using aio::archive::open_flag;
+using aio::io::archive_mode;
+using aio::io::open_flag;
 
 // TODO: move them into aio
 BOOST_AUTO_TEST_CASE(utility_case)

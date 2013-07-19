@@ -3,7 +3,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 */
 
 #include "precompile.h"
-#include <aio/common/archive/mem_archive.h>
+#include <aio/common/io/memory.h>
 #include "./iarchive.h"
 
 BOOST_AUTO_TEST_SUITE(archive_suite)

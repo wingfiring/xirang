@@ -5,15 +5,15 @@
 BOOST_AUTO_TEST_SUITE(vfs_suite)
 using namespace xirang::fs;
 using namespace xirang;
-using aio::archive::archive_mode;
-using aio::archive::open_flag;
+using aio::io::archive_mode;
+using aio::io::open_flag;
 
 BOOST_AUTO_TEST_CASE(inmemfs_case)
 {
     using namespace xirang::fs;
     using namespace xirang;
-    using aio::archive::archive_mode;
-    using aio::archive::open_flag;
+    using aio::io::archive_mode;
+    using aio::io::open_flag;
 
     InMemory vfs;
     aio::any ret = vfs.getopt(vo_readonly);

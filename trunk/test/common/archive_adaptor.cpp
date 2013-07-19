@@ -3,8 +3,8 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 */
 
 #include "precompile.h"
-#include <aio/common/archive/mem_archive.h>
-#include <aio/common/archive/adaptor.h>
+#include <aio/common/io/memory.h>
+#include <aio/common/io/adaptor.h>
 
 #include "./iarchive.h"
 

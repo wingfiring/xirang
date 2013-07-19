@@ -4,8 +4,8 @@
 
 using namespace xirang::fs;
 using namespace xirang;
-using aio::archive::archive_mode;
-using aio::archive::open_flag;
+using aio::io::archive_mode;
+using aio::io::open_flag;
 
 
 void VfsTester::test_mount(xirang::fs::IVfs& vfs)
@@ -46,8 +46,8 @@ void VfsTester::test_on_empty(xirang::fs::IVfs& vfs)
 
     BOOST_CHECK(vfs.createDir(aio::empty_str) != aiofs::er_ok); //create root
     BOOST_CHECK(vfs.createDir("not/found") != aiofs::er_ok);
-    aio::archive::archive_ptr file1 = vfs.create("not found", aio::archive::mt_read | aio::archive::mt_write | aio::archive::mt_random
-			, aio::archive::of_open);
+    aio::io::archive_ptr file1 = vfs.create("not found", aio::io::mt_read | aio::io::mt_write | aio::io::mt_random
+			, aio::io::of_open);
 	BOOST_CHECK(!file1.get());
 
     BOOST_CHECK(vfs.remove(aio::empty_str) != aiofs::er_ok);
@@ -81,19 +81,19 @@ void VfsTester::test_modification(xirang::fs::IVfs& vfs)
     BOOST_CHECK(itr == children.end());
 
 
-    aio::archive::archive_ptr file1 = vfs.create("dir1/file1", aio::archive::mt_read | aio::archive::mt_write | aio::archive::mt_random
-			, aio::archive::of_create);
+    aio::io::archive_ptr file1 = vfs.create("dir1/file1", aio::io::mt_read | aio::io::mt_write | aio::io::mt_random
+			, aio::io::of_create);
 	BOOST_REQUIRE(file1.get());
     BOOST_CHECK(vfs.state("dir1/file1").node.path == "dir1/file1");
     BOOST_CHECK(vfs.state("dir1/file1").size == 0);
     BOOST_CHECK(vfs.state("dir1/file1").state == aiofs::st_regular);
 
-	aio::archive::random* prange = file1->query_random();
+	aio::io::random* prange = file1->query_random();
 	BOOST_REQUIRE(prange != 0);
 	BOOST_CHECK(prange->offset() == 0);
 	BOOST_CHECK(prange->size() == 0);
 
-	aio::archive::writer* pwriter = file1->query_writer();
+	aio::io::writer* pwriter = file1->query_writer();
 	BOOST_REQUIRE(pwriter != 0);
 	string text = "make everything simple, as simple as posibble, but no more simpler";
 	pwriter->write(string_to_c_range(text));
@@ -107,8 +107,8 @@ void VfsTester::test_modification(xirang::fs::IVfs& vfs)
 
     BOOST_CHECK(vfs.truncate("dest", text.size()/2) == aiofs::er_ok);
 
-    aio::archive::archive_ptr file_dest = vfs.create("dest", aio::archive::mt_read | aio::archive::mt_random
-			, aio::archive::of_open);
+    aio::io::archive_ptr file_dest = vfs.create("dest", aio::io::mt_read | aio::io::mt_random
+			, aio::io::of_open);
     BOOST_REQUIRE(file_dest);
     BOOST_CHECK(file_dest->query_random() && file_dest->query_random()->size() == text.size()/2);
     BOOST_CHECK(vfs.state("dest").size== text.size()/2);
@@ -124,8 +124,8 @@ void VfsTester::test_readonly(xirang::fs::IVfs& vfs)
     BOOST_CHECK(vfs.createDir("dir3") != aiofs::er_ok);
 	BOOST_CHECK(vfs.createDir("dir3/dir31") != aiofs::er_ok);
 
-    aio::archive::archive_ptr file1 = vfs.create("dir1/file1", aio::archive::mt_read | aio::archive::mt_write | aio::archive::mt_random
-			, aio::archive::of_create_or_open);
+    aio::io::archive_ptr file1 = vfs.create("dir1/file1", aio::io::mt_read | aio::io::mt_write | aio::io::mt_random
+			, aio::io::of_create_or_open);
 	BOOST_REQUIRE(!file1.get());
 	vfs.sync();
     
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(rootfs_case)
 
     
     vfs.createDir("dir1");
-    vfs.create("dir1/file1", aio::archive::mt_write, aio::archive::of_create);
+    vfs.create("dir1/file1", aio::io::mt_write, aio::io::of_create);
 	BOOST_CHECK(vfs2.copy("/dir1/file1", "dest") == aiofs::er_ok);
 
 	VfsState st = root.locate("/dir2/dest");

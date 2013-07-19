@@ -4,7 +4,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 
 #include "precompile.h"
 #include <aio/utility/ext1/file_mapping_heap.h>
-#include <aio/common/archive/file_archive.h>
+#include <aio/common/io/file.h>
 #include <aio/common/fsutility.h>
 
 BOOST_AUTO_TEST_SUITE(suite_file_mapping_heap)

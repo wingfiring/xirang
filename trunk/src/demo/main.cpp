@@ -11,8 +11,8 @@
 #include <aio/xirang/object.h>
 #include <aio/xirang/vfs/local.h>
 #include <aio/xirang/vfs/zip.h>
-#include <aio/common/archive/file_archive.h>
-#include <aio/common/archive/mem_archive.h>
+#include <aio/common/io/file.h>
+#include <aio/common/io/memory.h>
 
 #include <set>
 #include <map>

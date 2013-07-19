@@ -32,10 +32,10 @@ namespace aio
 
 	struct AIO_COMM_API pool_heap : heap
 	{
-		pool_heap(heap* under, memory::thread_policy thp);
+		explicit pool_heap(heap* under, memory::thread_policy thp);
 		virtual ~pool_heap();
 
-		virtual void* malloc(std::size_t size, std::size_t alignment, const void* hint) ;
+		virtual void* malloc(std::size_t size, std::size_t alignment, const void* hint);
 		virtual void free(void* p, std::size_t size, std::size_t alignment);
 		virtual heap* underling();
 

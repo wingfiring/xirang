@@ -1,7 +1,7 @@
 #include <aio/xirang/xirang.h>
 #include <aio/xirang/typebinder.h>
 #include <aio/xirang/nativetype.h>
-#include <aio/common/archive/string.h>
+#include <aio/common/io/string.h>
 #include <aio/xirang/array.h>
 
 #include <assert.h>

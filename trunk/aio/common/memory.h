@@ -60,7 +60,7 @@ namespace aio
 		return h.malloc(sizeof(T), alignof(T), 0);
 	}
 	template<typename T> void free_obj(heap& h, T* p){
-		h.free(p, sizeof(T), alignof(T);
+		h.free(p, sizeof(T), alignof(T));
 	}
 
 	template<typename T>
@@ -181,9 +181,9 @@ namespace aio
 		long_offset_t end() const;
 
 		/// the default begin and end are zero
-		handle();
+		offset_range();
 		/// \pre b <= e
-		explicit handle(long_offset_t b, long_offset_t e);
+		explicit offset_range(long_offset_t b, long_offset_t e);
 
 		/// \return end - begin
 		long_size_t size() const;
@@ -194,8 +194,8 @@ namespace aio
 		/// \return !empty()
 		explicit operator bool() const;
 
-		bool in(const handle& rhs) const;
-		bool contains(const handle& rhs) const;
+		bool in(const offset_range& rhs) const;
+		bool contains(const offset_range& rhs) const;
 		private:
 		long_offset_t m_begin, m_end;
 	};

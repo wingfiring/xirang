@@ -1,7 +1,7 @@
 #ifndef AIO_COMMON_ZIP_H_
 #define AIO_COMMON_ZIP_H_
 
-#include <aio/common/iarchive.h>
+#include <aio/common/io.h>
 
 namespace aio{ namespace zip{
 
