@@ -3,6 +3,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(main)
 
 SET(BOOST_INCLUDE /usr/local/include)
+SET(BOOST_LINK /usr/local/lib)
 SET(AIO_ROOT ${PROJECT_ROOT})
 SET(EXECUTABLE_OUTPUT_PATH ../bin)
 SET(LIBRARY_OUTPUT_PATH ../lib)
@@ -13,15 +14,18 @@ SET(BOOST_SYSTEM boost_system)
 SET(PTHREAD  pthread)
 SET(ZLIB  z)
 
-option(DYNAMIC_BOOST "Use boost.test .so" OFF)
-if (DYNAMIC_BOOST)
+option(BOOST_USE_STATIC "Use boost.test .so" OFF)
+SET(Boost_USE_STATIC_LIBS ${BOOST_USE_STATIC})
+SET(Boost_USE_MULTITHREADED ON)
+if (!BOOST_USE_STATIC)
 	add_definitions(-DUSE_BOOST_TEST_DYN_LINK)
-endif(DYNAMIC_BOOST)
+endif()
 
-
-SET(CMAKE_CXX_FLAGS			"$ENV{CXXFLAGS} -Wall -std=c++11 -L/usr/local/lib")
+SET(CMAKE_CXX_FLAGS			"$ENV{CXXFLAGS} -Wall -std=c++11")
 SET(CMAKE_CXX_FLAGS_DEBUG	"$ENV{CXXFLAGS} -O0 -g -ggdb")
 SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 ")
+FIND_PACKAGE(Boost COMPONENTS unit_test_framework filesystem system)
+
 
 ADD_SUBDIRECTORY(common)
 ADD_SUBDIRECTORY(common_test)

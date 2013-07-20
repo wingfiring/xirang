@@ -5,6 +5,7 @@ PROJECT(utility_ext1_test)
 
 INCLUDE_DIRECTORIES(${AIO_ROOT})
 INCLUDE_DIRECTORIES(${BOOST_INCLUDE})
+LINK_DIRECTORIES(${BOOST_LINK})
 #source directory
 AUX_SOURCE_DIRECTORY(${AIO_ROOT}/test/utility/ext1 DIR_SRCS)
 
@@ -19,6 +20,9 @@ TARGET_LINK_LIBRARIES(
 	utility1_test
  	utility_ext1
 	aio_common
-	${BOOST_FILESYSTEM}
-	optimized ${BOOST_TEST}
-	debug ${BOOST_TEST})
+	${Boost_LIBRARIES}
+	)
+add_custom_command(
+	TARGET utility1_test
+	POST_BUILD COMMAND $<TARGET_FILE:utility1_test>
+	)

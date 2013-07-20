@@ -5,6 +5,7 @@ PROJECT(xirang_test)
 
 INCLUDE_DIRECTORIES(${AIO_ROOT})
 INCLUDE_DIRECTORIES(${BOOST_INCLUDE})
+LINK_DIRECTORIES(${BOOST_LINK})
 #source directory
 AUX_SOURCE_DIRECTORY(${AIO_ROOT}/test/xirang DIR_SRCS)
 AUX_SOURCE_DIRECTORY(${AIO_ROOT}/test/xirang/vfs DIR_SRCS)
@@ -21,7 +22,9 @@ TARGET_LINK_LIBRARIES(
  	xirang
 	aio_common
 	${ZLIB}
-	${BOOST_FILESYSTEM}
-	${BOOST_SYSTEM}
-	optimized ${BOOST_TEST}
-	debug ${BOOST_TEST})
+	${Boost_LIBRARIES}
+	)
+add_custom_command(
+	TARGET xirang_test
+	POST_BUILD COMMAND $<TARGET_FILE:xirang_test>
+	)

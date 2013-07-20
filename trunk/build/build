@@ -60,7 +60,7 @@ esac
 project_root=`pwd`
 project_root=`dirname $project_root`
 project_root=`dirname $project_root`
-cmake_flag=$cmake_flag" -DPROJECT_ROOT:STRING=$project_root -DDYNAMIC_BOOST=ON"
+cmake_flag=$cmake_flag" -DPROJECT_ROOT:STRING=$project_root -DBOOST_USE_STATIC=ON"
 
 cmake $cmake_flag $cmake_path
 
