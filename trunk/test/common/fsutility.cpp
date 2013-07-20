@@ -12,7 +12,7 @@ using aio::byte;
 
 BOOST_AUTO_TEST_CASE(tempfile_case)
 {
-    aio::string prefix = "test";
+    aio::string prefix("test");
     aio::string test_name = fs::private_::gen_temp_name(prefix);
 
     BOOST_CHECK(prefix.size() < test_name.size());

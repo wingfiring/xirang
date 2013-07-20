@@ -63,7 +63,7 @@ namespace aio {namespace fs{
 			if (!aio::contains(template_, '?'))	//back compatibility
 				return template_ << gen_temp_name_();
 
-			return aio::replace(string(template_), string("?"), gen_temp_name_());
+			return aio::replace(string(template_).range_str(), literal("?"), gen_temp_name_().range_str());
         }
     }
 #ifdef GNUC_COMPILER_
@@ -280,7 +280,7 @@ namespace aio {namespace fs{
 
 		const string& operator*() const
 		{
-            m_path = m_itr->path().leaf().c_str() ;
+            m_path = m_itr->path().leaf().string() ;
 			return m_path;
 		}
 
@@ -322,7 +322,7 @@ namespace aio {namespace fs{
         if (!tmpdir)
             tmpdir = getenv("TMP");
 
-        aio::string prefix = (tmpdir == 0) ? P_tmpdir : tmpdir;
+        aio::string prefix = as_range_string((tmpdir == 0) ? P_tmpdir : tmpdir);
         return temp_file(template_, to_aio_path(prefix), flag, path);
     }
     
@@ -357,7 +357,7 @@ namespace aio {namespace fs{
         if (!tmpdir)
             tmpdir = getenv("TMP");
 
-        aio::string prefix = (tmpdir == 0) ? P_tmpdir : tmpdir;
+        aio::string prefix = as_range_string((tmpdir == 0) ? P_tmpdir : tmpdir);
         return temp_dir(template_, to_aio_path(prefix));
     }
 

@@ -33,13 +33,13 @@ namespace xirang{ namespace fs{
 
 		const VfsNode& operator*() const
 		{
-            m_node.path = m_itr->path().leaf().c_str() ;
+            m_node.path = m_itr->path().leaf().string() ;
 			return m_node;
 		}
 
         const VfsNode* operator->() const
 		{
-            m_node.path = m_itr->path().leaf().c_str() ;
+            m_node.path = m_itr->path().leaf().string() ;
 			return &m_node;
 		}
 
@@ -160,7 +160,7 @@ namespace xirang{ namespace fs{
     }
 
 	// \return mounted() ? absolute() : empty() 
-	string LocalFs::mountPoint() const { return m_root ? m_root->mountPoint(*this) : "";}
+	string LocalFs::mountPoint() const { return m_root ? m_root->mountPoint(*this) : aio::empty_str;}
 
 	// \pre !absolute(path)
 	VfsNodeRange LocalFs::children(const string& path) const{

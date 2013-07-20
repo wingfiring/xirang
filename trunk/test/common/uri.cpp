@@ -15,8 +15,8 @@ using namespace aio;
 
 BOOST_AUTO_TEST_CASE(uri_case)
 {
-	string source ="abc 123\t";
-	string encoded = "abc%20123%09";
+	string source =literal("abc 123\t");
+	string encoded = literal("abc%20123%09");
 
 	string  result = uri::encode_string(source);
 

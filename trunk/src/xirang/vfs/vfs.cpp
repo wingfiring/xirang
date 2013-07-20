@@ -77,7 +77,7 @@ namespace xirang{ namespace fs{
 
 			VfsState st = locate(pw);
 
-			if (st.state == aiofs::st_dir || (pw == "/" && m_mount_map.empty()) )
+			if (st.state == aiofs::st_dir || (pw == aio::literal("/") && m_mount_map.empty()) )
 			{
 				m_mount_map.insert(mount_value(pw, &vfs));
 				vfs.setRoot(m_host);

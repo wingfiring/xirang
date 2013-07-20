@@ -10,9 +10,9 @@ using namespace aio;
 
 BOOST_AUTO_TEST_CASE(replace_case)
 {
-    aio::string txt = "This is a test";
+    aio::string txt = literal("This is a test");
     aio::string result = replace(txt, 'i', 'I');
-    BOOST_CHECK(result == "ThIs Is a test");
+    BOOST_CHECK(result == literal("ThIs Is a test"));
 }
 
 BOOST_AUTO_TEST_CASE(toupper_case)
@@ -31,12 +31,12 @@ BOOST_AUTO_TEST_CASE(tolower_case)
 
 BOOST_AUTO_TEST_CASE(tolower_copy_case)
 {
-    BOOST_CHECK(tolower_copy(string("THis Is -- A TesT.")) == "this is -- a test.");
+    BOOST_CHECK(tolower_copy(string("THis Is -- A TesT.")) == literal("this is -- a test."));
 }
 
 BOOST_AUTO_TEST_CASE(toupper_copy_case)
 {
-    BOOST_CHECK(toupper_copy(string("THis Is -- A TesT.")) == "THIS IS -- A TEST.");
+    BOOST_CHECK(toupper_copy(string("THis Is -- A TesT.")) == literal("THIS IS -- A TEST."));
 }
 
 BOOST_AUTO_TEST_CASE(rfind_case)

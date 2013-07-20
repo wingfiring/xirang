@@ -28,13 +28,14 @@ namespace aio{ namespace str_algo {
     }
 
     template<typename CharT>
-    basic_string<CharT> replace(const basic_string<CharT>& src, const basic_string<CharT>& pattern, const basic_string<CharT>& var){
-        basic_string_builder<CharT> sb;
-        typename basic_string<CharT>::const_iterator first = src.begin();
-        typename basic_string<CharT>::const_iterator last =src.end();
+    basic_string<typename std::remove_const<CharT>::type> replace(
+			basic_range_string<CharT> src, basic_range_string<CharT> pattern, basic_range_string<CharT> var){
+		typedef typename std::remove_const<CharT>::type CharRT;
+        basic_string_builder<CharRT> sb;
+        auto first = src.begin();
+        auto last =src.end();
         for (; first != last;){
-            typename basic_string<CharT>::const_iterator  pos 
-                  = std::search( first, last, pattern.begin(), pattern.end());
+            auto pos = std::search( first, last, pattern.begin(), pattern.end());
             sb.append(make_range(first, pos));
 
             if (pos != last){
@@ -44,7 +45,7 @@ namespace aio{ namespace str_algo {
             first = pos;
         }
         
-        return basic_string<CharT>(sb);
+        return basic_string<CharRT>(sb);
     }
     
     template<typename CharT>

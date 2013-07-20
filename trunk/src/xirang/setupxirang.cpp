@@ -65,7 +65,7 @@ namespace xirang
 	{
         Namespace root = xr.root();
 
-        Namespace sys = NamespaceBuilder().name("sys").adoptBy(root);
+        Namespace sys = NamespaceBuilder().name(literal("sys")).adoptBy(root);
 
 		for (TypeDesc* itr(g_systype_table); !itr->name.empty(); ++itr)
 		{
@@ -84,15 +84,15 @@ namespace xirang
 		//static reference type
 		{	
             Type t = TypeBuilder()
-                .name("ref")
-                .setArg("ref_type", "", Type())
-                .addMember("to", "pointer", sys.findType("pointer"))
+                .name(literal("ref"))
+                .setArg(literal("ref_type"), literal(""), Type())
+                .addMember(literal("to"), literal("pointer"), sys.findType(literal("pointer")))
                 .endBuild()
                 .adoptBy(sys);
 
             TypeAliasBuilder()
-                .name("ref")
-                .typeName(".sys.ref")
+                .name(literal("ref"))
+                .typeName(literal(".sys.ref"))
                 .setType(t)
                 .adoptBy(root);
 		}
@@ -100,28 +100,28 @@ namespace xirang
 		//dynamic reference type
 		{	
             Type t = TypeBuilder()
-                .name("dynamic_ref")
-                .addMember("to", "pointer", sys.findType("pointer"))
-                .addMember("type", "type", sys.findType("type"))
+                .name(literal("dynamic_ref"))
+                .addMember(literal("to"), literal("pointer"), sys.findType(literal("pointer")))
+                .addMember(literal("type"), literal("type"), sys.findType(literal("type")))
                 .endBuild()
                 .adoptBy(sys);
 
             TypeAliasBuilder()
-                .name("dynamic_ref")
-                .typeName(".sys.dynamic_ref")
+                .name(literal("dynamic_ref"))
+                .typeName(literal(".sys.dynamic_ref"))
                 .setType(t)
                 .adoptBy(root);
 		}
 		{
             Type t = TypeBuilder(getPrimitiveMethods<Array>())
-                .name("array")
-                .setArg("value_type", "", Type())
+                .name(literal("array"))
+                .setArg(literal("value_type"), literal(""), Type())
                 .endBuild()
                 .adoptBy(sys);
 
             TypeAliasBuilder()
-                .name("array")
-                .typeName(".sys.array")
+                .name(literal("array"))
+                .typeName(literal(".sys.array"))
                 .setType(t)
                 .adoptBy(root);
 		}

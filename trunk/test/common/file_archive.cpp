@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(file_archive_wchar_case)
     aio::string tmp = aio::fs::temp_dir();
     aio::string file_name = tmp << literal("/\xd0\xa0\xd0\xb0\xd0\xb7\xd0\xbd\xd0\xbe\xd0\xb5");
 
-    const string text="This is file archive UT content. --over--";
+    const string text= literal("This is file archive UT content. --over--");
     file wr(file_name, of_create_or_open);
     BOOST_CHECK(wr.size() == 0);
 
@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(file_archive)
 	string file_name =  temp_path << fs::private_::gen_temp_name(literal("/fa"));
 
 
-	const string text="This is file archive UT content. --over--";
+	const string text=literal("This is file archive UT content. --over--");
     aio::range<aio::buffer<aio::byte>::const_iterator> ctext = string_to_c_range(text);
 	std::size_t len1 = ((text.size() / 3) | 1) - 1;
 	std::size_t len2 = len1 / 2;

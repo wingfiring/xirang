@@ -99,6 +99,22 @@ namespace aio
 		basic_range_string(const range<pointer>& r)
 			: m_beg(r.begin()), m_end(r.end())
 		{ }
+		template<typename Range, typename Enable = typename std::enable_if<!is_concator<Range>::value, void>::type>
+		explicit basic_range_string(const Range& r) 
+			: m_beg(0), m_end(0)
+		{
+			if (!r.empty()){
+				m_beg = &*r.begin();
+				m_end = m_beg + r.size();
+			}
+		}
+		template<typename Range, typename Enable = typename std::enable_if<!is_concator<Range>::value, void>::type>
+		explicit basic_range_string(Range& r) {
+			if (!r.empty()){
+				m_beg = &*r.begin();
+				m_end = m_beg + r.size();
+			}
+		}
 
 		/// \return true if size() == 0
 		bool empty() const { return m_beg == m_end; }
@@ -191,7 +207,7 @@ namespace aio
 
 	///This class intends to be used to hold an immutable string
 	template < typename CharT >
-	class basic_string : totally_ordered<basic_range_string<CharT>>
+	class basic_string : totally_ordered<basic_string<CharT>>
 	{
 		AIO_ENABLE_TEST;
 	public:
@@ -280,7 +296,8 @@ namespace aio
 			m_data = src.size() > 0 ? new_data(h, src.data(), src.size()) : 0;
 		}
 		
-		basic_string(const_pointer src) 
+#if 1
+		explicit basic_string(const_pointer src) 
 			: m_data(0)
 		{
 			AIO_PRE_CONDITION(src != 0);
@@ -288,7 +305,7 @@ namespace aio
 			m_data = len > 0 ? new_data(get_heap(), src, len) : 0;
 		}
 
-		basic_string(const_pointer src
+		explicit basic_string(const_pointer src
 					 , heap& h) 
 		: m_data(0)
 		{
@@ -296,7 +313,7 @@ namespace aio
 			size_type len = traits_type::length(src);
 			m_data = len > 0 ? new_data(h, src, len) : 0;
 		}
-		
+#endif	
 		basic_string(basic_string&& rhs) 
 			: m_data(rhs.m_data)
 		{
@@ -359,14 +376,6 @@ namespace aio
 			basic_string(std::move(rhs)).swap(*this);
 			return *this;
 		}
-
-		basic_string& operator=(const_pointer rhs)
-		{
-			AIO_PRE_CONDITION(rhs != 0);
-			basic_string(rhs, get_heap()).swap(*this);
-			return *this;
-		}
-
 		basic_string& operator=(const basic_range_string<const CharT>& rhs)
 		{
 			basic_string(rhs, get_heap()).swap(*this);
@@ -388,9 +397,13 @@ namespace aio
 		}
 
 		operator basic_range_string<const CharT>() const{
+			return range_str();
+		}
+		basic_range_string<const CharT> range_str() const{
 			return empty() 
 				? basic_range_string<const CharT>() 
 				: basic_range_string<const CharT>(begin(), end());
+
 		}
 
 		void swap(basic_string& rhs)
@@ -429,25 +442,6 @@ namespace aio
 			return empty() ? memory::get_global_heap() : *m_data->heap_ptr;
 		}
 
-		static basic_string concate(const_pointer lhs, size_type lhs_size, 
-			const_pointer rhs, size_type rhs_size, heap& h)
-		{
-			AIO_PRE_CONDITION(lhs != 0 && rhs != 0);
-
-			size_type size = lhs_size + rhs_size;
-			data_type* buffer = 0;
-
-			if (size > 0)
-			{
-				buffer = new_data2(h, size);
-				traits_type::copy(buffer->data, lhs, lhs_size);
-				traits_type::copy(buffer->data + lhs_size, rhs, rhs_size);
-				buffer->data[size] = CharT();
-                buffer->hash_self();
-			}
-
-			return basic_string(buffer, internal_());
-		}
 		template<typename T, typename U>
 		friend struct concator;
 	};
@@ -537,23 +531,6 @@ namespace aio
 	}
 
 	template<typename CharT>
-	bool operator < (const basic_range_string<const CharT>& lhs, 
-		const basic_string<CharT>& rhs)
-	{
-		typedef basic_range_string<const CharT> range_type;
-		return !(lhs.begin() == rhs.begin() && lhs.end() == rhs.end()) && lhs < static_cast<range_type>(rhs);
-	}
-
-	template<typename CharT>
-	bool operator < (const basic_string<CharT>&lhs,
-		const basic_range_string<const CharT>& rhs)
-	{
-		typedef basic_range_string<const CharT> range_type;
-        return !(lhs.begin() == rhs.begin() && lhs.end() == rhs.end()) 
-            && static_cast<range_type>(lhs) < rhs;
-	}
-
-	template<typename CharT>
 	bool operator == (const basic_string<CharT>& lhs
 		, const basic_string<CharT>& rhs)
 	{
@@ -561,177 +538,6 @@ namespace aio
 		return lhs.c_str() == rhs.c_str()||
             ( lhs.hash() == rhs.hash()
             && static_cast<range_type>(lhs) == static_cast<range_type>(rhs));
-	}
-
-	template<typename CharT>
-	bool operator == (const CharT* lhs, const basic_string<CharT>& rhs)
-	{
-		AIO_PRE_CONDITION(lhs != 0);
-		typedef basic_range_string<const CharT> range_type;
-        return lhs == rhs.c_str() || static_cast<range_type>(lhs) == static_cast<range_type>(rhs);
-	}
-
-	template<typename CharT>
-	bool operator == (const basic_string<CharT>& lhs, 
-		const CharT* rhs)
-	{
-		AIO_PRE_CONDITION(rhs != 0);
-		return rhs == lhs;
-	}
-
-	template<typename CharT>
-	bool operator == (const basic_range_string<CharT>& lhs, 
-		const basic_string<CharT>& rhs)
-	{
-		typedef basic_range_string<const CharT> range_type;
-		return (lhs.begin() == rhs.begin() && lhs.end() == rhs.end()) || lhs == static_cast<range_type>(rhs);
-	}
-
-	template<typename CharT>
-	bool operator == (const basic_string<CharT>& lhs, 
-		const basic_range_string<const CharT>& rhs)
-	{
-		return rhs == basic_range_string<const CharT>(lhs);
-	}
-
-	template<typename CharT>
-	bool operator <= (const basic_string<CharT>& lhs
-		, const basic_string<CharT>& rhs)
-	{
-		return !(rhs < lhs);
-	}
-
-	template<typename CharT>
-	bool operator <= (const CharT* lhs, 
-		const basic_string<CharT>& rhs)
-	{
-		return !(rhs < lhs);
-	}
-
-	template<typename CharT>
-	bool operator <= (const basic_string<CharT>& lhs, 
-		const CharT* rhs)
-	{
-		return !(rhs < lhs);
-	}
-
-	template<typename CharT>
-	bool operator <= (const basic_range_string<const CharT>& lhs, 
-		const basic_string<CharT>& rhs)
-	{
-		return !(rhs < lhs);
-	}
-
-	template<typename CharT>
-	bool operator <= (const basic_string<CharT>& lhs, 
-		const basic_range_string<const CharT>& rhs)
-	{
-		return !(rhs < lhs);
-	}
-
-	template<typename CharT>
-	bool operator > (const basic_string<CharT>& lhs
-		, const basic_string<CharT>& rhs)
-	{
-		return rhs < lhs;
-	}
-
-	template<typename CharT>
-	bool operator > (const CharT* lhs, 
-		const basic_string<CharT>& rhs)
-	{
-		return rhs < lhs;
-	}
-
-	template<typename CharT>
-	bool operator > (const basic_string<CharT>& lhs, 
-		const CharT* rhs)
-	{
-		return rhs < lhs;
-	}
-
-	template<typename CharT>
-	bool operator > (const basic_range_string<const CharT>& lhs, 
-		const basic_string<CharT>& rhs)
-	{
-		return rhs < lhs;
-	}
-
-	template<typename CharT>
-	bool operator > (const basic_string<CharT>& lhs, 
-		const basic_range_string<const CharT>& rhs)
-	{
-		return rhs < lhs;
-	}
-
-	template<typename CharT>
-	bool operator >= (const basic_string<CharT>& lhs
-		, const basic_string<CharT>& rhs)
-	{
-		return !(lhs < rhs);
-	}
-
-	template<typename CharT>
-	bool operator >= (const CharT* lhs, 
-		const basic_string<CharT>& rhs)
-	{
-		return !(lhs < rhs);
-	}
-
-	template<typename CharT>
-	bool operator >= (const basic_string<CharT>& lhs, 
-		const CharT* rhs)
-	{
-		return !(lhs < rhs);
-	}
-
-	template<typename CharT>
-	bool operator >= (const basic_range_string<const CharT>& lhs, 
-		const basic_string<CharT>& rhs)
-	{
-		return !(lhs < rhs);
-	}
-
-	template<typename CharT>
-	bool operator >= (const basic_string<CharT>& lhs, 
-		const basic_range_string<const CharT>& rhs)
-	{
-		return !(lhs < rhs);
-	}
-
-	template<typename CharT>
-	bool operator != (const basic_string<CharT>& lhs
-		, const basic_string<CharT>& rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	template<typename CharT>
-	bool operator != (const CharT* lhs, 
-		const basic_string<CharT>& rhs)
-	{
-		return !(lhs == rhs);
-	}	
-
-	template<typename CharT>
-	bool operator != (const basic_string<CharT>& lhs, 
-		const CharT* rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	template<typename CharT>
-	bool operator != (const basic_range_string<const CharT>& lhs, 
-		const basic_string<CharT>& rhs)
-	{
-		return !(lhs == rhs);
-	}	
-
-	template<typename CharT>
-	bool operator != (const basic_string<CharT>& lhs, 
-		const basic_range_string<const CharT>& rhs)
-	{
-		return !(lhs == rhs);
 	}
 
 	typedef basic_string<char> string;
@@ -768,7 +574,7 @@ namespace aio
 
 	///This class intends to be used to hold an immutable string
 	template < typename CharT >
-	class basic_string_builder
+	class basic_string_builder : totally_ordered<basic_string_builder<CharT>>
 	{
 		AIO_ENABLE_TEST;
 	public:
@@ -1395,51 +1201,6 @@ namespace aio
 		return static_cast<range_type>(lhs) < static_cast<range_type>(rhs);
 	}
 
-	// CharT*
-	template<typename CharT>
-	bool operator <(const basic_string_builder<CharT>& lhs, const CharT* rhs)
-	{
-		typedef basic_range_string<const CharT> range_type;
-		return static_cast<range_type>(lhs) < static_cast<range_type>(rhs);
-	}
-
-	template<typename CharT>
-	bool operator <(const CharT* lhs, const basic_string_builder<CharT>& rhs)
-	{
-		typedef basic_range_string<const CharT> range_type;
-		return static_cast<range_type>(lhs) < static_cast<range_type>(rhs);
-	}
-
-	// range_string
-	template<typename CharT>
-	bool operator <(const basic_string_builder<CharT>& lhs, const basic_range_string<const CharT>& rhs)
-	{
-		typedef basic_range_string<const CharT> range_type;
-		return static_cast<range_type>(lhs) < rhs;
-	}
-
-	template<typename CharT>
-	bool operator <(const basic_range_string<const CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{
-		typedef basic_range_string<const CharT> range_type;
-		return lhs < static_cast<range_type>(rhs);
-	}
-
-	//basic_string
-	template<typename CharT>
-	bool operator <(const basic_string_builder<CharT>& lhs, const basic_string<CharT>& rhs)
-	{
-		typedef basic_range_string<const CharT> range_type;
-		return static_cast<range_type>(lhs) < static_cast<range_type>(rhs);
-	}
-
-	template<typename CharT>
-	bool operator <(const basic_string<CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{
-		typedef basic_range_string<const CharT> range_type;
-		return static_cast<range_type>(lhs) < static_cast<range_type>(rhs);
-	}
-
 	//equals
 	template<typename CharT>
 	bool operator ==(const basic_string_builder<CharT>& lhs, const basic_string_builder<CharT>& rhs)
@@ -1447,165 +1208,6 @@ namespace aio
 		typedef basic_range_string<const CharT> range_type;
 		return static_cast<range_type>(lhs) == static_cast<range_type>(rhs);
 	}
-
-	template<typename CharT>
-	bool operator ==(const basic_string_builder<CharT>& lhs, const CharT* rhs)
-	{
-		typedef basic_range_string<const CharT> range_type;
-		return static_cast<range_type>(lhs) == static_cast<range_type>(rhs);
-	}
-
-	template<typename CharT>
-	bool operator ==(const CharT* lhs, const basic_string_builder<CharT>& rhs)
-	{
-		typedef basic_range_string<const CharT> range_type;
-		return static_cast<range_type>(lhs) == static_cast<range_type>(rhs);
-	}
-
-	template<typename CharT>
-	bool operator ==(const basic_string_builder<CharT>& lhs, const basic_range_string<const CharT>& rhs)
-	{
-		typedef basic_range_string<const CharT> range_type;
-		return static_cast<range_type>(lhs) == rhs;
-	}
-
-	template<typename CharT>
-	bool operator ==(const basic_range_string<const CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{
-		typedef basic_range_string<const CharT> range_type;
-		return static_cast<range_type>(lhs) == static_cast<range_type>(rhs);
-	}
-
-	template<typename CharT>
-	bool operator ==(const basic_string_builder<CharT>& lhs, const basic_string<CharT>& rhs)
-	{
-		typedef basic_range_string<const CharT> range_type;
-		return static_cast<range_type>(lhs) == static_cast<range_type>(rhs);
-	}
-
-	template<typename CharT>
-	bool operator ==(const basic_string<CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{
-		typedef basic_range_string<const CharT> range_type;
-		return static_cast<range_type>(lhs) == static_cast<range_type>(rhs);
-	}
-
-	//less_equal
-	template<typename CharT>
-	bool operator <=(const basic_string_builder<CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{ return !(rhs < lhs); }
-
-	template<typename CharT>
-	bool operator <=(const basic_string_builder<CharT>& lhs, const CharT* rhs)
-	{ return !(rhs < lhs); }
-
-	template<typename CharT>
-	bool operator <=(const CharT* lhs, const basic_string_builder<CharT>& rhs)
-	{ return !(rhs < lhs); }
-
-	template<typename CharT>
-	bool operator <=(const basic_string_builder<CharT>& lhs, const basic_range_string<const CharT>& rhs)
-	{ return !(rhs < lhs); }
-
-	template<typename CharT>
-	bool operator <=(const basic_range_string<const CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{ return !(rhs < lhs); }
-
-	template<typename CharT>
-	bool operator <=(const basic_string_builder<CharT>& lhs, const basic_string<CharT>& rhs)
-	{ return !(rhs < lhs); }
-
-	template<typename CharT>
-	bool operator <=(const basic_string<CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{ return !(rhs < lhs); }
-
-	//greater
-	template<typename CharT>
-	bool operator >(const basic_string_builder<CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{ return rhs < lhs; }
-
-	template<typename CharT>
-	bool operator >(const basic_string_builder<CharT>& lhs, const CharT* rhs)
-	{ return rhs < lhs; }
-
-	template<typename CharT>
-	bool operator >(const CharT* lhs, const basic_string_builder<CharT>& rhs)
-	{ return rhs < lhs; }
-
-	template<typename CharT>
-	bool operator >(const basic_string_builder<CharT>& lhs, const basic_range_string<const CharT>& rhs)
-	{ return rhs < lhs; }
-
-	template<typename CharT>
-	bool operator >(const basic_range_string<const CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{ return rhs < lhs; }
-
-	template<typename CharT>
-	bool operator >(const basic_string_builder<CharT>& lhs, const basic_string<CharT>& rhs)
-	{ return rhs < lhs; }
-
-	template<typename CharT>
-	bool operator >(const basic_string<CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{ return rhs < lhs; }
-
-	//greater_equal
-	template<typename CharT>
-	bool operator >=(const basic_string_builder<CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{ return !(lhs < rhs); }
-
-	template<typename CharT>
-	bool operator >=(const basic_string_builder<CharT>& lhs, const CharT* rhs)
-	{ return !(lhs < rhs); }
-
-	template<typename CharT>
-	bool operator >=(const CharT* lhs, const basic_string_builder<CharT>& rhs)
-	{ return !(lhs < rhs); }
-
-	template<typename CharT>
-	bool operator >=(const basic_string_builder<CharT>& lhs, const basic_range_string<const CharT>& rhs)
-	{ return !(lhs < rhs); }
-
-	template<typename CharT>
-	bool operator >=(const basic_range_string<const CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{ return !(lhs < rhs); }
-
-	template<typename CharT>
-	bool operator >=(const basic_string_builder<CharT>& lhs, const basic_string<CharT>& rhs)
-	{ return !(lhs < rhs); }
-
-	template<typename CharT>
-	bool operator >=(const basic_string<CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{ return !(lhs < rhs); }
-
-	//not_equal
-	template<typename CharT>
-	bool operator !=(const basic_string_builder<CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{ return !(lhs == rhs); }
-
-	template<typename CharT>
-	bool operator !=(const basic_string_builder<CharT>& lhs, const CharT* rhs)
-	{ return !(lhs == rhs); }
-
-	template<typename CharT>
-	bool operator !=(const CharT* lhs, const basic_string_builder<CharT>& rhs)
-	{ return !(lhs == rhs); }
-
-	template<typename CharT>
-	bool operator !=(const basic_string_builder<CharT>& lhs, const basic_range_string<const CharT>& rhs)
-	{ return !(lhs == rhs); }
-
-	template<typename CharT>
-	bool operator !=(const basic_range_string<const CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{ return !(lhs == rhs); }
-
-	template<typename CharT>
-	bool operator !=(const basic_string_builder<CharT>& lhs, const basic_string<CharT>& rhs)
-	{ return !(lhs == rhs); }
-
-	template<typename CharT>
-	bool operator !=(const basic_string<CharT>& lhs, const basic_string_builder<CharT>& rhs)
-	{ return !(lhs == rhs); }
-
 
 	template<typename CharT>
 	void swap(basic_string_builder<CharT>& lhs, basic_string_builder<CharT>& rhs)
@@ -1629,7 +1231,6 @@ namespace aio
 		return aio::make_range(reinterpret_cast<buffer<byte>::const_iterator>(cont.begin()), 
 				reinterpret_cast<buffer<byte>::const_iterator>(cont.end()));
 	}
-
 }
 #include <aio/common/config/abi_suffix.h>
 

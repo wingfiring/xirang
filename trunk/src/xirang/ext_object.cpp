@@ -196,7 +196,7 @@ namespace xirang
 		AIO_PRE_CONDITION(t.valid() && t.argCount() == 1);
 
 		TypeArg ta = t.arg(0);
-		AIO_PRE_CONDITION(ta.name() == "value_type");
+		AIO_PRE_CONDITION(ta.name() == aio::literal("value_type"));
 
 		t = ta.type();
 		AIO_PRE_CONDITION(t.valid());

@@ -34,15 +34,15 @@ private:
 
 	static string convert_(const wchar_t* value)
 	{
-		if (value == 0) return "(null)";
+		if (value == 0) return literal("(null)");
 		
 		return utf8::encode_string(make_range(value, value + std::wcslen(value)));
 	}	
 
 	static string convert_(const char* value)
 	{
-		if (value == 0) return "(null)";
-		return value;
+		if (value == 0) return literal("(null)");
+		return as_range_string(value);
 	}
 
 	template<std::size_t N>
@@ -58,7 +58,7 @@ private:
 	{
 		std::stringstream sstr;
         sstr << value;
-        return sstr.str().c_str();
+        return basic_range_string<const char_utf8>(sstr.str());
 	}
 
 	static string convert_(const wstring& value)
@@ -84,16 +84,16 @@ private:
 
 	static wstring convert_(const char* value)
 	{
-		if (value == 0) return L"(null)";
+		if (value == 0) return literal(L"(null)");
 		
 		return utf8::decode_string(make_range(value, value + std::strlen(value)));
 	}	
 
 	static wstring convert_(const wchar_t* value)
 	{
-		if (value == 0) return L"(null)";
+		if (value == 0) return literal(L"(null)");
 
-		return value;
+		return as_range_string(value);
 	}
 
 	template<std::size_t N>

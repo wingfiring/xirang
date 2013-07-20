@@ -9,6 +9,6 @@ namespace aio {
 	{
         std::stringstream sstr;
         sstr << line;
-		return basic_string<char_utf8>(sstr.str().c_str());	
+		return basic_range_string<const char_utf8>(sstr.str());	
 	}
 }

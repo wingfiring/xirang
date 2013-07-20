@@ -150,7 +150,7 @@ namespace xirang{ namespace fs{
 		// \return mounted() ? absolute() : empty() 
 		string mountPoint() const 
 		{
-			return m_root ? m_root->mountPoint(*m_host) : "";
+			return m_root ? m_root->mountPoint(*m_host) : aio::empty_str;
 		}
 
 		// \pre !absolute(path)
