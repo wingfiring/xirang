@@ -7,6 +7,7 @@ namespace aio{ namespace zip{
 
 	typedef range<const byte*> dict_type;
 
+	///\@see coreponding in zlib
 	enum level{
 		zl_default = -1,
 		zl_no_compression = 0,
@@ -37,7 +38,10 @@ namespace aio{ namespace zip{
 		long_size_t out_size;
 	};
 
+	/// return crc32 initilaized value
 	extern uint32_t crc32_init();
+
+	//caculate new crc from input
 	extern uint32_t crc32(io::reader& src, uint32_t crc = crc32_init());
 	extern uint32_t crc32(io::read_map& src, uint32_t crc = crc32_init());
 	extern uint32_t crc32(range<const byte*>& src, uint32_t crc = crc32_init());

@@ -5,6 +5,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include "precompile.h"
 #include <aio/common/deflate.h>
 #include <aio/common/io/memory.h>
+#include <aio/common/io/s11n.h>
 #include <random>
 
 
@@ -21,7 +22,7 @@ BOOST_AUTO_TEST_CASE(deflate_case)
 
 	for (int i = 0; i < 100; ++i){
 		unsigned int var = distribution(engin);
-		aio::sio::save(wr, var);
+		save(local::as_sink(wr), var);
 	}
 
 	mem_archive zipped;

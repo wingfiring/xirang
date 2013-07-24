@@ -4,13 +4,14 @@
 #define AIO_HANDLE_PTR_H
 #include <aio/common/config.h>
 #include <aio/common/assert.h>
+#include <aio/common/operators.h>
 
 #include <aio/common/config/abi_prefix.h>
 namespace aio
 {
 	///handler ptr, it's a value semantic
     template<typename T>
-    class handle_ptr
+    class handle_ptr 
     {
     public:
 		typedef T element_type;	///< is a smart pointer
@@ -82,16 +83,8 @@ namespace aio
 	bool operator == (const handle_ptr<T>& lhs, const handle_ptr<U>& rhs) { return lhs.get() == rhs.get();}
 
 	template<typename T, typename U>
-	bool operator <= (const handle_ptr<T>& lhs, const handle_ptr<U>& rhs) { return lhs.get() <= rhs.get();}
-
-	template<typename T, typename U>
-	bool operator > (const handle_ptr<T>& lhs, const handle_ptr<U>& rhs) { return lhs.get() > rhs.get();}
-
-	template<typename T, typename U>
-	bool operator >= (const handle_ptr<T>& lhs, const handle_ptr<U>& rhs) { return lhs.get() >= rhs.get();}
-
-	template<typename T, typename U>
-	bool operator != (const handle_ptr<T>& lhs, const handle_ptr<U>& rhs) { return lhs.get() != rhs.get();}
+		class handle_ptr_operator : totally_ordered<handle_ptr<T>, handle_ptr<U>>
+	{};
 
 	//swap
     template<typename T>

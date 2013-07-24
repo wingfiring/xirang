@@ -4,6 +4,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 
 #include "precompile.h"
 #include <aio/common/io/memory.h>
+#include <aio/common/io/s11n.h>
 #include "./iarchive.h"
 
 BOOST_AUTO_TEST_SUITE(archive_suite)
@@ -82,17 +83,16 @@ BOOST_AUTO_TEST_CASE(mem_archive_case)
 
 	io::writer& wr = iar.get<io::writer>();
 	io::reader& rd = iar.get<io::reader>();
-	using namespace sio;
 
 	int i = 3;
-	wr & i;
+	io::local::as_sink(wr) & i;
 
 	BOOST_CHECK(ar.size() == sizeof(int));
 
 	ar.seek(0);
 	BOOST_CHECK(ar.offset() == 0);
 	int j;
-	rd & j;
+	io::local::as_source(rd) & j;
 	BOOST_CHECK(j == 3);
 
 	ar.truncate(sizeof(int)*2);

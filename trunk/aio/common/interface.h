@@ -7,6 +7,7 @@
 #include <cstring>	//for memcpy
 #include <aio/common/backward/unique_ptr.h>
 
+#include <aio/common/config/abi_prefix.h>
 namespace aio
 {
 	template<typename... Interfaces> struct iref;
@@ -216,6 +217,14 @@ namespace aio
 			typedef typename private_::find_convertible<T, Args...>::type type;
 			return get_helper_<return_type>((type*)0);
 		}
+
+		template<typename T>
+		operator T&() const {
+			AIO_PRE_CONDITION(valid());
+
+			return get<T>();
+		}
+
 		template<typename... OArgs>
 		iref& operator=(const iref<OArgs...>& rhs){
 			return *this = iref(rhs);
@@ -281,6 +290,7 @@ namespace aio
 			return *static_cast<CoClass*>(*((void**)this_ + 1));
 		}
 }
+#include <aio/common/config/abi_suffix.h>
 
 #endif //end AIO_COMMON_INTERFACE_H_
 

@@ -68,7 +68,6 @@ namespace xirang
 		template<typename Archive>
 		friend Archive& operator &(Archive & ar, const ExtObject& obj)
 		{
-			using namespace sio;
 			return ar & obj.m_heap & obj.m_ext_heap & obj.m_type 
 				& obj.m_handle.begin & obj.m_handle.end;
 		}

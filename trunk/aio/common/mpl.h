@@ -6,6 +6,23 @@
 #include <type_traits>
 namespace aio{ namespace mpl{
 
+struct true_type{ 
+	static const bool value = true;
+};
+
+struct false_type{
+	static const bool value = false;
+};
+
+template<template<typename> class F, typename T, typename ... Args>
+struct all_of{
+	static constexpr bool value = F<T>::value && all_of<F, Args...>::value;
+};
+template<template<typename> class F, typename T>
+struct all_of<F, T>{
+	static constexpr bool value = F<T>::value;
+};
+
 template<typename T, size_t N>
 struct array { T data[N]; };
 

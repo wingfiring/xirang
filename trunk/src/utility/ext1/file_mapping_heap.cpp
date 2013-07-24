@@ -2,6 +2,7 @@
 #include <aio/common/backward/atomic.h>
 #include <aio/common/memory.h>
 #include <aio/common/io/memory.h>
+#include <aio/common/io/s11n.h>
 
 
 //STL
@@ -501,9 +502,8 @@ namespace aio
 			mar.seek(0);
 			while(items--)
 			{
-				using namespace sio;
 				long_offset_t b, e;
-				ird.get<io::reader>() & b & e;
+				io::local::as_source(ird.get<io::reader>()) & b & e;
 				handle h(b, e);
 				free_space[1].insert(h);
 				info.outer_free_size += h.size() ;
@@ -540,13 +540,12 @@ namespace aio
 			io::mem_archive war;
 			iref<io::writer> ar(war);
 			
-			using namespace sio;
 			std::set<handle >::iterator use_end = rbeg.base();
 			for (std::set<handle >::iterator itr = free_space[1].begin(); itr != use_end; ++itr)
 			{
-				ar.get<io::writer>() & itr->begin() & itr->end();
+				io::local::as_sink(ar.get<io::writer>()) & itr->begin() & itr->end();
 			}
-			ar.get<io::writer>() & sig_ext_heap & end_pos;
+			io::local::as_sink(ar.get<io::writer>()) & sig_ext_heap & end_pos;
 
 			free_space[1].clear();
 

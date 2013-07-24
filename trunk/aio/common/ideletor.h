@@ -5,9 +5,6 @@
 
 #include <aio/common/config.h>
 
-#ifdef MSVC_COMPILER_
-#include <tuple>    //just for macros of _CLASS_ARG0_DEF_MAX etc
-#endif
 namespace aio
 {
 	struct AIO_INTERFACE ideletor
@@ -59,20 +56,6 @@ namespace aio
 		{
 		}
 	};
-#if 0 // for  MSVC_COMPILER_
-    template<typename Deletor, _CLASS_ARG0_DEF_MAX>
-	struct ideletorT : ideletor, _ARG0_ARG1_MAX
-	{
-		explicit ideletorT(Deletor dtor) : m_deletor(dtor){}
-		virtual void destroy()
-		{
-			m_deletor(this);
-		}
-	private:
-		Deletor m_deletor;
-	};
-#endif
-
 }
 #endif //end AIO_COMMON_IDELETOR_H
 

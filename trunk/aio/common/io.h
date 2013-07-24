@@ -21,12 +21,20 @@ namespace aio { namespace io{
 
 		template<typename T, typename ... U>
 			struct total_size_of<T, U...> {
+				static_assert(std::is_scalar<T>::value, "don't known how to skip a non-pod type (due to padding issue).");
 				static const size_t value = sizeof(T) + total_size_of<U...>::value;
 			};
 	}
 
-	template<size_t N> struct skip_n { skip_n(){}};
-	template<typename ... T> struct skip : skip_n<private_::total_size_of<T...>::value> { };
+	template<size_t N> struct skip_n { };
+	template<typename ... T> struct skip_scalar : skip_n<private_::total_size_of<T...>::value> { };
+	template<typename T> struct skip_t { 
+		typedef T type;
+	};
+
+	//TODO: clean block & non-block behavior
+
+
 
 	template<typename Interface, typename Ar> Ar& get_interface(Ar& ar){ return ar;}
 	template<typename Interface, typename ...Io> Interface& get_interface(const iref<Io...>& ar)
@@ -376,99 +384,7 @@ namespace aio { namespace io{
 	AIO_EXCEPTION_TYPE(seek_failed);
     AIO_EXCEPTION_TYPE(create_failed);
 
-}
 
-namespace sio{
-	using io::skip;
-	using io::skip_n;
-	using io::get_interface;
-
-	template<typename Ar, typename T>
-		typename std::enable_if<std::is_pod<T>::value, Ar&>::type 
-		save( Ar& wt, const T& t)
-		{
-			const byte* first = reinterpret_cast<const byte*>(&t);
-			const byte* last = reinterpret_cast<const byte*>(&t + 1);
-
-			io::block_write(get_interface<io::writer>(wt), make_range(first, last));
-
-			return wt;
-		}
-	template<typename Ar, size_t N>
-		Ar& save( Ar& wt, skip_n<N> t)
-		{
-			auto& seeker = get_interface<io::sequence>(wt);
-			seeker.seek(seeker.offset() + N);
-			return wt;
-		}
-
-	template<typename T, typename Ar>
-		typename std::enable_if<std::is_pod<T>::value, Ar&>::type 
-		load(Ar& rd, T& t)
-		{
-			byte* first = reinterpret_cast<byte*>(&t);
-			byte* last = reinterpret_cast<byte*>(&t + 1);
-
-			if (!io::block_read(get_interface<io::reader>(rd), make_range(first, last)).empty() )
-				AIO_THROW(io::read_failed);
-
-			return rd;
-		}
-	template<typename Ar, size_t N>
-		Ar& load(Ar& rd, skip_n<N> t)
-		{
-			auto& seeker = get_interface<io::sequence>(rd);
-			seeker.seek(seeker.offset() + N);
-			return rd;
-		}
-
-	template<typename T, typename Ar> T load(Ar& rd)
-		{
-			T t;
-			load(rd, t);
-			return std::move(t);
-		}
-
-	template<typename Ar, typename T> Ar& save(Ar& ar, const buffer<T>& buf)
-	{
-		save(ar, buf.size());
-		if (!buf.empty())
-		{
-			const byte* first = reinterpret_cast<const byte*>(buf.data());
-			const byte* last = first + sizeof(T) * buf.size();
-			get_interface<aio::io::writer>(ar).write(make_range(first, last));
-		}
-		return ar;
-	}
-
-
-	template<typename Ar, typename T> Ar& load(Ar& ar, buffer<T>& buf)
-	{
-		size_t size = load<size_t>(ar);
-		buf.resize(size);
-		if (size > 0)
-		{   
-			byte* first = reinterpret_cast<byte*>(buf.data());
-			byte* last = first + sizeof(T) * size;
-			get_interface<aio::io::reader>(ar).read(make_range(first, last));
-		}
-		return ar;
-	}
-
-	template<typename Ar, typename T>  
-		typename std::enable_if<std::is_base_of<aio::io::reader, Ar>::value, Ar&>::type 
-		operator&(Ar& ar, T& t){	//load
-			return load(ar, t);
-		}
-
-	template<typename Ar, typename T>  
-		typename std::enable_if<std::is_base_of<aio::io::writer, Ar>::value, Ar&>::type 
-		operator&(Ar& ar, const T& t){	//load
-			return save(ar, t);
-		}
-
-}
-
-}
+}}
 #endif //end AIO_COMMON_IARCHIVE_H_
 

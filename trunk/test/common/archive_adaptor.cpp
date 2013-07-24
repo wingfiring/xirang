@@ -5,6 +5,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include "precompile.h"
 #include <aio/common/io/memory.h>
 #include <aio/common/io/adaptor.h>
+#include <aio/common/io/s11n.h>
 
 #include "./iarchive.h"
 
@@ -78,8 +79,8 @@ BOOST_AUTO_TEST_CASE(multiplex_archive_case)
 		>(&mar, 0);
 
 	int var = 42;
-	sio::save(adaptor, var);
-	int var2 = sio::load<int>(adaptor2);
+	save(local::as_sink(adaptor), var);
+	int var2 = load<int>(local::as_source(adaptor2));
 	BOOST_CHECK(var == var2);
 }
 
@@ -126,9 +127,9 @@ BOOST_AUTO_TEST_CASE(sub_archive_case)
 		>(iar2, 4, 10);
 
 	int var = 42;
-	sio::save(adaptor, var);
-	sio::save(adaptor, var);
-	int var2 = sio::load<int>(adaptor2);
+	save(local::as_sink(adaptor), var);
+	save(local::as_sink(adaptor), var);
+	int var2 = load<int>(local::as_source(adaptor2));
 	BOOST_CHECK(var == var2);
 }
 
