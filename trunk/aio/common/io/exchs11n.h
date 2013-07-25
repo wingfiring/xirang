@@ -20,9 +20,10 @@ namespace aio{ namespace io{ namespace exchange{
 	template<> struct exchange_type_of<wchar_t>{ typedef std::int32_t type;};
 	template<> struct exchange_type_of<char>{ typedef std::int8_t type;};
 
+	AIO_EXCEPTION_TYPE(bad_exchange_cast);
+
 	template<typename U, typename T> U exchange_cast(T t){
-		// FIXME: do similiar work like boost::numeric_cast
-		return U(t);
+		U u(t);
 	}
 
 	template<typename Ar, typename T, 
