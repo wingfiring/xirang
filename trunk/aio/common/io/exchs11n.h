@@ -2,6 +2,7 @@
 #define AIO_COMMON_IO_S11N_EXCHANGE_H_
 #include <aio/common/io/s11nbase.h>
 #include <aio/common/byteorder.h>
+#include <limits>
 
 namespace aio{ namespace io{ namespace exchange{
 
@@ -22,8 +23,22 @@ namespace aio{ namespace io{ namespace exchange{
 
 	AIO_EXCEPTION_TYPE(bad_exchange_cast);
 
+	template<typename T, typename U> struct exchange_cast_imp{
+		static U apply(T t){
+			if (t < std::numeric_limits<U>::min()
+					|| t > std::numeric_limits<U>::max())
+				AIO_THROW(bad_exchange_cast);
+			return U(t);
+		}
+	};
+	template<typename T> struct exchange_cast_imp<T, T>{
+		static T apply(T t){
+			return t;
+		}
+	};
+
 	template<typename U, typename T> U exchange_cast(T t){
-		U u(t);
+		return exchange_cast_imp<T, U>::apply(t);
 	}
 
 	template<typename Ar, typename T, 
