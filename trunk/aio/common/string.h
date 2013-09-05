@@ -292,7 +292,7 @@ namespace aio
 		}
 		
 #if 1
-		explicit basic_string(const_pointer src) 
+		basic_string(const_pointer src) 
 			: m_data(0)
 		{
 			AIO_PRE_CONDITION(src != 0);
@@ -300,7 +300,7 @@ namespace aio
 			m_data = len > 0 ? new_data(get_heap(), src, len) : 0;
 		}
 
-		explicit basic_string(const_pointer src
+		basic_string(const_pointer src
 					 , heap& h) 
 		: m_data(0)
 		{
@@ -457,6 +457,7 @@ namespace aio
 			AIO_POST_CONDITION(pos == size());
 			ptr->data[pos] = CharT(0);
 
+			ptr->hash_self();
 			ret.m_data = ptr;
 			return std::move(ret);
 		}

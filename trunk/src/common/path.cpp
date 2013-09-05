@@ -118,6 +118,9 @@ namespace aio{
 
 
 	path& path::operator/=(const path& rhs){
+		if (rhs.is_root())
+			return *this;
+
 		if (is_root())
 		{
 			if (rhs.is_absolute())
@@ -125,13 +128,14 @@ namespace aio{
 			else
 				m_str = literal("/") << rhs.str();
 		}
-		else
-		{
-			if (rhs.is_absolute())
-				m_str = m_str << rhs.str();
-			else
-				m_str = m_str << literal("/") << rhs.str();
+		else if (rhs.is_network()){
+			m_str = m_str << rhs.str();
+			normalize();
 		}
+		else if (rhs.is_absolute())
+			m_str = m_str << rhs.str();
+		else
+			m_str = m_str << literal("/") << rhs.str();
 		return *this;
 	}
 
