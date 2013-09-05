@@ -21,7 +21,7 @@ if (!BOOST_USE_STATIC)
 	add_definitions(-DUSE_BOOST_TEST_DYN_LINK)
 endif()
 
-SET(CMAKE_CXX_FLAGS			"$ENV{CXXFLAGS} -Wall -std=c++11")
+SET(CMAKE_CXX_FLAGS			"$ENV{CXXFLAGS} -Wall -Werror -std=c++11")
 SET(CMAKE_CXX_FLAGS_DEBUG	"$ENV{CXXFLAGS} -O0 -g -ggdb")
 SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 ")
 FIND_PACKAGE(Boost COMPONENTS unit_test_framework filesystem system)

@@ -278,19 +278,14 @@ namespace aio
 		}
 	public:
 
-		basic_string()
-			: m_data(0){}
+		basic_string() : m_data(0){}
 
-		template<typename CharU>
-		basic_string(const basic_range_string<CharU>& src) 
+		basic_string(const basic_range_string<const CharT>& src) 
 			: m_data(0)
 		{
 			m_data = src.size() > 0 ? new_data(get_heap(), src.data(), src.size()) : 0;
 		}
-
-		template<typename CharU>
-		basic_string(const basic_range_string<const CharU>& src
-					 , heap& h) 
+		basic_string(const basic_range_string<const CharT>& src, heap& h) 
 			: m_data(0)
 		{
 			m_data = src.size() > 0 ? new_data(h, src.data(), src.size()) : 0;
@@ -469,6 +464,8 @@ namespace aio
 			return left->size() + right->size();
 		}
 		private:
+		template<typename CT, typename CU>
+		friend struct concator;
 
 		template<typename CharT, typename Range>
 		static std::size_t copy_(CharT* buf, std::size_t pos, const Range* s){
