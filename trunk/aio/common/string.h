@@ -109,7 +109,8 @@ namespace aio
 			}
 		}
 		template<typename Range, typename Enable = typename std::enable_if<!is_concator<Range>::value, void>::type>
-		explicit basic_range_string(Range& r) {
+		explicit basic_range_string(Range& r) 
+			: m_beg(0), m_end(0){
 			if (!r.empty()){
 				m_beg = &*r.begin();
 				m_end = m_beg + r.size();
@@ -146,14 +147,17 @@ namespace aio
 
 		friend	bool operator < (const basic_range_string<CharT>& lhs
 		, const basic_range_string<CharT>& rhs) {
-				return basic_range_string<CharT>::compare(
-						lhs.data(), lhs.size(), rhs.data(), rhs.size()) < 0;
+
+				return (lhs.empty() && !rhs.empty())
+					|| (!rhs.empty() && (basic_range_string<CharT>::compare(
+						lhs.data(), lhs.size(), rhs.data(), rhs.size()) < 0));
 		}
 		friend bool operator == (const basic_range_string<CharT>& lhs
 				, const basic_range_string<CharT>& rhs)
 		{
-			return basic_range_string<CharT>::compare(
-					lhs.data(), lhs.size(), rhs.data(), rhs.size()) == 0;
+			return (lhs.empty() && rhs.empty())
+			|| (!lhs.empty() && !rhs.empty() && (basic_range_string<CharT>::compare(
+					lhs.data(), lhs.size(), rhs.data(), rhs.size()) == 0));
 		}
 
 		/// if equal, return 0. if lhs < rhs, return negtive, otherwise return > 0
