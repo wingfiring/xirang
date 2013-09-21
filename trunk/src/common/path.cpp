@@ -298,7 +298,7 @@ namespace aio{
 	}
 
 
-	file_path& file_path::operator/=(const file_path& rhs){
+	file_path& file_path::operator/=(const sub_file_path& rhs){
 		if (rhs.is_root())
 			return *this;
 
@@ -391,14 +391,156 @@ namespace aio{
 		return as_sub_path().end();
 	}
 
-	file_path operator/(const file_path& lhs, const file_path& rhs){
+	file_path operator/(const sub_file_path& lhs, const sub_file_path& rhs){
 		file_path ret = lhs;
 		ret /= rhs;
 		return std::move(ret);
 	}
 
+	////////////////////////////////
+	//sub_simple_path
 
-	const char simple_path::dim = '.';
+	const char sub_simple_path::dim = '.';
+	sub_simple_path::sub_simple_path(){}
+
+	sub_simple_path::sub_simple_path(string::const_iterator first,
+			string::const_iterator last)
+		: m_str(first, last)
+	{}
+
+	sub_simple_path& sub_simple_path::operator=(const sub_simple_path& rhs){
+		m_str = rhs.m_str;
+		return *this;
+	}
+	void sub_simple_path::swap(sub_simple_path& rhs){
+		std::swap(m_str, rhs.m_str);
+	}
+
+	sub_simple_path sub_simple_path::parent() const{
+		auto pos = rfind(m_str, dim);
+		if (pos ==  m_str.begin() && is_absolute()){
+			return *begin();
+		}
+		if (pos == m_str.end()) pos = m_str.begin();
+		return sub_simple_path(m_str.begin(), pos);
+	}
+	sub_simple_path sub_simple_path::filename() const{
+		auto pos = rfind(m_str, dim);
+		if (pos != m_str.end()) ++pos;
+		return sub_simple_path(pos, m_str.end());
+	}
+
+	bool sub_simple_path::is_absolute() const{
+		return !m_str.empty() && m_str[0] == dim;
+	}
+	bool sub_simple_path::is_root() const{
+		return m_str.size() == 1 && m_str[0] == dim;
+	}
+	bool sub_simple_path::empty() const{
+		return m_str.empty();
+	}
+
+	const_range_string sub_simple_path::str() const{
+		return m_str;
+	}
+	sub_simple_path::iterator sub_simple_path::begin() const{
+		return sub_simple_path::iterator(m_str, m_str.begin());
+	}
+	sub_simple_path::iterator sub_simple_path::end() const{
+		return sub_simple_path::iterator(m_str, m_str.end());
+	}
+
+	sub_simple_path::iterator::iterator()
+		: m_pos(), m_path()
+	{}
+	sub_simple_path::iterator::iterator(const_range_string spath, string::const_iterator pos)
+		: m_pos(pos), m_path(spath)
+	{}
+
+	void sub_simple_path::iterator::swap(sub_simple_path::iterator& rhs){
+		std::swap(m_pos, rhs.m_pos);
+		std::swap(m_path, rhs.m_path);
+	}
+
+	sub_simple_path::iterator& sub_simple_path::iterator::operator++(){
+		AIO_PRE_CONDITION(!m_path.empty() && m_pos && "empty iterator");
+		AIO_PRE_CONDITION(m_pos != end_() &&"increase end iterator");
+
+		if (m_pos == begin_() &&path_().is_absolute()){
+			++m_pos;
+			return *this;
+		}
+		m_pos = find(m_pos, end_(), sub_simple_path::dim);
+		if (m_pos != end_()) ++m_pos;
+		return *this;
+	}
+	sub_simple_path::iterator& sub_simple_path::iterator::operator--(){
+		AIO_PRE_CONDITION(!m_path.empty() && m_pos && "empty iterator");
+		AIO_PRE_CONDITION(m_pos != begin_() &&"decrease begin iterator");
+
+		if (m_pos == begin_() + 1 && path_().is_absolute()){
+			--m_pos;
+			return *this;
+		}
+
+		if (m_pos != begin_() && m_pos != end_()){
+			AIO_PRE_CONDITION(*(m_pos -1) == sub_simple_path::dim);
+			--m_pos;
+		}
+		auto pos = rfind(begin_(), m_pos, sub_simple_path::dim);
+		m_pos = (pos == m_pos) ? begin_() : pos + 1;
+
+		return *this;
+	}
+	sub_simple_path::iterator sub_simple_path::iterator::operator++(int){
+		auto tmp = *this;
+		++*this;
+		return tmp;
+	}
+	sub_simple_path::iterator sub_simple_path::iterator::operator--(int){
+		auto tmp = *this;
+		--*this;
+		return tmp;
+	}
+
+	bool sub_simple_path::iterator::operator==(const sub_simple_path::iterator& rhs){
+		AIO_PRE_CONDITION(m_path == rhs.m_path);
+
+		return m_pos == rhs.m_pos;
+	}
+	bool sub_simple_path::iterator::operator!=(const sub_simple_path::iterator& rhs){
+		return !(*this == rhs);
+	}
+
+	sub_simple_path::iterator::reference sub_simple_path::iterator::operator*() const{
+		AIO_PRE_CONDITION(!m_path.empty() && m_pos && "empty iterator");
+		AIO_PRE_CONDITION(m_pos != end_() &&"dereference end iterator");
+		auto pos = m_pos;
+		if (m_pos == begin_()){
+			if (path_().is_absolute())
+				++pos;
+			else
+				pos = find(m_pos, end_(), sub_simple_path::dim);
+		}
+		else
+			pos = find(m_pos, end_(), sub_simple_path::dim);
+
+		m_cache = sub_simple_path(m_pos, pos);
+		return m_cache;
+	}
+	sub_simple_path::iterator::pointer sub_simple_path::iterator::operator->() const{
+		return &**this;
+	}
+	sub_simple_path sub_simple_path::iterator::path_() const{
+		return sub_simple_path(begin_(), end_());
+	}
+	string::const_iterator sub_simple_path::iterator::begin_() const{
+		return m_path.begin();
+	}
+	string::const_iterator sub_simple_path::iterator::end_() const{
+		return m_path.end();
+	}
+
 	simple_path::simple_path() {}
 
 	simple_path::simple_path(const string& str, path_process pp /* = pp_utf8check*/)
@@ -408,6 +550,7 @@ namespace aio{
 			check_utf8_(str);
 	}
 	simple_path::simple_path(const simple_path& rhs) : m_str(rhs.m_str){}
+	simple_path::simple_path(sub_simple_path rhs) : m_str(rhs.str()){}
 	simple_path::simple_path(simple_path&& rhs) : m_str(std::move(rhs.m_str)){}
 
 	simple_path& simple_path::operator=(const simple_path& rhs){
@@ -418,32 +561,35 @@ namespace aio{
 		simple_path(std::move(rhs)).swap(*this);
 		return *this;
 	}
-
-	simple_path simple_path::parent() const{
-		auto pos = rfind(m_str, dim);
-		if (pos ==  m_str.begin() && is_absolute()){
-			return *begin();
-		}
-		if (pos == m_str.end()) pos = m_str.begin();
-		return simple_path(const_range_string(m_str.begin(), pos), pp_none);
+	simple_path& simple_path::operator=(sub_simple_path rhs){
+		m_str = rhs.str();
+		return *this;
 	}
-	simple_path simple_path::filename() const{
-		auto pos = rfind(m_str, dim);
-		if (pos != m_str.end()) ++pos;
-		return simple_path(const_range_string(pos, m_str.end()), pp_none);
+	simple_path::operator sub_simple_path() const{
+		return as_sub_path();
+	}
+	sub_simple_path simple_path::as_sub_path() const{
+		return sub_simple_path(m_str.begin(), m_str.end());
+	}
+
+	sub_simple_path simple_path::parent() const{
+		return as_sub_path().parent();
+	}
+	sub_simple_path simple_path::filename() const{
+		return as_sub_path().filename();
 	}
 	bool simple_path::is_absolute() const{
-		return !m_str.empty() && m_str[0] == dim;
+		return as_sub_path().is_absolute();
 	}
 	bool simple_path::is_root() const{
-		return m_str.size() == 1 && m_str[0] == dim;
+		return as_sub_path().is_root();
 	}
 
 	bool simple_path::empty() const{
-		return m_str.empty();
+		return as_sub_path().empty();
 	}
 
-	simple_path& simple_path::operator/=(const simple_path& rhs){
+	simple_path& simple_path::operator/=(const sub_simple_path& rhs){
 		if (rhs.is_root())
 			return *this;
 
@@ -490,107 +636,17 @@ namespace aio{
 	}
 
 	simple_path::iterator simple_path::begin() const{
-		return simple_path::iterator(*this, str().begin());
+		return as_sub_path().begin();
 	}
 	simple_path::iterator simple_path::end() const{
-		return simple_path::iterator(*this, str().end());
+		return as_sub_path().end();
 	}
 
-	simple_path operator/(const simple_path& lhs, const simple_path& rhs){
+	simple_path operator/(const sub_simple_path& lhs, const sub_simple_path& rhs){
 		simple_path ret = lhs;
 		ret /= rhs;
 		return std::move(ret);
 	}
 
-	simple_path::iterator::iterator()
-		: m_pos(), m_path()
-	{}
-	simple_path::iterator::iterator(const simple_path& simple_path, string::const_iterator pos)
-		: m_pos(pos), m_path(&simple_path)
-	{}
-
-	void simple_path::iterator::swap(simple_path::iterator& rhs){
-		std::swap(m_pos, rhs.m_pos);
-		std::swap(m_path, rhs.m_path);
-	}
-
-	simple_path::iterator& simple_path::iterator::operator++(){
-		AIO_PRE_CONDITION(m_path && m_pos && "empty iterator");
-		AIO_PRE_CONDITION(m_pos != end_() &&"increase end iterator");
-
-		if (m_pos == begin_()){
-			if(m_path->is_absolute()){
-				++m_pos;
-				return *this;
-			}
-		}
-		m_pos = find(m_pos, end_(), simple_path::dim);
-		if (m_pos != end_()) ++m_pos;
-		return *this;
-	}
-	simple_path::iterator& simple_path::iterator::operator--(){
-		AIO_PRE_CONDITION(m_path && m_pos && "empty iterator");
-		AIO_PRE_CONDITION(m_pos != begin_() &&"decrease begin iterator");
-
-		if (m_pos == begin_() + 1 && m_path->is_absolute()){
-			--m_pos;
-			return *this;
-		}
-
-		if (m_pos != begin_() && m_pos != end_()){
-			AIO_PRE_CONDITION(*(m_pos -1) == simple_path::dim);
-			--m_pos;
-		}
-		auto pos = rfind(begin_(), m_pos, simple_path::dim);
-		m_pos = (pos == m_pos) ? begin_() : pos + 1;
-
-		return *this;
-	}
-	simple_path::iterator simple_path::iterator::operator++(int){
-		auto tmp = *this;
-		++*this;
-		return tmp;
-	}
-	simple_path::iterator simple_path::iterator::operator--(int){
-		auto tmp = *this;
-		--*this;
-		return tmp;
-	}
-
-	bool simple_path::iterator::operator==(const simple_path::iterator& rhs){
-		AIO_PRE_CONDITION(m_path == rhs.m_path);
-
-		return m_path == rhs.m_path
-			&& m_pos == rhs.m_pos;
-	}
-	bool simple_path::iterator::operator!=(const simple_path::iterator& rhs){
-		return !(*this == rhs);
-	}
-
-	simple_path::iterator::reference simple_path::iterator::operator*() const{
-		AIO_PRE_CONDITION(m_path && m_pos && "empty iterator");
-		AIO_PRE_CONDITION(m_pos != m_path->str().end() &&"dereference end iterator");
-		auto pos = m_pos;
-		if (m_pos == begin_()){
-			if (m_path->is_absolute())
-				++pos;
-			else
-				pos = find(m_pos, m_path->str().end(), simple_path::dim);
-		}
-		else
-			pos = find(m_pos, m_path->str().end(), simple_path::dim);
-
-		m_cache = simple_path(const_range_string(m_pos, pos), pp_none);
-		return m_cache;
-	}
-	simple_path::iterator::pointer simple_path::iterator::operator->() const{
-		return &**this;
-	}
-	string::const_iterator simple_path::iterator::begin_() const{
-		return m_path->str().begin();
-	}
-	string::const_iterator simple_path::iterator::end_() const{
-		return m_path->str().end();
-	}
 }
 
