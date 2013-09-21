@@ -177,6 +177,7 @@ namespace aio{
 			sub_simple_path filename() const;
 			bool is_absolute() const;
 			bool is_root() const;
+			bool is_normalized() const;
 			bool empty() const;
 
 			const_range_string str() const;
@@ -237,7 +238,7 @@ namespace aio{
 			typedef sub_simple_path::iterator iterator;
 			typedef sub_simple_path::const_iterator const_iterator;
 			simple_path();
-			explicit simple_path(const string& str, path_process pp = pp_none);
+			explicit simple_path(const string& str, path_process pp = pp_default);
 			simple_path(sub_simple_path rhs);
 			simple_path(const simple_path& rhs);
 			simple_path(simple_path&& rhs);
@@ -253,8 +254,10 @@ namespace aio{
 			sub_simple_path filename() const;
 			bool is_absolute() const;
 			bool is_root() const;
+			bool is_normalized() const;
 			bool empty() const;
 
+			simple_path& normalize(path_process pp = pp_default);
 			simple_path& operator/=(const sub_simple_path& rhs);
 			simple_path& replace_parent(const simple_path& rhs);
 			simple_path& replace_filename(const simple_path& rhs);

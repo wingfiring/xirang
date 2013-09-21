@@ -269,7 +269,7 @@ namespace aio{
 
     file_path& file_path::normalize(path_process pp)
 	{
-		std::vector<file_path> stack;
+		std::vector<sub_file_path> stack;
 		for (auto p : *this){
 			if (p.str() == onedot || p.str().empty())
 				continue;
@@ -278,8 +278,7 @@ namespace aio{
 				if (!stack.empty() && (!is_absolute() || stack.size() > 1)) stack.pop_back();
 				continue;
 			}
-			if (!p.str().empty())
-				stack.push_back(p);
+			stack.push_back(p);
 		}
 
 		string_builder result;
@@ -291,7 +290,7 @@ namespace aio{
 		}
 		if (result.size() > 1)
 			result.resize(result.size() - 1);
-		if (pp & pp_winfile && result.size() > 1 && result[0] != sub_file_path::dim && result[1] == ':')
+		if ((pp & pp_winfile) && result.size() > 1 && result[0] != sub_file_path::dim && result[1] == ':')
 			result.insert(result.begin(), 1, sub_file_path::dim);
 		m_str = result;
 		return *this;
@@ -436,6 +435,9 @@ namespace aio{
 	bool sub_simple_path::is_root() const{
 		return m_str.size() == 1 && m_str[0] == dim;
 	}
+	bool sub_simple_path::is_normalized() const{
+		return std::none_of(begin(), end(), [](const sub_simple_path& p){ return p.str().empty();});
+	}
 	bool sub_simple_path::empty() const{
 		return m_str.empty();
 	}
@@ -543,11 +545,13 @@ namespace aio{
 
 	simple_path::simple_path() {}
 
-	simple_path::simple_path(const string& str, path_process pp /* = pp_utf8check*/)
+	simple_path::simple_path(const string& str, path_process pp /* = pp_default*/)
 		: m_str(str)
 	{
 		if (pp & pp_utf8check)
 			check_utf8_(str);
+		if (pp & pp_normalize)
+			normalize(pp);
 	}
 	simple_path::simple_path(const simple_path& rhs) : m_str(rhs.m_str){}
 	simple_path::simple_path(sub_simple_path rhs) : m_str(rhs.str()){}
@@ -584,9 +588,33 @@ namespace aio{
 	bool simple_path::is_root() const{
 		return as_sub_path().is_root();
 	}
+	bool simple_path::is_normalized() const{
+		return as_sub_path().is_normalized();
+	}
 
 	bool simple_path::empty() const{
 		return as_sub_path().empty();
+	}
+    simple_path& simple_path::normalize(path_process pp)
+	{
+		std::vector<sub_simple_path> stack;
+		for (auto p : *this){
+			if (p.str().empty())
+				continue;
+			stack.push_back(p);
+		}
+
+		string_builder result;
+		for (auto& p : stack)
+		{
+			result += p.str();
+			if (!p.is_root())
+				result.push_back(sub_simple_path::dim);
+		}
+		if (result.size() > 1)
+			result.resize(result.size() - 1);
+		m_str = result;
+		return *this;
 	}
 
 	simple_path& simple_path::operator/=(const sub_simple_path& rhs){

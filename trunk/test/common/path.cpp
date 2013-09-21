@@ -129,5 +129,76 @@ BOOST_AUTO_TEST_CASE(path_windows_case)
 
 }
 
+BOOST_AUTO_TEST_CASE(simple_path_ctor_case){
+	simple_path p;
+	BOOST_CHECK(p.empty());
+
+	BOOST_CHECK(p.parent().empty());
+	BOOST_CHECK(p.filename().empty());
+	BOOST_CHECK(!p.is_absolute());
+	BOOST_CHECK(!p.is_root());
+}
+
+BOOST_AUTO_TEST_CASE(simple_path_normalize_case)
+{
+	simple_path p3(literal(".a...b/c.."));
+	auto itr = p3.begin();
+
+	BOOST_CHECK(itr->str() == literal("."));
+	++itr;
+	BOOST_CHECK(itr->str() == literal("a"));
+	++itr;
+	BOOST_CHECK(itr->str() == literal("b/c"));
+	++itr;
+	BOOST_CHECK(itr == p3.end());
+
+	--itr;
+	BOOST_CHECK(itr->str() == literal("b/c"));
+	--itr;
+	BOOST_CHECK(itr->str() == literal("a"));
+	--itr;
+	BOOST_CHECK(itr->str() == literal("."));
+	BOOST_CHECK(itr == p3.begin());
+
+	BOOST_CHECK(simple_path(literal("..")).str() == literal("."));
+	BOOST_CHECK(simple_path(literal("..a.b.c..")).str() == literal(".a.b.c"));
+	BOOST_CHECK(simple_path(literal("...a.b.c..")).str() == literal(".a.b.c"));
+}
+BOOST_AUTO_TEST_CASE(simple_path_parent_case)
+{
+	simple_path p(literal("a.b.c"), pp_none);
+	BOOST_CHECK(p.parent().str() == literal("a.b"));
+
+	BOOST_CHECK(simple_path(literal(".a")).parent().str() == literal("."));
+	BOOST_CHECK(simple_path(literal("a")).parent().str() == literal(""));
+}
+BOOST_AUTO_TEST_CASE(simple_path_filename_case)
+{
+	BOOST_CHECK(simple_path(literal("a.bcd")).filename().str() == literal("bcd"));
+	BOOST_CHECK(simple_path(literal("a./c")).filename().str() == literal("/c"));
+	BOOST_CHECK(simple_path(literal("..abc")).filename().str() == literal("abc"));
+}
+BOOST_AUTO_TEST_CASE(simple_path_is_absolute_case)
+{
+	BOOST_CHECK(simple_path(literal(".")).is_absolute());
+	BOOST_CHECK(simple_path(literal(".")).is_root());
+}
+BOOST_AUTO_TEST_CASE(simple_path_concat_case)
+{
+	BOOST_CHECK(simple_path(literal(".a"))/simple_path(literal("b")) == simple_path(literal(".a.b")));
+	BOOST_CHECK(simple_path(literal(".a"))/simple_path(literal(".b")) == simple_path(literal(".a.b")));
+	BOOST_CHECK(simple_path(literal(".a"))/simple_path(literal(".")) == simple_path(literal(".a")));
+	BOOST_CHECK(simple_path(literal("a"))/simple_path(literal(".")) == simple_path(literal("a")));
+	BOOST_CHECK(simple_path(literal("a"))/simple_path(literal("b")) == simple_path(literal("a.b")));
+	BOOST_CHECK(simple_path(literal("a"))/simple_path(literal("..b")) == simple_path(literal("a.b")));
+}
+
+BOOST_AUTO_TEST_CASE(simple_path_is_replace_case)
+{
+	BOOST_CHECK(simple_path(literal(".c:.a.b")).replace_parent(simple_path(literal("c"))) == simple_path(literal("c.b")));
+	BOOST_CHECK(simple_path(literal("a.cpp")).replace_filename(simple_path(literal("bc"))) == simple_path(literal("a.bc")));
+	BOOST_CHECK(simple_path(literal("a.b")).to_absolute() == simple_path(literal(".a.b")));
+	BOOST_CHECK(simple_path(literal(".a.b.c.cpp")).remove_absolute() == simple_path(literal("a.b.c.cpp")));
+}
 BOOST_AUTO_TEST_SUITE_END()
 
