@@ -6,7 +6,7 @@
 #include <typeinfo>
 #include <xirang/exception.h>
 
-namespace aio {
+namespace xirang {
 
     class any
     {

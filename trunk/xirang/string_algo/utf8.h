@@ -12,7 +12,7 @@
 #ifdef MSVC_COMPILER_
 #pragma warning(disable: 4333 4244)
 #endif
-namespace aio{ namespace utf8 {
+namespace xirang{ namespace utf8 {
 
 	AIO_EXCEPTION_TYPE(unicode_out_range);
 	AIO_EXCEPTION_TYPE(invalid_utf8_code);
@@ -105,7 +105,7 @@ namespace aio{ namespace utf8 {
 				}
 				else
 				{
-					AIO_THROW(unicode_out_range)("aio::utf8::encode");
+					AIO_THROW(unicode_out_range)("xirang::utf8::encode");
 				}
 			}
 			return std::make_pair(iin, out);

@@ -8,7 +8,7 @@
 //STL
 #include <algorithm>
 
-namespace aio
+namespace xirang
 {
 	template<typename Iterator>
 	struct range

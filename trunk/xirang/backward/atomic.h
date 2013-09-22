@@ -5,7 +5,7 @@
 
 #include <xirang/config.h>
 
-namespace aio{ namespace atomic{
+namespace xirang{ namespace atomic{
 
 	struct atomic_flag{ 
 #ifdef GNUC_COMPILER_	
@@ -30,7 +30,7 @@ namespace aio{ namespace atomic{
 	};
 }}
 
-namespace aio{ namespace atomic{ namespace private_{
+namespace xirang{ namespace atomic{ namespace private_{
 
 #ifdef GNUC_COMPILER_
 	inline bool cas_( atomic_t<bool>& target, bool expect, bool update)
@@ -275,7 +275,7 @@ namespace aio{ namespace atomic{ namespace private_{
 #endif
 }}}
 
-namespace aio{ namespace atomic{
+namespace xirang{ namespace atomic{
 
 	template<typename T> inline bool sync_cas( atomic_t<T>& p, T expect, T update)
 	{

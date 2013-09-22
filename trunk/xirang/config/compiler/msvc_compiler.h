@@ -1,5 +1,5 @@
-#define AIO_ABI_PREFIX <aio/common/config/abi/msvc_prefix.h>
-#define AIO_ABI_SUFFIX <aio/common/config/abi/msvc_suffix.h>
+#define AIO_ABI_PREFIX <xirang/config/abi/msvc_prefix.h>
+#define AIO_ABI_SUFFIX <xirang/config/abi/msvc_suffix.h>
 
 #define AIO_FUNCTION __FUNCTION__ 
 

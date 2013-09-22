@@ -4,7 +4,7 @@
 #include <xirang/assert.h>
 #include <type_traits>
 
-namespace aio
+namespace xirang
 {
     /// Primary template, default_delete.
     template<typename T>

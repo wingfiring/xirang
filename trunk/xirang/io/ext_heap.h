@@ -4,7 +4,7 @@
 #include <xirang/io.h>
 #include <xirang/memory.h>
 
-namespace aio{ namespace io{
+namespace xirang{ namespace io{
 	struct ext_heap_archive // reader, writer, random
 	{
 		typedef reader::iterator iterator;

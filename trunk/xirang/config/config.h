@@ -1,7 +1,7 @@
 #ifndef AIO_CONFIG_CONFIG_H
 #define AIO_CONFIG_CONFIG_H
 
-namespace aio{	namespace os{
+namespace xirang{	namespace os{
 	struct os_tag{};
 
 	struct linux_os : os_tag{};
@@ -227,9 +227,9 @@ namespace stdlib{
 
 #endif
 
-#define AIO_OS_CONFIG <aio/common/config/os/OS_TYPE.h>
-#define AIO_COMPILER_CONFIG <aio/common/config/compiler/COMPILER_TYPE.h>
-#define AIO_STDLIB_CONFIG <aio/common/config/stdlib/STDLIB_TYPE.h>
+#define AIO_OS_CONFIG <xirang/config/os/OS_TYPE.h>
+#define AIO_COMPILER_CONFIG <xirang/config/compiler/COMPILER_TYPE.h>
+#define AIO_STDLIB_CONFIG <xirang/config/stdlib/STDLIB_TYPE.h>
 
 #include AIO_OS_CONFIG
 #include AIO_COMPILER_CONFIG

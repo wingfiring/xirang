@@ -5,7 +5,7 @@
 #include <xirang/string.h>
 #include <xirang/io.h>
 
-namespace aio
+namespace xirang
 {
 	struct file_mapping_heap_imp;
 	struct file_mapping_heap_info

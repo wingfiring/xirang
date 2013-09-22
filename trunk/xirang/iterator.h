@@ -20,7 +20,7 @@
 	typedef typename Traits::iterator_category iterator_category;\
 	AIO_ITERATOR_TRAITS_TYPEDEF(Traits)
 
-namespace aio { namespace itr_{
+namespace xirang { namespace itr_{
 
 	const std::size_t IteratorSizeLimit = 5;
 

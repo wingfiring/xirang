@@ -4,7 +4,7 @@
 #include <xirang/byteorder.h>
 #include <limits>
 
-namespace aio{ namespace io{ namespace exchange{
+namespace xirang{ namespace io{ namespace exchange{
 
 	template<typename Ar> struct serializer : public s11n::serializer_base<Ar>{
 		explicit serializer(Ar& ar) : s11n::serializer_base<Ar>(ar){};

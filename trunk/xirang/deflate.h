@@ -3,7 +3,7 @@
 
 #include <xirang/io.h>
 
-namespace aio{ namespace zip{
+namespace xirang{ namespace zip{
 
 	typedef range<const byte*> dict_type;
 

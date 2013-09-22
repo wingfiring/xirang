@@ -8,8 +8,7 @@
 //STL
 #include <iterator>
 
-namespace xirang
-{
+namespace xirang{ namespace type{
 	class MapImp;
 	class MapIteratorImp;
 	class Map
@@ -121,7 +120,7 @@ namespace xirang
 
 	//bool operator==(const Map& lhs, const Map& rhs); 
 	//bool operator<(const Map& lhs, const Map& rhs); 
-}
+}}
 
 #endif //end XIRANG_MAP_H
 

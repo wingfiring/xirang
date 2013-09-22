@@ -8,7 +8,7 @@
 #include <xirang/string.h>
 
 #include <xirang/config/abi_prefix.h>
-namespace aio
+namespace xirang
 {
 	extern basic_string<char_utf8> line2string(unsigned line);
 
@@ -17,7 +17,7 @@ namespace aio
 
 	//used to collect exception point runtime information
 	// @param base usually, user just need to define a empty exception class
-	// with or without base class. all aio exception class should derived from ::aio::exception
+	// with or without base class. all xirang exception class should derived from ::xirang::exception
 	template<typename Base>
 	class context_exception : public Base
 	{
@@ -71,7 +71,7 @@ namespace aio
 	};
 }
 
-#define AIO_THROW(ex) throw ::aio::context_exception<ex>(__FILE__, __LINE__)
+#define AIO_THROW(ex) throw ::xirang::context_exception<ex>(__FILE__, __LINE__)
 
 #include <xirang/config/abi_suffix.h>
 #endif //end AIO_CONTEXT_EXCEPTION_H

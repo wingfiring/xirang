@@ -5,7 +5,7 @@
 #include <xirang/io/exchs11n.h>
 #include <xirang/string.h>
 
-namespace aio{namespace io{ namespace local{
+namespace xirang{namespace io{ namespace local{
 	template<typename Ar, typename T, typename = 
 		typename std::enable_if<s11n::is_deserializer<Ar>::value>::type>
 	Ar load(Ar ar, basic_range_string<T>& buf)
@@ -60,7 +60,7 @@ namespace aio{namespace io{ namespace local{
 
 }}}
 
-namespace aio{namespace io{ namespace exchange{
+namespace xirang{namespace io{ namespace exchange{
 
 	template<typename Ar, typename T, typename = 
 		typename std::enable_if< s11n::is_deserializer<Ar>::value>::type>

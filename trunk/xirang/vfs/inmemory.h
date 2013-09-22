@@ -4,14 +4,14 @@
 #include <xirang/vfs.h>
 #include <xirang/io/memory.h>
 
-namespace xirang{ namespace fs{
+namespace xirang{ namespace vfs{
 
 	class InMemoryImp;
 	class InMemory : public IVfs
 	{
 	public:
 
-        explicit InMemory(const string& resource = aio::empty_str);
+        explicit InMemory(const string& resource = empty_str);
 
 		~InMemory();
 
@@ -24,15 +24,15 @@ namespace xirang{ namespace fs{
 		virtual fs_error createDir(const  string& path);
 
 		// file operations
-		aio::io::buffer_io create(const string& path, int flag);
-		aio::io::buffer_in readOpen(const string& path);
+		io::buffer_io create(const string& path, int flag);
+		io::buffer_in readOpen(const string& path);
 
 		// \pre !absolute(to)
 		// if from and to in same fs, it may have a more effective implementation
 		// otherwise, from should be a
 		virtual fs_error copy(const string& from, const string& to);
 
-		virtual fs_error truncate(const string& path, aio::long_size_t s);
+		virtual fs_error truncate(const string& path, long_size_t s);
 
 		virtual void sync();
 
@@ -59,7 +59,7 @@ namespace xirang{ namespace fs{
         virtual any setopt(int id, const any & optdata,  const any & indata= any());
 
 		virtual void** do_create(unsigned long long mask,
-				void** base, aio::unique_ptr<void>& owner, const string& path, int flag);
+				void** base, unique_ptr<void>& owner, const string& path, int flag);
 	private:
 		// if r == null, means unmount
 		virtual void setRoot(RootFs* r);

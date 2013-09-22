@@ -3,7 +3,7 @@
 
 #include <xirang/io.h>
 
-namespace aio{ namespace io{ namespace s11n{
+namespace xirang{ namespace io{ namespace s11n{
 	struct serializer_tag{};
 	struct deserializer_tag{};
 

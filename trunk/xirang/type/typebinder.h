@@ -4,8 +4,7 @@
 #include <xirang/itypebinder.h>
 #include <xirang/binder.h>
 
-namespace xirang
-{
+namespace xirang { namespace type{
 	template<typename T> struct assigner{
 		static void apply(ConstCommonObject from, CommonObject to){
 			uncheckBind<T>(to) = uncheckBind<T>(from);
@@ -76,9 +75,9 @@ namespace xirang
 	};
 
 	// specialize for buffer 
-	template<typename T> struct hasher<aio::buffer<T>> {
+	template<typename T> struct hasher<buffer<T>> {
 		static size_t apply(ConstCommonObject obj){
-			auto& data = uncheckBind<aio::buffer<T>>(obj);
+			auto& data = uncheckBind<buffer<T>>(obj);
 			auto size = data.size();
 			size_t hash = 2166136261U;
 			size_t stride = 1 + size / 10;
@@ -90,9 +89,9 @@ namespace xirang
 		}
 	};
 	// specialize for basic_string
-	template<typename CharT> struct hasher<aio::basic_string<CharT>> {
+	template<typename CharT> struct hasher<basic_string<CharT>> {
 		static size_t apply(ConstCommonObject obj){
-			auto& data = uncheckBind<aio::basic_string<CharT>>(obj);
+			auto& data = uncheckBind<basic_string<CharT>>(obj);
 			return data.hash();
 		}
 	};
@@ -145,5 +144,5 @@ namespace xirang
 	};
 
 	template<typename T> const TypeInfo<T>	PrimitiveMethods<T>::typeinfo_;
-}
+}}
 #endif //end XIRANG_TYPE_BINDER_H

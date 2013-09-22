@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(to_aio_native_path_case)
 #else
     BOOST_CHECK(to_native_path(literal("made/everything/../simple")) == literal("made\\everything\\..\\simple"));
 #endif
-    BOOST_CHECK(to_aio_path(literal("made\\everything\\..\\simple")) == literal("made/everything/../simple"));
+    BOOST_CHECK(to_xirang_path(literal("made\\everything\\..\\simple")) == literal("made/everything/../simple"));
 }
 
 BOOST_AUTO_TEST_CASE(dir_filename_case)

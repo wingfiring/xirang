@@ -13,7 +13,7 @@
 #include <xirang/backward/unique_ptr.h>
 
 #include <xirang/config/abi_prefix.h>
-namespace aio
+namespace xirang
 {
 	/// helper class. it intends to init the global memory handler only once.
 	/// it guarantees that the global memory handle will be inited before using
@@ -103,7 +103,7 @@ namespace aio
 	template<typename T>
 	struct heap_creator
 	{
-		typedef aio::unique_ptr<T, heap_deletor<T> > pointer_type;
+		typedef xirang::unique_ptr<T, heap_deletor<T> > pointer_type;
 		explicit heap_creator(heap& h) : m_heap(&h){}
 		template<typename ... Args>
 		pointer_type create(Args && ... args)

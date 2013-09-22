@@ -7,7 +7,7 @@
 #include <xirang/operators.h>
 
 #include <xirang/config/abi_prefix.h>
-namespace aio
+namespace xirang
 {
 	///handler ptr, it's a value semantic
     template<typename T>

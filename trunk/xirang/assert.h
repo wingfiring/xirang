@@ -17,7 +17,7 @@
 //must be latest include
 #include <xirang/config/abi_prefix.h>
 
-namespace aio
+namespace xirang
 {
 	/**	includes invariant checkers.
 	*/
@@ -119,7 +119,7 @@ namespace aio
 	/** convert assert check failure to exceptions*/
 	class exception_reporter : public contract_handler
 	{
-		/** @copydoc aio::contract::contract_handler::do_process */
+		/** @copydoc xirang::contract::contract_handler::do_process */
 		virtual bool do_process(contract_category type, 
 				const char_utf8* expr, 
 				const char_utf8* sourcefile, 
@@ -132,7 +132,7 @@ namespace aio
 	class console_reporter : public contract_handler
 	{
 	public:
-		/** @copydoc aio::contract::contract_handler::do_process */
+		/** @copydoc xirang::contract::contract_handler::do_process */
 		virtual bool do_process(contract_category type, 
 				const char_utf8* expr, 
 				const char_utf8* sourcefile, 
@@ -148,7 +148,7 @@ namespace aio
 #if !defined(NDEBUG) || defined(AIO_KEEP_CONTRACT_ASSERT)
 #  define AIO_AIO_INVARIANT_COMM_EX(contract_category, expr, msg)\
 	(expr) ||\
-		::aio::contract_handler::process(contract_category, \
+		::xirang::contract_handler::process(contract_category, \
 		AIO_STRING(expr), __FILE__,\
 			AIO_FUNCTION, __LINE__, msg)
 
@@ -162,22 +162,22 @@ namespace aio
 #endif //end NDEBUG
 
 #define AIO_PRE_CONDITION_EX(expr, msg)\
-	AIO_AIO_INVARIANT_COMM_EX(aio::contract_category::pre, expr, msg)
+	AIO_AIO_INVARIANT_COMM_EX(xirang::contract_category::pre, expr, msg)
 
 #define AIO_POST_CONDITION_EX(expr, msg)\
-	AIO_AIO_INVARIANT_COMM_EX(aio::contract_category::post, expr, msg)
+	AIO_AIO_INVARIANT_COMM_EX(xirang::contract_category::post, expr, msg)
 
 #define AIO_INVARIANT_EX(expr, msg)\
-	AIO_AIO_INVARIANT_COMM_EX(aio::contract_category::invariant, expr, msg)
+	AIO_AIO_INVARIANT_COMM_EX(xirang::contract_category::invariant, expr, msg)
 
 #define AIO_PRE_CONDITION(expr)\
-	AIO_AIO_INVARIANT_COMM(aio::contract_category::pre, expr)
+	AIO_AIO_INVARIANT_COMM(xirang::contract_category::pre, expr)
 
 #define AIO_POST_CONDITION(expr)\
-	AIO_AIO_INVARIANT_COMM(aio::contract_category::post, expr)
+	AIO_AIO_INVARIANT_COMM(xirang::contract_category::post, expr)
 
 #define AIO_INVARIANT(expr)\
-	AIO_AIO_INVARIANT_COMM(aio::contract_category::invariant, expr)
+	AIO_AIO_INVARIANT_COMM(xirang::contract_category::invariant, expr)
 
 #include <xirang/config/abi_suffix.h>
 #endif // end AIO_ASSERT_H

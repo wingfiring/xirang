@@ -20,7 +20,7 @@
 #include <xirang/test_helper.h>
 #include <xirang/config/abi_prefix.h>
 
-namespace aio
+namespace xirang
 {
 	//force the signature independs on std::char_traits, 
 	//because thre real signature of std::char_traits maybe changed
@@ -959,7 +959,7 @@ namespace aio
 			return insert(end(), r);
 		}
         
-		basic_string_builder& append(const aio::basic_string<CharT>& r)
+		basic_string_builder& append(const basic_string<CharT>& r)
 		{
 			return insert(end(), to_range(r));
 		}
@@ -1223,14 +1223,14 @@ namespace aio
 	template<typename StringType>
 	range<buffer<byte>::iterator> string_to_range( StringType & cont)
 	{
-		return aio::make_range(reinterpret_cast<buffer<byte>::iterator>(cont.begin()), 
+		return make_range(reinterpret_cast<buffer<byte>::iterator>(cont.begin()), 
 				reinterpret_cast<buffer<byte>::iterator>(cont.end()));
 	}
 
 	template<typename StringType>
 	range<buffer<byte>::const_iterator> string_to_c_range( const StringType & cont)
 	{
-		return aio::make_range(reinterpret_cast<buffer<byte>::const_iterator>(cont.begin()), 
+		return make_range(reinterpret_cast<buffer<byte>::const_iterator>(cont.begin()), 
 				reinterpret_cast<buffer<byte>::const_iterator>(cont.end()));
 	}
 }

@@ -4,7 +4,7 @@
 #include <xirang/string_algo/utf8.h>
 #include <xirang/string_algo/string.h>
 #include <xirang/operators.h>
-namespace aio{
+namespace xirang{
 
 	enum path_process{
 		pp_none,
@@ -38,9 +38,9 @@ namespace aio{
 			bool empty() const;
 
 			const_range_string str() const;
-			aio::string native_str() const;
-			aio::wstring native_wstr() const;
-			aio::wstring wstr() const;
+			string native_str() const;
+			wstring native_wstr() const;
+			wstring wstr() const;
 
 			class iterator;
 			typedef iterator const_iterator;
@@ -137,11 +137,11 @@ namespace aio{
 
 			void swap(file_path& rhs);
 
-			const aio::string& str() const;
+			const string& str() const;
 
-			aio::string native_str() const;
-			aio::wstring native_wstr() const;
-			aio::wstring wstr() const;
+			string native_str() const;
+			wstring native_wstr() const;
+			wstring wstr() const;
 
 			operator sub_file_path() const;
 			sub_file_path as_sub_path() const;
@@ -266,7 +266,7 @@ namespace aio{
 
 			void swap(simple_path& rhs);
 
-			const aio::string& str() const;
+			const string& str() const;
 
 			iterator begin() const;
 			iterator end() const;

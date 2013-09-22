@@ -3,7 +3,7 @@
 
 #include <xirang/config.h>
 #include <endian.h>
-namespace aio{
+namespace xirang{
 	struct little_endian_tag{};
 	struct big_endian_tag{};
 	struct pdp_endian_tag{};

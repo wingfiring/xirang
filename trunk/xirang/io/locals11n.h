@@ -2,7 +2,7 @@
 #define AIO_COMMON_IO_LOCAL_S11N_H
 #include <xirang/io/s11nbase.h>
 
-namespace aio{ namespace io{ namespace local{
+namespace xirang{ namespace io{ namespace local{
 
 	template<typename Ar> struct serializer : public s11n::serializer_base<Ar>{
 		explicit serializer(Ar& ar) : s11n::serializer_base<Ar>(ar){};

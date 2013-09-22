@@ -4,7 +4,7 @@
 #include <xirang/io.h>
 #include <xirang/memory.h>
 
-namespace aio{ namespace io{
+namespace xirang{ namespace io{
 	struct file_imp;
 
 	struct file_reader // <reader, random >

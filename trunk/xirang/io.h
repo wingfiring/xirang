@@ -12,7 +12,7 @@
 #include <xirang/memory.h>
 #include <xirang/any.h>
 #include <xirang/interface.h>
-namespace aio { namespace io{
+namespace xirang { namespace io{
 	namespace private_{
 		template<typename ...T> struct total_size_of;
 		template<> struct total_size_of<> {

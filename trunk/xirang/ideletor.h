@@ -5,7 +5,7 @@
 
 #include <xirang/config.h>
 
-namespace aio
+namespace xirang
 {
 	struct AIO_INTERFACE ideletor
 	{

@@ -3,7 +3,7 @@
 
 #include <xirang/io.h>
 
-namespace aio{ namespace io{
+namespace xirang{ namespace io{
 
 	struct buffer_rd_view : read_view
 	{

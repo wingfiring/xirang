@@ -3,8 +3,7 @@
 
 #include <xirang/object.h>
 
-namespace xirang
-{
+namespace xirang{ namespace type{
 	//namespace
 	class NamespaceImp;
 
@@ -243,6 +242,6 @@ namespace xirang
         NamespaceBuilder(const NamespaceBuilder&); //diable copy ctor
         NamespaceBuilder& operator=(const NamespaceBuilder&); //disable assignment
 	};
-}
+}}
 #endif				//end XIRANG_NAMESPACE_H
 

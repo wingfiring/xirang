@@ -11,7 +11,7 @@
 #include <cstring>	//for strlen
 #include <sstream>	//for stringstream wstringstream
 
-namespace aio { namespace private_ {
+namespace xirang { namespace private_ {
 
 template<typename CharT>
 struct string_converter;
@@ -148,7 +148,7 @@ struct basic_to_string
 	const CharT* c_str() const { return str.c_str();}
 
 	///append result
-	aio::basic_string_builder<CharT> str;
+	basic_string_builder<CharT> str;
 };
 
 typedef basic_to_string<char>  to_string;

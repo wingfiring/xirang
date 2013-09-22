@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <type_traits>
 
-namespace aio
+namespace xirang
 {
 	/// this class is designed for perfoemance, and the resize don't construct the elements.
 	/// so the element type can only be POD type.

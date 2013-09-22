@@ -1,7 +1,6 @@
 #ifndef AIO_XIRANG_VFS_H
 #define AIO_XIRANG_VFS_H
 
-#include <aio/xirang/xrbase.h>
 #include <xirang/io.h>
 #include <xirang/fsutility.h>
 #include <xirang/mpl.h>
@@ -9,40 +8,40 @@
 // STD
 #include <memory>
 
-namespace xirang { namespace io{
+namespace xirang { namespace vfs{ namespace io{
 	template<typename T> struct interface_mask;
 
-	template<> struct interface_mask<aio::io::sequence>{
+	template<> struct interface_mask<io::sequence>{
 		static const unsigned long long value = 1;
 	};
-	template<> struct interface_mask<aio::io::forward>{
+	template<> struct interface_mask<io::forward>{
 		static const unsigned long long value = 1 << 1;
 	};
-	template<> struct interface_mask<aio::io::random>{
+	template<> struct interface_mask<io::random>{
 		static const unsigned long long value = 1 << 2;
 	};
-	template<> struct interface_mask<aio::io::reader>{
+	template<> struct interface_mask<io::reader>{
 		static const unsigned long long value = 1 << 3;
 	};
-	template<> struct interface_mask<aio::io::writer>{
+	template<> struct interface_mask<io::writer>{
 		static const unsigned long long value = 1 << 4;
 	};
-	template<> struct interface_mask<aio::io::ioctrl>{
+	template<> struct interface_mask<io::ioctrl>{
 		static const unsigned long long value = 1 << 5;
 	};
-	template<> struct interface_mask<aio::io::options>{
+	template<> struct interface_mask<io::options>{
 		static const unsigned long long value = 1 << 6;
 	};
-	template<> struct interface_mask<aio::io::read_view>{
+	template<> struct interface_mask<io::read_view>{
 		static const unsigned long long value = 1 << 7;
 	};
-	template<> struct interface_mask<aio::io::write_view>{
+	template<> struct interface_mask<io::write_view>{
 		static const unsigned long long value = 1 << 8;
 	};
-	template<> struct interface_mask<aio::io::read_map>{
+	template<> struct interface_mask<io::read_map>{
 		static const unsigned long long value = 1 << 9;
 	};
-	template<> struct interface_mask<aio::io::write_map>{
+	template<> struct interface_mask<io::write_map>{
 		static const unsigned long long value = 1 << 10;
 	};
 	
@@ -54,14 +53,12 @@ namespace xirang { namespace io{
 	};
 }
 
-namespace fs 
-{ 
 	AIO_EXCEPTION_TYPE(unsupport_interface);
 
 	namespace private_{
 		template<typename... Interfaces> struct map_to_iref;
-		template<typename... Interfaces> struct map_to_iref<aio::mpl::seq<Interfaces...>>{
-			typedef aio::iref<Interfaces...> type;
+		template<typename... Interfaces> struct map_to_iref<mpl::seq<Interfaces...>>{
+			typedef iref<Interfaces...> type;
 		};
 
 		template<typename T, typename U> struct less_interface{
@@ -69,39 +66,39 @@ namespace fs
 		};
 
 		template<typename... Interfaces> struct sorted_iref{
-			typedef aio::mpl::seq<Interfaces...> seq;
-			typedef typename aio::mpl::sort<seq, less_interface>::type  sorted_seq;
+			typedef mpl::seq<Interfaces...> seq;
+			typedef typename mpl::sort<seq, less_interface>::type  sorted_seq;
 			typedef typename map_to_iref<sorted_seq>::type type;
 		};
 
 		template<typename... Interfaces> struct map_to_iauto;
-		template<typename... Interfaces> struct map_to_iauto<aio::mpl::seq<Interfaces...>>{
-			typedef aio::iauto<Interfaces...> type;
+		template<typename... Interfaces> struct map_to_iauto<mpl::seq<Interfaces...>>{
+			typedef iauto<Interfaces...> type;
 		};
 
 		template<typename... Interfaces> struct sorted_iauto{
-			typedef aio::mpl::seq<Interfaces...> seq;
-			typedef typename aio::mpl::sort<seq, less_interface>::type  sorted_seq;
+			typedef mpl::seq<Interfaces...> seq;
+			typedef typename mpl::sort<seq, less_interface>::type  sorted_seq;
 			typedef typename map_to_iauto<sorted_seq>::type type;
 		};
 
 		template<typename... Interfaces> struct copy_interface_helper;
 		
-		template<> struct copy_interface_helper<aio::mpl::seq<>> {
+		template<> struct copy_interface_helper<mpl::seq<>> {
 			template<typename IRef>
 			static void** copy(unsigned long long , void** ret, const IRef& , void* ){ 
 				return ret;
 			}
 		};
 		template<typename T, typename... Interfaces> 
-			struct copy_interface_helper<aio::mpl::seq<T, Interfaces...>> {
+			struct copy_interface_helper<mpl::seq<T, Interfaces...>> {
 			template<typename IRef>
 			static void** copy(unsigned long long mask, void** ret, const IRef& ref, void* this_){
 				if (mask & io::interface_mask<T>::value) {
 					*ret++ = *(void**)&ref.template get<T>();
 					*ret++ = this_;
 				}
-				return copy_interface_helper<aio::mpl::seq<Interfaces...> >::template copy(mask, ret, ref, this_);
+				return copy_interface_helper<mpl::seq<Interfaces...> >::template copy(mask, ret, ref, this_);
 			}
 		};
 	}
@@ -123,11 +120,9 @@ namespace fs
 	class RootFs;
 	class RootFsImp;
 
-    using aio::fs::fs_error;
-    using aio::fs::file_state;
-    using aio::any;
-
-    namespace aiofs = aio::fs;
+    using fs::fs_error;
+    using fs::file_state;
+    using any;
 
 	struct VfsNode
 	{
@@ -145,7 +140,7 @@ namespace fs
 	{
 		VfsNode node;
 		file_state state;
-		aio::long_size_t  size;
+		long_size_t  size;
 	};
     enum vfs_option
     {
@@ -155,13 +150,13 @@ namespace fs
         vo_user = 1 << 16
     };
 
-	typedef BiRangeT<aio::const_itr_traits<MountInfo> > VfsRange;
-	typedef BiRangeT<aio::const_itr_traits<VfsNode> > VfsNodeRange;
+	typedef BiRangeT<const_itr_traits<MountInfo> > VfsRange;
+	typedef BiRangeT<const_itr_traits<VfsNode> > VfsNodeRange;
 	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
-		create(IVfs& fs, const aio::const_range_string& path, int flag);
+		create(IVfs& fs, const const_range_string& path, int flag);
 
     /// \notes 1. all vfs modifications will return er_ok or not null archive_ptr if succeeded.
-    ///     2. the path or file name must be aio style, separated by "/".
+    ///     2. the path or file name must be xirang style, separated by "/".
     ///     3. supported file name character set is depends on vfs implementation.
     ///     4. the returned fs_error is implementation defined, if user just depends on IVfs, should not assume 
     ///         which error code will be returned, except return er_ok case. but, for a known vfs imp, the error code should be determinated.
@@ -183,7 +178,7 @@ namespace fs
 		virtual fs_error createDir(const  string& path) = 0;
 
 		template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
-			create(const aio::const_range_string& path, int flag){
+			create(const const_range_string& path, int flag){
 			return fs::create<Interfaces...>(*this, path, flag);
 		}
 
@@ -198,7 +193,7 @@ namespace fs
         /// truncate a file with given size
         /// \pre path must not end with '/'. 
 		/// \pre !absolute(to)
-		virtual fs_error truncate(const string& path, aio::long_size_t s) = 0;
+		virtual fs_error truncate(const string& path, long_size_t s) = 0;
 
         /// flush buffered data to underly media. implementation defined.
 		virtual void sync() = 0;
@@ -239,8 +234,8 @@ namespace fs
 		virtual ~IVfs();
 
 		/// create or open file
-        /// \param compound flag of aio::io::archive_mode
-        /// \param flag one of aio::io::open_flag
+        /// \param compound flag of io::archive_mode
+        /// \param flag one of io::open_flag
         /// \pre path must not end with '/'. 
 		/// \pre !absolute(path)
         /// \notes the capability of returned archive_ptr must greater than or equal to given mode. 
@@ -248,7 +243,7 @@ namespace fs
         /// \notes if the parent of path is not exist, failed.
         /// \notes the result depends on implementation capability.
 		virtual void** do_create(unsigned long long mask,
-				void* ret, aio::unique_ptr<void>& owner, const string& path, int flag) = 0;
+				void* ret, unique_ptr<void>& owner, const string& path, int flag) = 0;
 
 	private:
 		// if r == null, means unmount, used by RootFs only
@@ -257,11 +252,11 @@ namespace fs
 		friend class RootFsImp;
 	};
 	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
-		create(IVfs& fs, const aio::range_string& path, int flag){
+		create(IVfs& fs, const range_string& path, int flag){
 			typedef typename private_::sorted_iauto<Interfaces...>::type interface_type;
 			const auto mask = io::get_mask<Interfaces...>::value;
 			interface_type ret;
-			aio::target_holder<void>* holder = &ret;
+			target_holder<void>* holder = &ret;
 			void** last = fs.do_create(mask, (void**)(holder + 1), ret.target_ptr, path, flag);
 			AIO_PRE_CONDITION(last == (void**)&ret.target_ptr);
 			holder->target = ret.target_ptr.get();
@@ -271,71 +266,71 @@ namespace fs
 	template<typename CoClass> struct IVfsCoBase : public IVfs
 	{
 		virtual fs_error remove(const string& path) {
-			return aio::get_cobj<CoClass>(this).remove(path);
+			return get_cobj<CoClass>(this).remove(path);
 		}
 
 		virtual fs_error createDir(const  string& path){
-			return aio::get_cobj<CoClass>(this).createDir(path);
+			return get_cobj<CoClass>(this).createDir(path);
 		}
 
 		virtual fs_error copy(const string& from, const string& to){
-			return aio::get_cobj<CoClass>(this).copy(from, to);
+			return get_cobj<CoClass>(this).copy(from, to);
 		}
 
-		virtual fs_error truncate(const string& path, aio::long_size_t s){
-			return aio::get_cobj<CoClass>(this).truncate(path, s);
+		virtual fs_error truncate(const string& path, long_size_t s){
+			return get_cobj<CoClass>(this).truncate(path, s);
 		}
 
 		virtual void sync(){
-			return aio::get_cobj<CoClass>(this).sync();
+			return get_cobj<CoClass>(this).sync();
 		}
 		
 		virtual const string& resource() const{
-			return aio::get_cobj<CoClass>(this).resource();
+			return get_cobj<CoClass>(this).resource();
 		}
 
 		virtual RootFs* root() const{
-			return aio::get_cobj<CoClass>(this).root();
+			return get_cobj<CoClass>(this).root();
 		}
 
 		virtual bool mounted() const{
-			return aio::get_cobj<CoClass>(this).mounted();
+			return get_cobj<CoClass>(this).mounted();
 		}
 
 		virtual string mountPoint() const{
-			return aio::get_cobj<CoClass>(this).mountPoint();
+			return get_cobj<CoClass>(this).mountPoint();
 		}
 
 		virtual VfsNodeRange children(const string& path) const{
-			return aio::get_cobj<CoClass>(this).children(path);
+			return get_cobj<CoClass>(this).children(path);
 		}
 
 		virtual VfsState state(const string& path) const{
-			return aio::get_cobj<CoClass>(this).state(path);
+			return get_cobj<CoClass>(this).state(path);
 		}
 	
         virtual any getopt(int id, const any & optdata) const{
-			return aio::get_cobj<CoClass>(this).getopt(id, optdata);
+			return get_cobj<CoClass>(this).getopt(id, optdata);
 		}
 
         virtual any setopt(int id, const any & optdata, const any & indata){
-			return aio::get_cobj<CoClass>(this).setopt(id, optdata, indata);
+			return get_cobj<CoClass>(this).setopt(id, optdata, indata);
 		}
 
 	private:
 		virtual void** do_create(unsigned long long mask,
-				void** base, aio::unique_ptr<void>& owner, const string& path, int flag) = 0;
+				void** base, unique_ptr<void>& owner, const string& path, int flag) = 0;
 
 		virtual void setRoot(RootFs* r){
-			return aio::get_cobj<CoClass>(this).setRoot(r);
+			return get_cobj<CoClass>(this).setRoot(r);
 		}
 	};
 
 	template<typename CoClass>
 	struct IVfsCo : IVfsCoBase<CoClass>{
 		virtual void** do_create(unsigned long long mask,
-				void** base, aio::unique_ptr<void>& owner, const string& path, int flag){
-			return aio::get_cobj<CoClass>(this).do_create(mask, base, owner, path, flag);
+				void** base, unique_ptr<void>& owner, const string& path, int flag){
+			return get_cobj<CoClass>(this).do_create(mask, base, owner, path, flag);
 		}
 	};
 
@@ -376,52 +371,52 @@ namespace fs
 	AIO_EXCEPTION_TYPE(FileExist);
 	AIO_EXCEPTION_TYPE(FileNotFound);
 
-    using aio::fs::append_tail_slash;
-	using aio::fs::normalize;
-	using aio::fs::is_normalized;
-    using aio::fs::is_filename;
-    using aio::fs::dir_filename;
-    using aio::fs::ext_filename;
+    using fs::append_tail_slash;
+	using fs::normalize;
+	using fs::is_normalized;
+    using fs::is_filename;
+    using fs::dir_filename;
+    using fs::ext_filename;
 
     // return true if p[0] is '/';
 	extern bool is_absolute(const string& p);
 
 	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
-    temp_file(IVfs& vfs, aio::const_range_string template_ , aio::const_range_string parent_dir
-			, int flag = aio::io::of_remove_on_close, string* path = 0){
-        AIO_PRE_CONDITION(flag == 0 ||  flag  == aio::io::of_remove_on_close);
-        flag |= aio::io::of_create;
+    temp_file(IVfs& vfs, const_range_string template_ , const_range_string parent_dir
+			, int flag = io::of_remove_on_close, string* path = 0){
+        AIO_PRE_CONDITION(flag == 0 ||  flag  == io::of_remove_on_close);
+        flag |= io::of_create;
 
-        if (vfs.state(parent_dir).state != aio::fs::st_dir)
-            AIO_THROW(aio::io::create_failed)("failed to locate the temp directory:")(parent_dir);
+        if (vfs.state(parent_dir).state != fs::st_dir)
+            AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir);
 
         //avoid to make parent start with '/'
-        string parent =  parent_dir.empty()? aio::string(parent_dir) : append_tail_slash(parent_dir);
+        string parent =  parent_dir.empty()? string(parent_dir) : append_tail_slash(parent_dir);
 
         const int max_try = 10;
         for(int i = 0; i < max_try ; ++i)
         {
-            aio::string_builder file_path = parent;
-            file_path += aio::fs::private_::gen_temp_name(template_);
-			if (vfs.state(string(file_path)).state != aio::fs::st_not_found)
+            string_builder file_path = parent;
+            file_path += fs::private_::gen_temp_name(template_);
+			if (vfs.state(string(file_path)).state != fs::st_not_found)
 				continue;
 			auto ret = create<Interfaces...>(vfs, string(file_path), flag);
 			*path = file_path;
 			return std::move(ret);
         }
 
-        AIO_THROW(aio::io::create_failed)("failed to create temp file in directory:")(parent_dir);
+        AIO_THROW(io::create_failed)("failed to create temp file in directory:")(parent_dir);
     }
 
-    string temp_dir(IVfs& vfs, aio::const_range_string template_, aio::const_range_string parent_dir);
+    string temp_dir(IVfs& vfs, const_range_string template_, const_range_string parent_dir);
     fs_error recursive_remove(IVfs&vfs, const string& path);
     fs_error recursive_create_dir(IVfs&vfs, const string& path);
 
 	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
     recursive_create(IVfs&vfs, const string& path, int flag){
         fs_error err = recursive_create_dir(vfs, dir_filename(path));
-        if (err != aio::fs::er_ok && err != aio::fs::er_exist)
-			AIO_THROW(aio::io::create_failed)("failed to create the parent directory:")(path);
+        if (err != fs::er_ok && err != fs::er_exist)
+			AIO_THROW(io::create_failed)("failed to create the parent directory:")(path);
 
         return create<Interfaces...>(vfs, path, flag);
 	}

@@ -3,7 +3,7 @@
 
 #include <xirang/vfs.h>
 
-namespace xirang{ namespace fs{
+namespace xirang{ namespace vfs{
 
 	class SubVfs : public IVfs
 	{
@@ -26,7 +26,7 @@ namespace xirang{ namespace fs{
 		// otherwise, from should be a
 		virtual fs_error copy(const string& from, const string& to);
 
-		virtual fs_error truncate(const string& path, aio::long_size_t s);
+		virtual fs_error truncate(const string& path, long_size_t s);
 
 		virtual void sync();
 
@@ -52,7 +52,7 @@ namespace xirang{ namespace fs{
         IVfs& parentFs() const;
 
 		virtual void** do_create(unsigned long long mask,
-				void* ret, aio::unique_ptr<void>& owner, const string& path, int flag);
+				void* ret, unique_ptr<void>& owner, const string& path, int flag);
 	private:
 		// if r == null, means unmount
 		virtual void setRoot(RootFs* r);

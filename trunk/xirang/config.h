@@ -17,7 +17,7 @@
 template<typename... T>
 inline void unuse(const T& ...) {}
 
-namespace aio{
+namespace xirang{
 	template<typename T> constexpr T const& const_max(T const& a, T const& b) {
 		return a < b ? b : a;
 	}

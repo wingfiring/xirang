@@ -4,8 +4,7 @@
 #include <xirang/xrfwd.h>
 #include <xirang/type.h>
 
-namespace xirang
-{
+namespace xirang { namespace type{
 	class TypeAliasImp;
 
     /// type alias 
@@ -50,5 +49,5 @@ namespace xirang
 
 		friend class NamespaceBuilder;
 	};
-}
+}}
 #endif //end XIRANG_TYPE_ALIAS_H

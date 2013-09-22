@@ -12,7 +12,7 @@
 
 
 #include <xirang/config/abi_prefix.h>
-namespace aio
+namespace xirang
 {
 	struct exception
 #ifdef AIO_DERIVED_FROM_STD_EXCEPTION
@@ -31,7 +31,7 @@ namespace aio
 	}
 
 #define AIO_EXCEPTION_TYPE(type) \
-	AIO_EXCEPTION_TYPE_EX(type, ::aio::exception)
+	AIO_EXCEPTION_TYPE_EX(type, ::xirang::exception)
 
 #include <xirang/config/abi_suffix.h>
 #endif //end AIO_EXCEPTION_H

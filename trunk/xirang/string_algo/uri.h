@@ -6,7 +6,7 @@
 
 //STL
 
-namespace aio { namespace uri {
+namespace xirang { namespace uri {
 
 	AIO_EXCEPTION_TYPE(invalid_encoded_uri);
 	AIO_EXCEPTION_TYPE(no_enough_encoded_uri_input);

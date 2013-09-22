@@ -8,7 +8,7 @@
 #include <xirang/backward/unique_ptr.h>
 
 #include <xirang/config/abi_prefix.h>
-namespace aio
+namespace xirang
 {
 	template<typename... Interfaces> struct iref;
 	template<typename... Interfaces> struct iauto;

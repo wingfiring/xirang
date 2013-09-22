@@ -6,7 +6,7 @@
 #include <xirang/memory.h>
 #include <xirang/string.h>
 
-namespace aio
+namespace xirang
 {
 	/// plain heap. it forward the malloc and free to platform call directly.
 	struct AIO_COMM_API plain_heap : heap

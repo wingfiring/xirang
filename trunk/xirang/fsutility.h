@@ -10,7 +10,7 @@
 #include <xirang/iterator.h>
 #include <xirang/io/file.h>
 
-namespace aio{ namespace fs{
+namespace xirang{ namespace fs{
     namespace private_{
         /// \note never use the returned name as file or dir name without check, otherwise may encouter security risk.
         /// It intends to be used to implement temp file/dir only.
@@ -76,16 +76,16 @@ namespace aio{ namespace fs{
 
 // temp file related 
 
-    // \throw aio::io::create_failed
+    // \throw xirang::io::create_failed
 	io::file temp_file(const_range_string template_ = literal("tmpf"), int flag = io::of_remove_on_close, string* result_path = 0);
 
-    // \throw aio::io::create_failed
+    // \throw xirang::io::create_failed
 	io::file temp_file(const_range_string template_, const_range_string parent_dir, int flag = io::of_remove_on_close, string* result_path = 0);
 
-    // \throw aio::io::create_failed
+    // \throw xirang::io::create_failed
     string temp_dir(const_range_string template_ = literal("tmpd"));
     
-    // \throw aio::io::create_failed
+    // \throw xirang::io::create_failed
     string temp_dir(const_range_string template_, const_range_string parent_dir);
 
 //********************** end core fs functions
@@ -125,9 +125,9 @@ namespace aio{ namespace fs{
     // to OS style path
     string to_native_path(const string& p);
 
-    // to aio style path
-    // it's ok if p is an aio style path
-    string to_aio_path(const string& p);
+    // to xirang style path
+    // it's ok if p is an xirang style path
+    string to_xirang_path(const string& p);
 
     // if path is not a dir, remove it.
     // if the path is dir, remove the dir and children, recursilvey
@@ -138,7 +138,7 @@ namespace aio{ namespace fs{
     fs_error recursive_create_dir(const string& path);
 
     // create a file, if the some dir of the paths are not exist, create them
-    // \throw aio::io::create_failed
+    // \throw xirang::io::create_failed
 	io::file recursive_create(const string& path, int flag);
 
     // split the path into dir part and file name part. return the dir part, fill the file name into out parameter file.

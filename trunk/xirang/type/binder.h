@@ -6,8 +6,7 @@
 
 #include <xirang/context_except.h>
 
-namespace xirang
-{
+namespace xirang { namespace type{
     ///  exception for type mismatch
 	AIO_EXCEPTION_TYPE(TypeMismatchException);
     /// Bind T* to const CommonObject pointer. if type mismatch, it returns null pointer.
@@ -222,5 +221,5 @@ namespace xirang
 	}
 #undef SELECTED_BIND_FUNCTION
 
-}
+}}
 #endif				//end AIO_COMMON_XIRANG_BINDER_H

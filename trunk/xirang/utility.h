@@ -6,7 +6,7 @@
 #include <xirang/config.h>
 #include <xirang/assert.h>
 
-namespace aio
+namespace xirang
 {
 	//use to surppress unused variable warning.
 	template<typename T>
@@ -43,7 +43,7 @@ namespace aio
 
 #define AIO_INIT_ONCE(T)\
 	namespace { \
-	::aio::init_once<T> g_init_once;}
+	::xirang::init_once<T> g_init_once;}
 
 	template<typename T>
 	struct init_ptr

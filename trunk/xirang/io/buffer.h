@@ -4,7 +4,7 @@
 #include <xirang/io/exchs11n.h>
 #include <xirang/buffer.h>
 
-namespace aio{ namespace io{ namespace local{
+namespace xirang{ namespace io{ namespace local{
 
 	template<typename Ar, typename T, typename = 
 		typename std::enable_if<s11n::is_deserializer<Ar>::value>::type>
@@ -15,7 +15,7 @@ namespace aio{ namespace io{ namespace local{
 		{
 			const byte* first = reinterpret_cast<const byte*>(buf.data());
 			const byte* last = first + sizeof(T) * buf.size();
-			get_interface<aio::io::writer>(ar.get()).write(make_range(first, last));
+			get_interface<xirang::io::writer>(ar.get()).write(make_range(first, last));
 		}
 		return ar;
 	}
@@ -31,13 +31,13 @@ namespace aio{ namespace io{ namespace local{
 		{   
 			byte* first = reinterpret_cast<byte*>(buf.data());
 			byte* last = first + sizeof(T) * size;
-			get_interface<aio::io::reader>(ar.get()).read(make_range(first, last));
+			get_interface<xirang::io::reader>(ar.get()).read(make_range(first, last));
 		}
 		return ar;
 	}
 
 }}}
-namespace aio{namespace io{ namespace exchange{
+namespace xirang{namespace io{ namespace exchange{
 	template<typename Ar, typename T, typename = 
 		typename std::enable_if< s11n::is_deserializer<Ar>::value>::type>
 	Ar load(Ar ar, buffer<T>& buf)

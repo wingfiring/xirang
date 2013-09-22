@@ -4,7 +4,7 @@
 #include <xirang/vfs.h>
 #include <xirang/io/file.h>
 
-namespace xirang{ namespace fs{
+namespace xirang{ namespace vfs{
 
 	class LocalFs : public IVfs
 	{
@@ -23,15 +23,15 @@ namespace xirang{ namespace fs{
 		virtual fs_error createDir(const  string& path);
 
 		// file operations
-		aio::io::file open_create(const string& path, int flag);
-		aio::io::file_reader open(const string& path);
+		io::file open_create(const string& path, int flag);
+		io::file_reader open(const string& path);
 
 		// \pre !absolute(to)
 		// if from and to in same fs, it may have a more effective implementation
 		// otherwise, from should be a
 		virtual fs_error copy(const string& from, const string& to);
 
-		virtual fs_error truncate(const string& path, aio::long_size_t s);
+		virtual fs_error truncate(const string& path, long_size_t s);
 
 		virtual void sync();
 
@@ -55,7 +55,7 @@ namespace xirang{ namespace fs{
 		virtual VfsState state(const string& path) const;
 
 		virtual void** do_create(unsigned long long mask,
-				void** base, aio::unique_ptr<void>& owner, const string& path, int flag);
+				void** base, unique_ptr<void>& owner, const string& path, int flag);
 	private:
 		// if r == null, means unmount
 		virtual void setRoot(RootFs* r);

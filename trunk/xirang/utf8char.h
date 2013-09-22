@@ -3,7 +3,7 @@
 #ifndef AIO_CHAR_UTF8_H
 #define AIO_CHAR_UTF8_H
 
-namespace aio
+namespace xirang
 {
 	typedef char char_utf8;
 }

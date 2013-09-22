@@ -4,8 +4,7 @@
 #include <xirang/object.h>
 #include <typeinfo>
 
-namespace xirang
-{
+namespace xirang {namespace type {
     /// this class design a portable C++ type info
 	struct TypeInfoHandle
 	{
@@ -81,6 +80,6 @@ namespace xirang
 
     /// get the defalut methods, default method support compound type.
 	extern TypeMethods& DefaultMethods();
-}
+}}
 
 #endif //end AIO_XIRANG_ITYPE_BINDER_H

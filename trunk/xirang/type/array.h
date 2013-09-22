@@ -12,9 +12,7 @@
 //STL
 #include <iterator>
 
-namespace xirang
-{
-	typedef aio::byte byte;
+namespace xirang { namespace type{
 
 	class ArrayImp;
 
@@ -513,6 +511,6 @@ namespace xirang
 	template<> struct comparison<Array> {
 		static int apply(ConstCommonObject lhs,ConstCommonObject rhs) ;
 	};
-}
+}} // namespace xirang::type
 
 #endif //end XIRANG_ARRAY_H

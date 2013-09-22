@@ -3,8 +3,7 @@
 
 #include <xirang/xrfwd.h>
 
-namespace xirang
-{
+namespace xirang{ namespace type{
 	class TypeItemImp;
 
     /// hold the info of type data member
@@ -329,6 +328,6 @@ namespace xirang
 
 			friend class NamespaceBuilder;
 	};
-}
+}}
 #endif				//end XIRANG_TYPE_H
 

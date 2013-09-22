@@ -5,7 +5,7 @@
 
 #include <xirang/string.h>
 
-namespace aio
+namespace xirang
 {
     enum empty_token_policy { drop_empty_tokens, keep_empty_tokens };
 

@@ -4,7 +4,7 @@
 #include <xirang/string.h>
 #include <algorithm>
 
-namespace aio{ namespace str_algo {
+namespace xirang{ namespace str_algo {
 
     namespace private_{
         template<typename T>

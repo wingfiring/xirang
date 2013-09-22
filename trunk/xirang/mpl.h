@@ -4,7 +4,7 @@
 #define AIO_COMMON_MPL_H
 
 #include <type_traits>
-namespace aio{ namespace mpl{
+namespace xirang{ namespace mpl{
 
 struct true_type{ 
 	static const bool value = true;

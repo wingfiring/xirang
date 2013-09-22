@@ -5,7 +5,7 @@
 #include <xirang/backward/atomic.h>
 
 #include <xirang/config/abi_prefix.h>
-namespace aio{ 
+namespace xirang{ 
 	class heap;
 	namespace private_{
 

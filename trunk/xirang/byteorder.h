@@ -3,7 +3,7 @@
 
 #include <xirang/endian.h>
 
-namespace aio{
+namespace xirang{
 
 	namespace byteorder{
 

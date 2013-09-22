@@ -3,8 +3,7 @@
 
 #include <xirang/type.h>
 
-namespace xirang
-{
+namespace xirang { namespace type{
 	class SubObjIterator;
 	class ConstSubObjIterator;
 	class TypeImp;
@@ -399,5 +398,5 @@ namespace xirang
         ext_heap* m_ext_al;
         void* m_data;
     };
-}
+}}
 #endif				//end XIRANG_OBJECT_H

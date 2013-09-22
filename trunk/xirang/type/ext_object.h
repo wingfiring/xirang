@@ -7,8 +7,7 @@
 
 #include <xirang/memory.h>
 
-namespace xirang
-{
+namespace xirang { namespace type{
 	//Type of ExtObject must be relocatable.
 	class ExtObject
 	{
@@ -102,5 +101,5 @@ namespace xirang
 		static MethodsExtension* value();
 	};
 
-}
+}}
 #endif //end AIO_XIRANG_EXT_OBJECT_H

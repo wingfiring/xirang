@@ -6,8 +6,7 @@
 #include <xirang/namespace.h>
 #include <xirang/typealias.h>
 
-namespace xirang
-{
+namespace xirang{ namespace type{
 	class XirangImp;
 
 	class Xirang
@@ -59,5 +58,5 @@ namespace xirang
 	};
 	
 	void SetupXirang(Xirang& xr);	
-}
+}}
 #endif				//end XIRANG_XIRANG_H
