@@ -3,9 +3,9 @@
 #ifndef AIO_BUFFER_H
 #define AIO_BUFFER_H
 
-#include <aio/common/memory.h>
-#include <aio/common/assert.h>
-#include <aio/common/range.h>
+#include <xirang/memory.h>
+#include <xirang/assert.h>
+#include <xirang/range.h>
 
 //STL
 #include <algorithm>

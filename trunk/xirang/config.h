@@ -3,8 +3,8 @@
 #ifndef AIO_COMMON_CONFIG_H
 #define AIO_COMMON_CONFIG_H
 
-#include <aio/common/config/config.h>
-#include <aio/common/config/user.h>
+#include <xirang/config/config.h>
+#include <xirang/config/user.h>
 
 #if defined (AIO_COMMON_DLL_EXPORT)
 #	define AIO_COMM_API AIO_DLL_EXPORT

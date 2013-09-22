@@ -2,10 +2,10 @@
 
 #ifndef AIO_STRING_CAST_H
 #define AIO_STRING_CAST_H
-#include <aio/common/config.h>
-#include <aio/common/macro_helper.h>
-#include <aio/common/string_algo/utf8.h>
-#include <aio/common/range.h>
+#include <xirang/config.h>
+#include <xirang/macro_helper.h>
+#include <xirang/string_algo/utf8.h>
+#include <xirang/range.h>
 
 //STL
 #include <cstring>	//for strlen

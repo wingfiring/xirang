@@ -9,6 +9,7 @@ LINK_DIRECTORIES(${BOOST_LINK})
 #source directory
 AUX_SOURCE_DIRECTORY(${AIO_ROOT}/test/xirang DIR_SRCS)
 AUX_SOURCE_DIRECTORY(${AIO_ROOT}/test/xirang/vfs DIR_SRCS)
+AUX_SOURCE_DIRECTORY(${AIO_ROOT}/test/xirang/type DIR_SRCS)
 
 
 

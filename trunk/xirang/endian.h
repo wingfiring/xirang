@@ -1,7 +1,7 @@
 #ifndef AIO_COMMON_ENDIAN_H
 #define AIO_COMMON_ENDIAN_H
 
-#include <aio/common/config.h>
+#include <xirang/config.h>
 #include <endian.h>
 namespace aio{
 	struct little_endian_tag{};

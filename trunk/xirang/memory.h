@@ -2,17 +2,17 @@
 
 #ifndef AIO_MEMORY_H
 #define AIO_MEMORY_H
-#include <aio/common/config.h>
+#include <xirang/config.h>
 
-#include <aio/common/macro_helper.h>
-#include <aio/common/assert.h>
+#include <xirang/macro_helper.h>
+#include <xirang/assert.h>
 
 //STD
 #include <cstddef>
 #include <memory>
-#include <aio/common/backward/unique_ptr.h>
+#include <xirang/backward/unique_ptr.h>
 
-#include <aio/common/config/abi_prefix.h>
+#include <xirang/config/abi_prefix.h>
 namespace aio
 {
 	/// helper class. it intends to init the global memory handler only once.
@@ -932,7 +932,7 @@ namespace aio
 
 }
 
-#include <aio/common/config/abi_suffix.h>
+#include <xirang/config/abi_suffix.h>
 
 #endif //end AIO_STRING_H
 

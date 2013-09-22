@@ -1,10 +1,10 @@
 #ifndef AIO_IMP_SHARED_DATA_H
 #define AIO_IMP_SHARED_DATA_H
 
-#include <aio/common/config.h>
-#include <aio/common/backward/atomic.h>
+#include <xirang/config.h>
+#include <xirang/backward/atomic.h>
 
-#include <aio/common/config/abi_prefix.h>
+#include <xirang/config/abi_prefix.h>
 namespace aio{ 
 	class heap;
 	namespace private_{
@@ -40,6 +40,6 @@ namespace aio{
         }
 	};
 }}
-#include <aio/common/config/abi_suffix.h>
+#include <xirang/config/abi_suffix.h>
 
 #endif //end AIO_IMP_SHARED_DATA_H

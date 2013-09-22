@@ -1,11 +1,11 @@
 #ifndef AIO_XIRANG_EXT_OBJECT_H
 #define AIO_XIRANG_EXT_OBJECT_H
 
-#include <aio/xirang/object.h>
-#include <aio/xirang/typebinder.h>
-#include <aio/xirang/serialize.h>
+#include <xirang/object.h>
+#include <xirang/typebinder.h>
+#include <xirang/serialize.h>
 
-#include <aio/common/memory.h>
+#include <xirang/memory.h>
 
 namespace xirang
 {

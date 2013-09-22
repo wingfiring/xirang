@@ -2,11 +2,11 @@
 
 #ifndef AIO_HANDLE_PTR_H
 #define AIO_HANDLE_PTR_H
-#include <aio/common/config.h>
-#include <aio/common/assert.h>
-#include <aio/common/operators.h>
+#include <xirang/config.h>
+#include <xirang/assert.h>
+#include <xirang/operators.h>
 
-#include <aio/common/config/abi_prefix.h>
+#include <xirang/config/abi_prefix.h>
 namespace aio
 {
 	///handler ptr, it's a value semantic
@@ -93,5 +93,5 @@ namespace aio
         lhs.swap(rhs);
     }
 }
-#include <aio/common/config/abi_suffix.h>
+#include <xirang/config/abi_suffix.h>
 #endif //AIO_HANDLE_PTR_H

@@ -1,8 +1,8 @@
 #ifndef AIO_COMMON_ARCHIVE_FILE_ARCHIVE_H
 #define AIO_COMMON_ARCHIVE_FILE_ARCHIVE_H
 
-#include <aio/common/io.h>
-#include <aio/common/memory.h>
+#include <xirang/io.h>
+#include <xirang/memory.h>
 
 namespace aio{ namespace io{
 	struct file_imp;

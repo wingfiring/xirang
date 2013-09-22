@@ -1,7 +1,7 @@
 #ifndef AIO_COMMON_IO_S11N_EXCHANGE_H_
 #define AIO_COMMON_IO_S11N_EXCHANGE_H_
-#include <aio/common/io/s11nbase.h>
-#include <aio/common/byteorder.h>
+#include <xirang/io/s11nbase.h>
+#include <xirang/byteorder.h>
 #include <limits>
 
 namespace aio{ namespace io{ namespace exchange{

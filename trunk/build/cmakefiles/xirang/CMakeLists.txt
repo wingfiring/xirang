@@ -9,6 +9,10 @@ LINK_DIRECTORIES(${BOOST_LINK})
 #source directory
 AUX_SOURCE_DIRECTORY(${AIO_ROOT}/src/xirang DIR_SRCS)
 AUX_SOURCE_DIRECTORY(${AIO_ROOT}/src/xirang/vfs DIR_SRCS)
+AUX_SOURCE_DIRECTORY(${AIO_ROOT}/src/xirang/archive DIR_SRCS)
+AUX_SOURCE_DIRECTORY(${AIO_ROOT}/src/xirang/heap DIR_SRCS)
+AUX_SOURCE_DIRECTORY(${AIO_ROOT}/src/xirang/platform DIR_SRCS)
+AUX_SOURCE_DIRECTORY(${AIO_ROOT}/src/xirang/type DIR_SRCS)
 
 #add library file
 ADD_LIBRARY(xirang STATIC ${DIR_SRCS})

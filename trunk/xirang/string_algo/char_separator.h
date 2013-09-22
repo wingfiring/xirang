@@ -3,7 +3,7 @@
 #ifndef AIO_CHAR_SEPARATOR_H
 #define AIO_CHAR_SEPARATOR_H
 
-#include <aio/common/string.h>
+#include <xirang/string.h>
 
 namespace aio
 {

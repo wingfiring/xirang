@@ -1,10 +1,10 @@
 #ifndef XIRANG_XIRANG_H
 #define XIRANG_XIRANG_H
 
-#include <aio/xirang/xrfwd.h>
-#include <aio/xirang/type.h>
-#include <aio/xirang/namespace.h>
-#include <aio/xirang/typealias.h>
+#include <xirang/xrfwd.h>
+#include <xirang/type.h>
+#include <xirang/namespace.h>
+#include <xirang/typealias.h>
 
 namespace xirang
 {

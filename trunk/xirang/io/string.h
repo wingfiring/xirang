@@ -1,9 +1,9 @@
 #ifndef AIO_COMMON_ARCHIVE_STRING_H
 #define AIO_COMMON_ARCHIVE_STRING_H
 
-#include <aio/common/io/locals11n.h>
-#include <aio/common/io/exchs11n.h>
-#include <aio/common/string.h>
+#include <xirang/io/locals11n.h>
+#include <xirang/io/exchs11n.h>
+#include <xirang/string.h>
 
 namespace aio{namespace io{ namespace local{
 	template<typename Ar, typename T, typename = 

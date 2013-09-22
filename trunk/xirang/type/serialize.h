@@ -1,10 +1,10 @@
 #ifndef AIO_XIRANG_SERIALIZE_H_
 #define AIO_XIRANG_SERIALIZE_H_
 
-#include <aio/common/io.h>
-#include <aio/common/io/s11n.h>
-#include <aio/xirang/object.h>
-#include <aio/xirang/binder.h>
+#include <xirang/io.h>
+#include <xirang/io/s11n.h>
+#include <xirang/object.h>
+#include <xirang/binder.h>
 
 namespace xirang{ namespace io{ namespace exchange{
 

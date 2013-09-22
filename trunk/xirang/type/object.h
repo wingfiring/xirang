@@ -1,7 +1,7 @@
 #ifndef XIRANG_OBJECT_H
 #define XIRANG_OBJECT_H
 
-#include <aio/xirang/type.h>
+#include <xirang/type.h>
 
 namespace xirang
 {

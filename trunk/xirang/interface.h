@@ -5,9 +5,9 @@
 
 #include <type_traits>
 #include <cstring>	//for memcpy
-#include <aio/common/backward/unique_ptr.h>
+#include <xirang/backward/unique_ptr.h>
 
-#include <aio/common/config/abi_prefix.h>
+#include <xirang/config/abi_prefix.h>
 namespace aio
 {
 	template<typename... Interfaces> struct iref;
@@ -290,7 +290,7 @@ namespace aio
 			return *static_cast<CoClass*>(*((void**)this_ + 1));
 		}
 }
-#include <aio/common/config/abi_suffix.h>
+#include <xirang/config/abi_suffix.h>
 
 #endif //end AIO_COMMON_INTERFACE_H_
 

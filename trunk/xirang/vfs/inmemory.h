@@ -1,8 +1,8 @@
 #ifndef AIO_XIRANG_INMEMORY_FS
 #define AIO_XIRANG_INMEMORY_FS
 
-#include <aio/xirang/vfs.h>
-#include <aio/common/io/memory.h>
+#include <xirang/vfs.h>
+#include <xirang/io/memory.h>
 
 namespace xirang{ namespace fs{
 

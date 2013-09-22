@@ -10,12 +10,12 @@
 	three invariant check are implemented: AIO_PRE_CONDITION, AIO_POST_CONDITION, AIO_INVARIANT.
 */
 
-#include <aio/common/config.h>
-#include <aio/common/exception.h>
-#include <aio/common/macro_helper.h>
+#include <xirang/config.h>
+#include <xirang/exception.h>
+#include <xirang/macro_helper.h>
 
 //must be latest include
-#include <aio/common/config/abi_prefix.h>
+#include <xirang/config/abi_prefix.h>
 
 namespace aio
 {
@@ -179,6 +179,6 @@ namespace aio
 #define AIO_INVARIANT(expr)\
 	AIO_AIO_INVARIANT_COMM(aio::contract_category::invariant, expr)
 
-#include <aio/common/config/abi_suffix.h>
+#include <xirang/config/abi_suffix.h>
 #endif // end AIO_ASSERT_H
 

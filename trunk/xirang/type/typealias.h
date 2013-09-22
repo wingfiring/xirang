@@ -1,8 +1,8 @@
 #ifndef XIRANG_TYPE_ALIAS_H
 #define XIRANG_TYPE_ALIAS_H
 
-#include <aio/xirang/xrfwd.h>
-#include <aio/xirang/type.h>
+#include <xirang/xrfwd.h>
+#include <xirang/type.h>
 
 namespace xirang
 {

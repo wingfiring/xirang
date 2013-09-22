@@ -3,8 +3,8 @@
 #ifndef AIO_UTILITY_H
 #define AIO_UTILITY_H
 
-#include <aio/common/config.h>
-#include <aio/common/assert.h>
+#include <xirang/config.h>
+#include <xirang/assert.h>
 
 namespace aio
 {

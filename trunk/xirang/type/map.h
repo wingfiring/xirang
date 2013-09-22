@@ -1,9 +1,9 @@
 #ifndef XIRANG_MAP_H
 #define XIRANG_MAP_H
 
-#include <aio/xirang/type.h>
-#include <aio/xirang/object.h>
-#include <aio/xirang/typebinder.h>
+#include <xirang/type.h>
+#include <xirang/object.h>
+#include <xirang/typebinder.h>
 
 //STL
 #include <iterator>

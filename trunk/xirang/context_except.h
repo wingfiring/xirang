@@ -2,12 +2,12 @@
 
 #ifndef AIO_CONTEXT_EXCEPTION_H
 #define AIO_CONTEXT_EXCEPTION_H
-#include <aio/common/config.h>
-#include <aio/common/macro_helper.h>
-#include <aio/common/utf8char.h>
-#include <aio/common/string.h>
+#include <xirang/config.h>
+#include <xirang/macro_helper.h>
+#include <xirang/utf8char.h>
+#include <xirang/string.h>
 
-#include <aio/common/config/abi_prefix.h>
+#include <xirang/config/abi_prefix.h>
 namespace aio
 {
 	extern basic_string<char_utf8> line2string(unsigned line);
@@ -73,5 +73,5 @@ namespace aio
 
 #define AIO_THROW(ex) throw ::aio::context_exception<ex>(__FILE__, __LINE__)
 
-#include <aio/common/config/abi_suffix.h>
+#include <xirang/config/abi_suffix.h>
 #endif //end AIO_CONTEXT_EXCEPTION_H

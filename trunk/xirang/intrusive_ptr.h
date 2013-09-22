@@ -15,8 +15,8 @@
 #ifndef AIO_COMMON_INTRUSIVE_PTR_H
 #define AIO_COMMON_INTRUSIVE_PTR_H
 
-#include <aio/common/config.h>
-#include <aio/common/assert.h>
+#include <xirang/config.h>
+#include <xirang/assert.h>
 #include <type_traits>
 
 namespace aio{

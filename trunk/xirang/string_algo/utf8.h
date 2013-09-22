@@ -1,9 +1,9 @@
 #ifndef AIO_COMMON_STRING_ALGO_UTF8_H
 #define AIO_COMMON_STRING_ALGO_UTF8_H
 
-#include <aio/common/config.h>
-#include <aio/common/utf8char.h>
-#include <aio/common/context_except.h>
+#include <xirang/config.h>
+#include <xirang/utf8char.h>
+#include <xirang/context_except.h>
 
 //STL
 #include <iterator>

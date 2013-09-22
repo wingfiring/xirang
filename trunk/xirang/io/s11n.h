@@ -1,12 +1,12 @@
 #ifndef AIO_COMMON_IO_S11N_H
 #define AIO_COMMON_IO_S11N_H
-#include <aio/common/io/s11nbase.h>
+#include <xirang/io/s11nbase.h>
 
-#include <aio/common/io/locals11n.h>
-#include <aio/common/io/exchs11n.h>
+#include <xirang/io/locals11n.h>
+#include <xirang/io/exchs11n.h>
 
-#include <aio/common/io/string.h>
-#include <aio/common/io/buffer.h>
+#include <xirang/io/string.h>
+#include <xirang/io/buffer.h>
 
 
 #endif //end AIO_COMMON_IO_S11N_H

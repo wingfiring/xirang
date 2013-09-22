@@ -3,7 +3,7 @@
 #ifndef AIO_COMMON_IDELETOR_H
 #define AIO_COMMON_IDELETOR_H
 
-#include <aio/common/config.h>
+#include <xirang/config.h>
 
 namespace aio
 {

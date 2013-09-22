@@ -1,7 +1,7 @@
 #ifndef AIO_COMMON_BYTE_ORDER
 #define AIO_COMMON_BYTE_ORDER
 
-#include <aio/common/endian.h>
+#include <xirang/endian.h>
 
 namespace aio{
 

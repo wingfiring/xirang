@@ -3,7 +3,7 @@
 #ifndef AIO_ATOMIC_H
 #define AIO_ATOMIC_H
 
-#include <aio/common/config.h>
+#include <xirang/config.h>
 
 namespace aio{ namespace atomic{
 

@@ -2,16 +2,16 @@
 
 #ifndef AIO_EXCEPTION_H
 #define AIO_EXCEPTION_H
-#include <aio/common/config.h>
-#include <aio/common/macro_helper.h>
-#include <aio/common/utf8char.h>
+#include <xirang/config.h>
+#include <xirang/macro_helper.h>
+#include <xirang/utf8char.h>
 
 #ifdef AIO_DERIVED_FROM_STD_EXCEPTION
 #include <exception>
 #endif
 
 
-#include <aio/common/config/abi_prefix.h>
+#include <xirang/config/abi_prefix.h>
 namespace aio
 {
 	struct exception
@@ -33,5 +33,5 @@ namespace aio
 #define AIO_EXCEPTION_TYPE(type) \
 	AIO_EXCEPTION_TYPE_EX(type, ::aio::exception)
 
-#include <aio/common/config/abi_suffix.h>
+#include <xirang/config/abi_suffix.h>
 #endif //end AIO_EXCEPTION_H

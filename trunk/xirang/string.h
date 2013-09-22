@@ -3,22 +3,22 @@
 #ifndef AIO_STRING_H
 #define AIO_STRING_H
 
-#include <aio/common/config.h>
-#include <aio/common/memory.h>
-#include <aio/common/backward/atomic.h>
-#include <aio/common/range.h>
-#include <aio/common/buffer.h>
+#include <xirang/config.h>
+#include <xirang/memory.h>
+#include <xirang/backward/atomic.h>
+#include <xirang/range.h>
+#include <xirang/buffer.h>
 
-#include <aio/common/impl/shared_data.h>
-#include <aio/common/operators.h>
+#include <xirang/impl/shared_data.h>
+#include <xirang/operators.h>
 
 //STL
 #include <iosfwd>
 #include <cstddef>
 #include <string>		//introduce char_traits and stream
 
-#include <aio/common/test_helper.h>
-#include <aio/common/config/abi_prefix.h>
+#include <xirang/test_helper.h>
+#include <xirang/config/abi_prefix.h>
 
 namespace aio
 {
@@ -1234,7 +1234,7 @@ namespace aio
 				reinterpret_cast<buffer<byte>::const_iterator>(cont.end()));
 	}
 }
-#include <aio/common/config/abi_suffix.h>
+#include <xirang/config/abi_suffix.h>
 
 #endif //end AIO_STRING_H
 

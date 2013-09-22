@@ -1,9 +1,9 @@
 #ifndef AIO_COMMON_UTILITY_FILE_MAPPING_HEAP_H
 #define AIO_COMMON_UTILITY_FILE_MAPPING_HEAP_H
 
-#include <aio/common/memory.h>
-#include <aio/common/string.h>
-#include <aio/common/io.h>
+#include <xirang/memory.h>
+#include <xirang/string.h>
+#include <xirang/io.h>
 
 namespace aio
 {

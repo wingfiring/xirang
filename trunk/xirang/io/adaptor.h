@@ -1,7 +1,7 @@
 #ifndef AIO_COMMON_ARCHIVE_ADAPTOR_H
 #define AIO_COMMON_ARCHIVE_ADAPTOR_H
 
-#include <aio/common/io.h>
+#include <xirang/io.h>
 
 namespace aio{ namespace io{
 	namespace io_private_{

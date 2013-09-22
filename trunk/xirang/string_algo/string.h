@@ -1,7 +1,7 @@
 #ifndef AIO_COMMON_STRING_ALGO_STRING_H
 #define AIO_COMMON_STRING_ALGO_STRING_H
 
-#include <aio/common/string.h>
+#include <xirang/string.h>
 #include <algorithm>
 
 namespace aio{ namespace str_algo {

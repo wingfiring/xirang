@@ -1,13 +1,13 @@
 #ifndef XIRANG_ARRAY_H
 #define XIRANG_ARRAY_H
 
-#include <aio/xirang/type.h>
-#include <aio/xirang/object.h>
-#include <aio/xirang/typebinder.h>
-#include <aio/xirang/xrbase.h>
+#include <xirang/type.h>
+#include <xirang/object.h>
+#include <xirang/typebinder.h>
+#include <xirang/xrbase.h>
 
 //AIO
-#include <aio/common/io.h>
+#include <xirang/io.h>
 
 //STL
 #include <iterator>

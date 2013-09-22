@@ -1,8 +1,8 @@
 #ifndef XIRANG_TYPE_BINDER_H
 #define XIRANG_TYPE_BINDER_H
 
-#include <aio/xirang/itypebinder.h>
-#include <aio/xirang/binder.h>
+#include <xirang/itypebinder.h>
+#include <xirang/binder.h>
 
 namespace xirang
 {

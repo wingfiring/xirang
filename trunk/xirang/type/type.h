@@ -1,7 +1,7 @@
 #ifndef XIRANG_TYPE_H
 #define XIRANG_TYPE_H
 
-#include <aio/xirang/xrfwd.h>
+#include <xirang/xrfwd.h>
 
 namespace xirang
 {

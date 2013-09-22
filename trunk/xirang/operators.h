@@ -8,7 +8,7 @@
 //  See http://www.aio.org/libs/utility/operators.htm for documentation.
 #ifndef AIO_COMMON_OPERATIONS_H_
 #define AIO_COMMON_OPERATIONS_H_
-#include <aio/common/config.h>
+#include <xirang/config.h>
 namespace aio{
 	namespace private_{
 		template<typename T> struct empty_base{};

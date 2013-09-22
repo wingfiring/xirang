@@ -1,11 +1,11 @@
 #ifndef XIRANG_XRBASE_H
 #define XIRANG_XRBASE_H
 
-#include <aio/common/range.h>
-#include <aio/common/string.h>
-#include <aio/common/iterator.h>
-#include <aio/common/buffer.h>
-#include <aio/common/context_except.h>
+#include <xirang/range.h>
+#include <xirang/string.h>
+#include <xirang/iterator.h>
+#include <xirang/buffer.h>
+#include <xirang/context_except.h>
 
 namespace xirang
 {

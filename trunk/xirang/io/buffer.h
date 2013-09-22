@@ -1,8 +1,8 @@
 #ifndef AIO_COMMON_IO_BUFFER_H_
 #define AIO_COMMON_IO_BUFFER_H_
-#include <aio/common/io/locals11n.h>
-#include <aio/common/io/exchs11n.h>
-#include <aio/common/buffer.h>
+#include <xirang/io/locals11n.h>
+#include <xirang/io/exchs11n.h>
+#include <xirang/buffer.h>
 
 namespace aio{ namespace io{ namespace local{
 

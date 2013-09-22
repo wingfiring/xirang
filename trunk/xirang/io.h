@@ -3,15 +3,15 @@
 #ifndef AIO_COMMON_IARCHIVE_H_
 #define AIO_COMMON_IARCHIVE_H_
 
-#include <aio/common/config.h>
-#include <aio/common/buffer.h>
-#include <aio/common/context_except.h>
+#include <xirang/config.h>
+#include <xirang/buffer.h>
+#include <xirang/context_except.h>
 
-#include <aio/common/ideletor.h>
-#include <aio/common/assert.h>
-#include <aio/common/memory.h>
-#include <aio/common/any.h>
-#include <aio/common/interface.h>
+#include <xirang/ideletor.h>
+#include <xirang/assert.h>
+#include <xirang/memory.h>
+#include <xirang/any.h>
+#include <xirang/interface.h>
 namespace aio { namespace io{
 	namespace private_{
 		template<typename ...T> struct total_size_of;

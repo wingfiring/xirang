@@ -1,7 +1,7 @@
 #ifndef XIRANG_XRFWD_H
 #define XIRANG_XRFWD_H
 
-#include <aio/xirang/xrbase.h>
+#include <xirang/xrbase.h>
 #include <iterator>
 
 namespace xirang

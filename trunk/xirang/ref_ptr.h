@@ -2,9 +2,9 @@
 
 #ifndef AIO_REFERENCE_PTR_H
 #define AIO_REFERENCE_PTR_H
-#include <aio/common/config.h>
+#include <xirang/config.h>
 
-#include <aio/common/config/abi_prefix.h>
+#include <xirang/config/abi_prefix.h>
 namespace aio
 {
 ///handler ptr, it's a value semantic
@@ -67,5 +67,5 @@ namespace aio
 		return ref_ptr<T const>(t);
 	}
 }
-#include <aio/common/config/abi_suffix.h>
+#include <xirang/config/abi_suffix.h>
 #endif //AIO_REFERENCE_PTR_H

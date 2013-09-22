@@ -3,8 +3,8 @@
 #ifndef AIO_COMMON_HEAP_H
 #define AIO_COMMON_HEAP_H
 
-#include <aio/common/memory.h>
-#include <aio/common/string.h>
+#include <xirang/memory.h>
+#include <xirang/string.h>
 
 namespace aio
 {

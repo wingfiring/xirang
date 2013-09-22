@@ -1,9 +1,9 @@
 #ifndef AIO_COMMON_PATH_H_
 #define AIO_COMMON_PATH_H_
-#include <aio/common/string.h>
-#include <aio/common/string_algo/utf8.h>
-#include <aio/common/string_algo/string.h>
-#include <aio/common/operators.h>
+#include <xirang/string.h>
+#include <xirang/string_algo/utf8.h>
+#include <xirang/string_algo/string.h>
+#include <xirang/operators.h>
 namespace aio{
 
 	enum path_process{

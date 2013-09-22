@@ -4,7 +4,7 @@
 # error double inclusion of header common/config/abi_prefix.hpp is an error
 #endif
 
-#include <aio/common/config.h>
+#include <xirang/config.h>
 
 #ifdef AIO_HAS_ABI_HEADERS
 #  include AIO_ABI_PREFIX

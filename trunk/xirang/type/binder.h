@@ -1,10 +1,10 @@
 #ifndef AIO_COMMON_XIRANG_BINDER_H
 #define AIO_COMMON_XIRANG_BINDER_H
 
-#include <aio/xirang/object.h>
-#include <aio/xirang/itypebinder.h>
+#include <xirang/object.h>
+#include <xirang/itypebinder.h>
 
-#include <aio/common/context_except.h>
+#include <xirang/context_except.h>
 
 namespace xirang
 {
