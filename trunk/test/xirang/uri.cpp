@@ -3,9 +3,9 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 */
 
 #include "precompile.h"
-#include <aio/common/string_algo/uri.h>
-#include <aio/common/string.h>
-#include <aio/common/buffer.h>
+#include <xirang/string_algo/uri.h>
+#include <xirang/string.h>
+#include <xirang/buffer.h>
 
 //STL
 #include <vector>

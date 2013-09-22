@@ -1,8 +1,8 @@
 #include "xirangimp.h"
-#include <aio/xirang/namespace.h>
-#include <aio/xirang/type.h>
-#include <aio/xirang/typealias.h>
-#include <aio/xirang/object.h>
+#include <xirang/namespace.h>
+#include <xirang/type.h>
+#include <xirang/typealias.h>
+#include <xirang/object.h>
 
 #include <cctype>
 

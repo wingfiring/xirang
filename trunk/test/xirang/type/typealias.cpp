@@ -1,6 +1,6 @@
 #include "precompile.h"
-#include <aio/xirang/xirang.h>
-#include <aio/xirang/typealias.h>
+#include <xirang/xirang.h>
+#include <xirang/typealias.h>
 
 #include <vector>
 #include <iostream>

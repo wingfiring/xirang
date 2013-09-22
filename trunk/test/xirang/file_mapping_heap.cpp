@@ -4,8 +4,8 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 
 #include "precompile.h"
 #include <aio/utility/ext1/file_mapping_heap.h>
-#include <aio/common/io/file.h>
-#include <aio/common/fsutility.h>
+#include <xirang/io/file.h>
+#include <xirang/fsutility.h>
 
 BOOST_AUTO_TEST_SUITE(suite_file_mapping_heap)
 using namespace aio;

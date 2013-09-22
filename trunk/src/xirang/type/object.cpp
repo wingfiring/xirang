@@ -1,8 +1,8 @@
-#include <aio/xirang/object.h>
-#include <aio/xirang/itypebinder.h>
+#include <xirang/object.h>
+#include <xirang/itypebinder.h>
 #include "typeimp.h"
-#include <aio/xirang/namespace.h>
-#include <aio/xirang/xirang.h>
+#include <xirang/namespace.h>
+#include <xirang/xirang.h>
 #include "namespaceimp.h"
 #include "impaccessor.h"
 

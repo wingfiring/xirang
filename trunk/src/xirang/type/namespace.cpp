@@ -1,13 +1,13 @@
 #include "namespaceimp.h"
 
-#include <aio/xirang/namespace.h>
-#include <aio/xirang/type.h>
-#include <aio/xirang/typealias.h>
-#include <aio/xirang/object.h>
+#include <xirang/namespace.h>
+#include <xirang/type.h>
+#include <xirang/typealias.h>
+#include <xirang/object.h>
 #include "impaccessor.h"
 
 #include <boost/tokenizer.hpp>
-#include <aio/common/string_algo/char_separator.h>
+#include <xirang/string_algo/char_separator.h>
 
 namespace xirang
 {

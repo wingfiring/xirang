@@ -1,6 +1,6 @@
-#include <aio/xirang/ext_object.h>
-#include <aio/xirang/binder.h>
-#include <aio/common/backward/atomic.h>
+#include <xirang/ext_object.h>
+#include <xirang/binder.h>
+#include <xirang/backward/atomic.h>
 
 namespace xirang
 {

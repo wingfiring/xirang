@@ -3,7 +3,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 */
 
 #include "precompile.h"
-#include <aio/common/string_algo/string.h>
+#include <xirang/string_algo/string.h>
 
 BOOST_AUTO_TEST_SUITE(string_algo_suite)
 using namespace aio;

@@ -1,7 +1,7 @@
 #include "precompile.h"
-#include <aio/xirang/xirang.h>
-#include <aio/xirang/typebinder.h>
-#include <aio/xirang/binder.h>
+#include <xirang/xirang.h>
+#include <xirang/typebinder.h>
+#include <xirang/binder.h>
 #include <vector>
 #include <iostream>
 #include <stdint.h>

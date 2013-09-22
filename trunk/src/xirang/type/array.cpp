@@ -1,7 +1,7 @@
-#include <aio/xirang/array.h>
-#include <aio/xirang/typebinder.h>
+#include <xirang/array.h>
+#include <xirang/typebinder.h>
 
-#include <aio/common/buffer.h>
+#include <xirang/buffer.h>
 #include <stdint.h>
 
 namespace xirang

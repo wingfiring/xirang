@@ -1,9 +1,9 @@
 #ifndef SRC_XIRANG_VFS_FILE_TREE_H
 #define SRC_XIRANG_VFS_FILE_TREE_H
 
-#include <aio/xirang/vfs.h>
-#include <aio/common/string_algo/char_separator.h>
-#include <aio/common/string_algo/string.h>
+#include <xirang/vfs.h>
+#include <xirang/string_algo/char_separator.h>
+#include <xirang/string_algo/string.h>
 
 #include <boost/tokenizer.hpp>
 #include <algorithm>

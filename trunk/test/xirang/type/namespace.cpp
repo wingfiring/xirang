@@ -1,9 +1,9 @@
 #include "precompile.h"
-#include <aio/xirang/xirang.h>
-#include <aio/xirang/namespace.h>
-#include <aio/xirang/typebinder.h>
-#include <aio/xirang/binder.h>
-#include <aio/xirang/object.h>
+#include <xirang/xirang.h>
+#include <xirang/namespace.h>
+#include <xirang/typebinder.h>
+#include <xirang/binder.h>
+#include <xirang/object.h>
 #include <vector>
 #include <iostream>
 #include <stdint.h>

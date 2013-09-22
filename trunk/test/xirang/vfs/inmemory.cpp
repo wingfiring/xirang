@@ -1,5 +1,5 @@
 #include "../precompile.h"
-#include <aio/xirang/vfs/inmemory.h>
+#include <xirang/vfs/inmemory.h>
 #include "./vfs.h"
 
 BOOST_AUTO_TEST_SUITE(vfs_suite)

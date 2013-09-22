@@ -1,9 +1,9 @@
-#include <aio/xirang/vfs/inmemory.h>
-#include <aio/common/io/memory.h>
+#include <xirang/vfs/inmemory.h>
+#include <xirang/io/memory.h>
 
-#include <aio/xirang/vfs/vfs_common.h>
-#include <aio/common/string_algo/string.h>
-#include <aio/common/buffer.h>
+#include <xirang/vfs/vfs_common.h>
+#include <xirang/string_algo/string.h>
+#include <xirang/buffer.h>
 
 #include "file_tree.h"
 

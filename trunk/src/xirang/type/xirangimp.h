@@ -1,12 +1,12 @@
 #ifndef XIRANG_DETAIL_XIRANG_IMP_H
 #define XIRANG_DETAIL_XIRANG_IMP_H
 
-#include <aio/xirang/xirang.h>
+#include <xirang/xirang.h>
 #include "typeimp.h"
 #include "namespaceimp.h"
 
-#include <aio/xirang/typebinder.h>
-#include <aio/xirang/object.h>
+#include <xirang/typebinder.h>
+#include <xirang/object.h>
 
 #include <memory>
 #include <algorithm>

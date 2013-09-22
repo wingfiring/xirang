@@ -1,11 +1,11 @@
-#include <aio/xirang/vfs.h>
+#include <xirang/vfs.h>
 #include <boost/tokenizer.hpp>
 #include <boost/bimap.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
 
 
 #include <deque>
-#include <aio/common/string_algo/char_separator.h>
+#include <xirang/string_algo/char_separator.h>
 
 namespace xirang{ namespace fs{
 	IVfs::~IVfs(){}

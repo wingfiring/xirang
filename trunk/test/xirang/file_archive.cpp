@@ -3,10 +3,10 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 */
 
 #include "precompile.h"
-#include <aio/common/io/file.h>
-#include <aio/common/fsutility.h>
-#include <aio/common/assert.h>
-#include <aio/common/string_algo/utf8.h>
+#include <xirang/io/file.h>
+#include <xirang/fsutility.h>
+#include <xirang/assert.h>
+#include <xirang/string_algo/utf8.h>
 
 //#include <iostream>
 

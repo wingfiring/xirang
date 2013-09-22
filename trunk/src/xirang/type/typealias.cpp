@@ -1,6 +1,6 @@
 #include "typealiasimp.h"
-#include <aio/xirang/typealias.h>
-#include <aio/xirang/namespace.h>
+#include <xirang/typealias.h>
+#include <xirang/namespace.h>
 #include "namespaceimp.h"
 
 #include <memory>

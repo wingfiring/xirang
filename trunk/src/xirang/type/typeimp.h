@@ -1,7 +1,7 @@
 #ifndef XIRANG_DETAIL_TYPE_IMP_H
 #define XIRANG_DETAIL_TYPE_IMP_H
 
-#include <aio/xirang/type.h>
+#include <xirang/type.h>
 
 #include <map>
 #include <vector>

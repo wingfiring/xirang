@@ -1,7 +1,7 @@
 #ifndef AIO_COMMON_TEST_IARCHIVE_H
 #define AIO_COMMON_TEST_IARCHIVE_H
-#include <aio/common/io.h>
-#include <aio/common/interface.h>
+#include <xirang/io.h>
+#include <xirang/interface.h>
 
 BOOST_AUTO_TEST_SUITE(archive_suite)
 

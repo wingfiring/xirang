@@ -1,9 +1,9 @@
-#include "aio/common/fsutility.h"
-#include "aio/common/to_string.h"
-#include "aio/common/context_except.h"
-#include "aio/common/string_algo/utf8.h"
-#include "aio/common/string_algo/string.h"
-#include "aio/common/io/file.h"
+#include "xirang/fsutility.h"
+#include "xirang/to_string.h"
+#include "xirang/context_except.h"
+#include "xirang/string_algo/utf8.h"
+#include "xirang/string_algo/string.h"
+#include "xirang/io/file.h"
 
 #include <cstdlib>
 #include <vector>
@@ -17,7 +17,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/tokenizer.hpp>
-#include <aio/common/string_algo/char_separator.h>
+#include <xirang/string_algo/char_separator.h>
 #include <random>
 
 namespace aio {namespace fs{

@@ -10,7 +10,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #ifndef AIO_XIRANG_UNIT_TEST_PRE_COMPILE_HEAD_H
 #define AIO_XIRANG_UNIT_TEST_PRE_COMPILE_HEAD_H
 
-#include <aio/common/config.h>
+#include <xirang/config.h>
 
 
 //#define BOOST_TEST_NO_AUTO_LINK 1
@@ -19,7 +19,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include <boost/test/test_case_template.hpp>
 
 #define AIO_KEEP_CONTRACT_ASSERT
-#include <aio/common/utility.h>
+#include <xirang/utility.h>
 
 namespace
 {

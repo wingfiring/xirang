@@ -1,6 +1,6 @@
 #ifndef XIRANG_SRC_XIRANG_IMP_ACCESSOR_H
 #define XIRANG_SRC_XIRANG_IMP_ACCESSOR_H
-#include <aio/xirang/xrfwd.h>
+#include <xirang/xrfwd.h>
 
 namespace xirang{
   template<typename Imp>

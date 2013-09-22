@@ -1,7 +1,7 @@
 #ifndef XIRANG_DETAIL_TYPE_ALIAS_IMP_H
 #define XIRANG_DETAIL_TYPE_ALIAS_IMP_H
 
-#include <aio/xirang/xrfwd.h>
+#include <xirang/xrfwd.h>
 namespace xirang
 {
 

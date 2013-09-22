@@ -9,5 +9,5 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #define BOOST_TEST_MODULE darksunne_xirang
 
 #include "precompile.h"
-#include <aio/common/assert.h>
+#include <xirang/assert.h>
 

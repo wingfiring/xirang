@@ -1,15 +1,15 @@
-#include <aio/xirang/vfs/local.h>
-#include <aio/xirang/xrbase.h>
-#include <aio/common/io/file.h>
-#include <aio/common/string_algo/utf8.h>
+#include <xirang/vfs/local.h>
+#include <xirang/xrbase.h>
+#include <xirang/io/file.h>
+#include <xirang/string_algo/utf8.h>
 
 // BOOST
 #include <boost/filesystem.hpp>
 
 #include <sys/stat.h>
 
-#include <aio/xirang/vfs/vfs_common.h>
-#include <aio/common/string_algo/utf8.h>
+#include <xirang/vfs/vfs_common.h>
+#include <xirang/string_algo/utf8.h>
 
 #ifdef MSVC_COMPILER_
 #include <direct.h>

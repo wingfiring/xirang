@@ -1,6 +1,6 @@
 
 #include "precompile.h"
-#include <aio/common/interface.h>
+#include <xirang/interface.h>
 
 BOOST_AUTO_TEST_SUITE(interface_suite)
 	using namespace aio;

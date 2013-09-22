@@ -1,8 +1,8 @@
 #include "../precompile.h"
-#include <aio/common/archive/mem_archive.h>
-#include <aio/xirang/vfs/zip.h>
-#include <aio/xirang/vfs/inmemory.h>
-#include <aio/common/io/adaptor.h>
+#include <xirang/archive/mem_archive.h>
+#include <xirang/vfs/zip.h>
+#include <xirang/vfs/inmemory.h>
+#include <xirang/io/adaptor.h>
 
 #include "./vfs.h"
 

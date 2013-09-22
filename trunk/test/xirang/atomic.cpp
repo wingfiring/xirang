@@ -3,9 +3,9 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 */
 
 #include "precompile.h"
-#include <aio/common/ref_ptr.h>
-#include <aio/common/assert.h>
-#include <aio/common/backward/atomic.h>
+#include <xirang/ref_ptr.h>
+#include <xirang/assert.h>
+#include <xirang/backward/atomic.h>
 
 //BOOST
 #include <boost/mpl/list.hpp>

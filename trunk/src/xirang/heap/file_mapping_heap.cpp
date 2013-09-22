@@ -1,8 +1,8 @@
 #include <aio/utility/ext1/file_mapping_heap.h>
-#include <aio/common/backward/atomic.h>
-#include <aio/common/memory.h>
-#include <aio/common/io/memory.h>
-#include <aio/common/io/s11n.h>
+#include <xirang/backward/atomic.h>
+#include <xirang/memory.h>
+#include <xirang/io/memory.h>
+#include <xirang/io/s11n.h>
 
 
 //STL

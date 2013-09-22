@@ -3,7 +3,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 */
 
 #include "precompile.h"
-#include <aio/common/buffer.h>
+#include <xirang/buffer.h>
 
 BOOST_AUTO_TEST_SUITE(buffer_suite)
 using namespace aio;

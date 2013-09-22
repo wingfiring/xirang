@@ -1,6 +1,6 @@
 #include "../precompile.h"
-#include <aio/common/fsutility.h>
-#include <aio/xirang/vfs/local.h>
+#include <xirang/fsutility.h>
+#include <xirang/vfs/local.h>
 #include "./vfs.h"
 
 BOOST_AUTO_TEST_SUITE(vfs_suite)

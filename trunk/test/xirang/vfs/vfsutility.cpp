@@ -1,6 +1,6 @@
 #include "../precompile.h"
-#include <aio/common/fsutility.h>
-#include <aio/xirang/vfs.h>
+#include <xirang/fsutility.h>
+#include <xirang/vfs.h>
 
 BOOST_AUTO_TEST_SUITE(vfs_suite)
 using namespace xirang::fs;

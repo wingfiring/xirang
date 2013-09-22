@@ -1,8 +1,8 @@
-#include <aio/xirang/xirang.h>
-#include <aio/xirang/typebinder.h>
-#include <aio/xirang/nativetype.h>
-#include <aio/common/io/string.h>
-#include <aio/xirang/array.h>
+#include <xirang/xirang.h>
+#include <xirang/typebinder.h>
+#include <xirang/nativetype.h>
+#include <xirang/io/string.h>
+#include <xirang/array.h>
 
 #include <assert.h>
 namespace xirang

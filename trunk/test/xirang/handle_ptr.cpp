@@ -3,8 +3,8 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 */
 
 #include "precompile.h"
-#include <aio/common/handle_ptr.h>
-#include <aio/common/assert.h>
+#include <xirang/handle_ptr.h>
+#include <xirang/assert.h>
 
 //BOOST
 #include <boost/mpl/list.hpp>

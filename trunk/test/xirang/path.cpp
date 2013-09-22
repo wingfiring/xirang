@@ -3,7 +3,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 */
 
 #include "precompile.h"
-#include <aio/common/path.h>
+#include <xirang/path.h>
 
 BOOST_AUTO_TEST_SUITE(path_suite)
 using namespace aio;

@@ -3,8 +3,8 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 */
 
 #include "precompile.h"
-#include <aio/common/io/memory.h>
-#include <aio/common/io/s11n.h>
+#include <xirang/io/memory.h>
+#include <xirang/io/s11n.h>
 #include "./iarchive.h"
 
 BOOST_AUTO_TEST_SUITE(archive_suite)
