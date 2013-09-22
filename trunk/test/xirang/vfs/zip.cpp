@@ -1,5 +1,5 @@
 #include "../precompile.h"
-#include <xirang/archive/mem_archive.h>
+#include <xirang/io/mem_archive.h>
 #include <xirang/vfs/zip.h>
 #include <xirang/vfs/inmemory.h>
 #include <xirang/io/adaptor.h>
