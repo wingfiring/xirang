@@ -14,7 +14,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 
 BOOST_AUTO_TEST_SUITE(memory_suite)
 
-using namespace aio;
+using namespace xirang;
 /* TODO: switch to heap interface
 BOOST_AUTO_TEST_CASE(memory_handler_case)
 {

@@ -5,7 +5,7 @@
 
 #include <typeinfo>
 
-namespace aio
+namespace xirang
 {
 	namespace
 	{

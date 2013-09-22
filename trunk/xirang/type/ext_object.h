@@ -1,9 +1,9 @@
 #ifndef AIO_XIRANG_EXT_OBJECT_H
 #define AIO_XIRANG_EXT_OBJECT_H
 
-#include <xirang/object.h>
-#include <xirang/typebinder.h>
-#include <xirang/serialize.h>
+#include <xirang/type/object.h>
+#include <xirang/type/typebinder.h>
+#include <xirang/type/serialize.h>
 
 #include <xirang/memory.h>
 

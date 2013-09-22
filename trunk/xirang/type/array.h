@@ -1,10 +1,10 @@
 #ifndef XIRANG_ARRAY_H
 #define XIRANG_ARRAY_H
 
-#include <xirang/type.h>
-#include <xirang/object.h>
-#include <xirang/typebinder.h>
-#include <xirang/xrbase.h>
+#include <xirang/type/type.h>
+#include <xirang/type/object.h>
+#include <xirang/type/typebinder.h>
+#include <xirang/type/xrbase.h>
 
 //AIO
 #include <xirang/io.h>

@@ -14,16 +14,16 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 
 BOOST_AUTO_TEST_SUITE(file_archive_suite)
 
-using namespace aio;
-using namespace aio::io;
+using namespace xirang;
+using namespace xirang::io;
 
 using archive_suite::ArchiveTester;
 
 BOOST_AUTO_TEST_CASE(file_archive_wchar_case)
 {
     //prepare
-    aio::string tmp = aio::fs::temp_dir();
-    aio::string file_name = tmp << literal("/\xd0\xa0\xd0\xb0\xd0\xb7\xd0\xbd\xd0\xbe\xd0\xb5");
+    xirang::string tmp = xirang::fs::temp_dir();
+    xirang::string file_name = tmp << literal("/\xd0\xa0\xd0\xb0\xd0\xb7\xd0\xbd\xd0\xbe\xd0\xb5");
 
     const string text= literal("This is file archive UT content. --over--");
     file wr(file_name, of_create_or_open);
@@ -35,10 +35,10 @@ BOOST_AUTO_TEST_CASE(file_archive_wchar_case)
 #ifndef MSVC_COMPILER_
 	unlink(file_name.c_str());
 #else
-    aio::wstring wpath = utf8::decode_string(file_name);
+    xirang::wstring wpath = utf8::decode_string(file_name);
     _wunlink(wpath.c_str());
 #endif
-    aio::fs::remove(tmp);
+    xirang::fs::remove(tmp);
 }
 BOOST_AUTO_TEST_CASE(file_archive)
 {
@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(file_archive)
 
 
 	const string text=literal("This is file archive UT content. --over--");
-    aio::range<aio::buffer<aio::byte>::const_iterator> ctext = string_to_c_range(text);
+    xirang::range<xirang::buffer<xirang::byte>::const_iterator> ctext = string_to_c_range(text);
 	std::size_t len1 = ((text.size() / 3) | 1) - 1;
 	std::size_t len2 = len1 / 2;
 
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(file_archive)
 		BOOST_CHECK(wr.offset() == text.size());
 		BOOST_CHECK(wr.size() == text.size());
 
-		aio::long_size_t off = aio::long_size_t(wr.seek(len1));
+		xirang::long_size_t off = xirang::long_size_t(wr.seek(len1));
 		BOOST_REQUIRE(off == len1);
 		BOOST_CHECK(wr.offset() == off);
 
@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(file_archive)
 		BOOST_CHECK(rd.size() == len1 + text.size());
 		BOOST_REQUIRE(rd.readable());
 
-		buffer<aio::byte> buf;
+		buffer<xirang::byte> buf;
 		buf.resize(len1);
 		auto reset = rd.read(to_range(buf));
 		BOOST_CHECK(reset.empty());
@@ -103,8 +103,8 @@ BOOST_AUTO_TEST_CASE(file_archive)
 
 		rd.seek(len1);
 		reset = rd.read(to_range(buf));
-		BOOST_CHECK(!std::lexicographical_compare(buf.begin(), reset.begin(), (const aio::byte*)text.begin(), (const aio::byte*)text.end()));
-		BOOST_CHECK(!std::lexicographical_compare((const aio::byte*)text.begin(), (const aio::byte*)text.end(), buf.begin(), reset.begin()));
+		BOOST_CHECK(!std::lexicographical_compare(buf.begin(), reset.begin(), (const xirang::byte*)text.begin(), (const xirang::byte*)text.end()));
+		BOOST_CHECK(!std::lexicographical_compare((const xirang::byte*)text.begin(), (const xirang::byte*)text.end(), buf.begin(), reset.begin()));
 
 		ArchiveTester tester;
 		rd.seek(0);
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(file_archive)
 
 		string_builder buf;
 		buf.resize(len1);
-		range<buffer<aio::byte>::iterator> mbuf = string_to_range(buf);
+		range<buffer<xirang::byte>::iterator> mbuf = string_to_range(buf);
 
 		auto reset = rw.read(mbuf);
 		BOOST_CHECK(reset.empty());
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(file_archive)
 		tester.check_random(rw);
 	}
 
-    aio::fs::recursive_remove(temp_path);
+    xirang::fs::recursive_remove(temp_path);
 }
 BOOST_AUTO_TEST_SUITE_END()
 

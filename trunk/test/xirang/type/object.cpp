@@ -1,19 +1,20 @@
-#include "precompile.h"
-#include <xirang/xirang.h>
-#include <xirang/object.h>
-#include <xirang/typebinder.h>
-#include <xirang/binder.h>
+#include "../precompile.h"
+#include <xirang/type/xirang.h>
+#include <xirang/type/object.h>
+#include <xirang/type/typebinder.h>
+#include <xirang/type/binder.h>
 
 #include <vector>
 #include <iostream>
 #include <stdint.h>
 using namespace xirang;
+using namespace xirang::type;
 
 BOOST_AUTO_TEST_SUITE(xirang_object_suites)
 
 BOOST_AUTO_TEST_CASE(object_case)
 {
-    Xirang xi("object_case", aio::memory::get_global_heap(), aio::memory::get_global_ext_heap());
+    Xirang xi("object_case", xirang::memory::get_global_heap(), xirang::memory::get_global_ext_heap());
 
     SetupXirang(xi);
 

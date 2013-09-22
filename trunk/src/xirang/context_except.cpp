@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 
-namespace aio {
+namespace xirang {
 
 	basic_string<char_utf8> line2string(unsigned line)
 	{

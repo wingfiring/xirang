@@ -1,10 +1,10 @@
-#include <xirang/typebinder.h>
-#include <xirang/type.h>
+#include <xirang/type/typebinder.h>
+#include <xirang/type/type.h>
 #include <cstring>
 
 #include <boost/functional/hash.hpp>
 
-namespace xirang {
+namespace xirang { namespace type{
 
 	namespace {
 		TypeMethods defaultMethods;
@@ -136,4 +136,5 @@ namespace xirang {
         const string& v = uncheckBind<string>(obj);
         return v.hash();
     }
-}
+}}
+

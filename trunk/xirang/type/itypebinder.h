@@ -1,7 +1,7 @@
 #ifndef AIO_XIRANG_ITYPE_BINDER_H
 #define AIO_XIRANG_ITYPE_BINDER_H
 
-#include <xirang/object.h>
+#include <xirang/type/object.h>
 #include <typeinfo>
 
 namespace xirang {namespace type {

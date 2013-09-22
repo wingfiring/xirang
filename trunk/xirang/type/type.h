@@ -1,7 +1,7 @@
 #ifndef XIRANG_TYPE_H
 #define XIRANG_TYPE_H
 
-#include <xirang/xrfwd.h>
+#include <xirang/type/xrfwd.h>
 
 namespace xirang{ namespace type{
 	class TypeItemImp;

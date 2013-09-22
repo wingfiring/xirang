@@ -20,7 +20,7 @@
 #include <xirang/string_algo/char_separator.h>
 #include <random>
 
-namespace aio {namespace fs{
+namespace xirang {namespace fs{
     namespace{
         const auto onedot = literal(".");
         const auto twodot = literal("..");
@@ -60,10 +60,10 @@ namespace aio {namespace fs{
 
         string gen_temp_name(const_range_string template_)
         {
-			if (!aio::contains(template_, '?'))	//back compatibility
+			if (!contains(template_, '?'))	//back compatibility
 				return template_ << gen_temp_name_();
 
-			return aio::replace(string(template_).range_str(), literal("?"), gen_temp_name_().range_str());
+			return replace(string(template_).range_str(), literal("?"), gen_temp_name_().range_str());
         }
     }
 #ifdef GNUC_COMPILER_
@@ -152,15 +152,15 @@ namespace aio {namespace fs{
 #elif defined(MSVC_COMPILER_)
     fs_error move(const string& from, const string& to)
     {
-        aio::wstring wfrom = aio::utf8::decode_string(to_native_path(from));
-        aio::wstring wto = aio::utf8::decode_string(to_native_path(to));
+        wstring wfrom = utf8::decode_string(to_native_path(from));
+        wstring wto = utf8::decode_string(to_native_path(to));
 		return MoveFileW(wfrom.c_str(), wto.c_str()) ? er_ok : er_system_error;
 
     }
 
     fs_error remove(const string& path)
     {
-        aio::wstring wpath = aio::utf8::decode_string(to_native_path(path));
+        wstring wpath = utf8::decode_string(to_native_path(path));
         if (state(path).state == st_dir)
         {
         
@@ -181,7 +181,7 @@ namespace aio {namespace fs{
         if (state(path).state != st_not_found)
             return er_exist;
 
-        aio::wstring wpath = aio::utf8::decode_string(to_native_path(path));
+        wstring wpath = utf8::decode_string(to_native_path(path));
         return (_wmkdir(wpath.c_str()) != 0)
             ? er_system_error
             : er_ok;
@@ -199,15 +199,15 @@ namespace aio {namespace fs{
         bool is_dir_or_network = is_disk || is_network;
 
         
-        aio::string tmppath = is_dir_or_network? append_tail_slash(path) : remove_tail_slash(path);
+        string tmppath = is_dir_or_network? append_tail_slash(path) : remove_tail_slash(path);
         fstate fst = {remove_tail_slash(path), st_not_found, 0};
 
         struct _stat st;
-        aio::wstring_builder wpath;
+        wstring_builder wpath;
 
         wpath.reserve(tmppath.size() + 1);
-        aio::utf8::decode(aio::to_range(tmppath), std::back_inserter(wpath));
-        //aio::wstring wpath = aio::utf8::decode_string(to_native_path(tmppath)); // for network path, try as dir at first
+        utf8::decode(to_range(tmppath), std::back_inserter(wpath));
+        //wstring wpath = utf8::decode_string(to_native_path(tmppath)); // for network path, try as dir at first
         if (_wstat(wpath.c_str(), &st) == 0)
         {
             if (_S_IFREG & st.st_mode)
@@ -221,8 +221,8 @@ namespace aio {namespace fs{
         else if (is_network) //retry as a file
         {
             wpath.clear();
-            aio::utf8::decode(aio::to_range(to_native_path(fst.path)), std::back_inserter(wpath));
-            //aio::wstring wpath = aio::utf8::decode_string(to_native_path(fst.path));
+            utf8::decode(to_range(to_native_path(fst.path)), std::back_inserter(wpath));
+            //wstring wpath = utf8::decode_string(to_native_path(fst.path));
             if (_wstat(wpath.c_str(), &st) == 0)
             {
                 if (_S_IFREG & st.st_mode)
@@ -240,7 +240,7 @@ namespace aio {namespace fs{
 
     fs_error truncate(const string& path, long_size_t s)
     {
-        aio::wstring wpath = aio::utf8::decode_string(to_native_path(path));
+        wstring wpath = utf8::decode_string(to_native_path(path));
         HANDLE hFile = CreateFileW(wpath.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
         if (hFile == INVALID_HANDLE_VALUE)
             return er_system_error;
@@ -322,8 +322,8 @@ namespace aio {namespace fs{
         if (!tmpdir)
             tmpdir = getenv("TMP");
 
-        aio::string prefix = as_range_string((tmpdir == 0) ? P_tmpdir : tmpdir);
-        return temp_file(template_, to_aio_path(prefix), flag, path);
+        string prefix = as_range_string((tmpdir == 0) ? P_tmpdir : tmpdir);
+        return temp_file(template_, to_xirang_path(prefix), flag, path);
     }
     
 	io::file temp_file(const_range_string template_, const_range_string parent_dir, int flag /*= io::of_create | io::of_remove_on_close*/, string* path/* = 0*/)
@@ -332,7 +332,7 @@ namespace aio {namespace fs{
         flag |= io::of_create;
 
         if (state(parent_dir).state != st_dir)
-            AIO_THROW(aio::io::create_failed)("failed to locate the temp directory:")(parent_dir);
+            AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir);
 
         string parent =  append_tail_slash(parent_dir);
 
@@ -347,7 +347,7 @@ namespace aio {namespace fs{
 			return io::file(file_path.str(), flag);
         }
 
-        AIO_THROW(aio::io::create_failed)("failed to create temp file in directory:")(parent_dir);
+        AIO_THROW(io::create_failed)("failed to create temp file in directory:")(parent_dir);
     }
 
     
@@ -357,15 +357,15 @@ namespace aio {namespace fs{
         if (!tmpdir)
             tmpdir = getenv("TMP");
 
-        aio::string prefix = as_range_string((tmpdir == 0) ? P_tmpdir : tmpdir);
-        return temp_dir(template_, to_aio_path(prefix));
+        string prefix = as_range_string((tmpdir == 0) ? P_tmpdir : tmpdir);
+        return temp_dir(template_, to_xirang_path(prefix));
     }
 
     
     string temp_dir(const_range_string template_, const_range_string parent_dir)
     {
         if (state(parent_dir).state != st_dir)
-            AIO_THROW(aio::io::create_failed)("failed to locate the temp directory:")(parent_dir);
+            AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir);
 
         string prefix =  append_tail_slash(parent_dir) << template_;
 
@@ -377,7 +377,7 @@ namespace aio {namespace fs{
                 return file_path;
         }
 
-        AIO_THROW(aio::io::create_failed)("failed to create temp file in directory:")(parent_dir);
+        AIO_THROW(io::create_failed)("failed to create temp file in directory:")(parent_dir);
     }
 
     bool exists(const_range_string file)
@@ -406,11 +406,11 @@ namespace aio {namespace fs{
         bool is_abs = !p.empty() && *p.begin() == '/';
 		bool end_slash = !p.empty() && *(p.end() - 1) == '/';
 
-		aio::char_separator<char> sep('/');
-        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, const_range_string> tokenizer;
+		char_separator<char> sep('/');
+        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
         tokenizer tokens(p, sep);
 
-		std::deque<aio::string> stack;
+		std::deque<string> stack;
 		bool append_slash = false;
 		for (tokenizer::iterator itr = tokens.begin(); itr != tokens.end(); ++itr)
 		{
@@ -426,7 +426,7 @@ namespace aio {namespace fs{
 				continue;
 			}
 			if (!itr->empty())
-				stack.push_back(aio::string(*itr));
+				stack.push_back(string(*itr));
 			append_slash = end_slash;
 		}
 
@@ -437,7 +437,7 @@ namespace aio {namespace fs{
                 result.push_back('/');
         }
 
-		for (std::deque<aio::string>::iterator itr = stack.begin(); itr != stack.end(); ++itr)
+		for (std::deque<string>::iterator itr = stack.begin(); itr != stack.end(); ++itr)
 		{
 			result += *itr;
 			result.push_back('/');
@@ -449,8 +449,8 @@ namespace aio {namespace fs{
 
     bool is_normalized(const string& p)
 	{
-		aio::char_separator<char> sep('/');
-        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, const_range_string> tokenizer;
+		char_separator<char> sep('/');
+        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
 		tokenizer tokens(p, sep);
 
         
@@ -478,7 +478,7 @@ namespace aio {namespace fs{
         
     }
 
-    string to_aio_path(const string& p)
+    string to_xirang_path(const string& p)
     {
         return replace(p, '\\', '/');
     }
@@ -488,7 +488,7 @@ namespace aio {namespace fs{
         if (state(path).state == st_dir)
         {
             file_range rf = children(path);
-            aio::string pathprefix = append_tail_slash(path);
+            string pathprefix = append_tail_slash(path);
             for (file_range::iterator itr = rf.begin(); itr != rf.end(); ++itr){
                 recursive_remove(pathprefix << *itr);
             }
@@ -499,9 +499,9 @@ namespace aio {namespace fs{
 
     fs_error recursive_create_dir(const string& path)
     {
-        aio::char_separator<char> sep('/', 0, aio::keep_empty_tokens);
-        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, const_range_string> tokenizer;
-        aio::string normalized_path = normalize(path);
+        char_separator<char> sep('/', 0, keep_empty_tokens);
+        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
+        string normalized_path = normalize(path);
 		tokenizer tokens(normalized_path, sep);
 
         tokenizer::iterator itr = tokens.begin();
@@ -515,8 +515,8 @@ namespace aio {namespace fs{
 		for (; itr != tokens.end(); ++itr)
 		{
             mpath.append(*itr);
-            aio::string fpath(mpath);
-            aio::fs::file_state st = state(fpath).state;
+            string fpath(mpath);
+            fs::file_state st = state(fpath).state;
             if (st == st_not_found)
             {
                 fs_error err = create_dir(fpath);
@@ -579,7 +579,7 @@ namespace aio {namespace fs{
         if (pos != path.end()) 
             ++extStart;
 
-        aio::string ext = string(make_range(extStart, path.end()));
+        string ext = string(make_range(extStart, path.end()));
         if (file)
             *file = string (make_range(path.begin(), pos));
             

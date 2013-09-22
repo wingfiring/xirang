@@ -1,13 +1,13 @@
-#include <xirang/object.h>
-#include <xirang/itypebinder.h>
+#include <xirang/type/object.h>
+#include <xirang/type/itypebinder.h>
 #include "typeimp.h"
-#include <xirang/namespace.h>
-#include <xirang/xirang.h>
+#include <xirang/type/namespace.h>
+#include <xirang/type/xirang.h>
 #include "namespaceimp.h"
 #include "impaccessor.h"
 
-namespace xirang
-{
+namespace xirang{ namespace type{
+
         UninitObjectPtr::UninitObjectPtr(Type t, heap& al)
             : m_type(t), m_al(al), m_data(0), m_dtor_enabled(false)
         {
@@ -585,4 +585,5 @@ namespace xirang
         swap(m_ext_al, rhs.m_ext_al);
         swap(m_data, rhs.m_data);
     }
-}
+}}
+

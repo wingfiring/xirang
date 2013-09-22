@@ -6,54 +6,53 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include <sys/stat.h>
 
 BOOST_AUTO_TEST_SUITE(tempfile_suite)
-using namespace aio::fs;
-using namespace aio;
-using aio::byte;
+using namespace xirang::fs;
+using namespace xirang;
 
 BOOST_AUTO_TEST_CASE(tempfile_case)
 {
-    aio::string prefix("test");
-    aio::string test_name = fs::private_::gen_temp_name(prefix);
+    xirang::string prefix("test");
+    xirang::string test_name = fs::private_::gen_temp_name(prefix);
 
     BOOST_CHECK(prefix.size() < test_name.size());
     BOOST_CHECK(std::equal(prefix.begin(), prefix.end(), test_name.begin()));
 
-    aio::string tmppath;
+    xirang::string tmppath;
     {   
-        aio::io::file file = temp_file(prefix, aio::io::of_remove_on_close, &tmppath);
+        xirang::io::file file = temp_file(prefix, xirang::io::of_remove_on_close, &tmppath);
         BOOST_CHECK(!tmppath.empty());
-        BOOST_CHECK(state(tmppath).state == aio::fs::st_regular);
+        BOOST_CHECK(state(tmppath).state == xirang::fs::st_regular);
     }
-    BOOST_CHECK(state(tmppath).state == aio::fs::st_not_found);
+    BOOST_CHECK(state(tmppath).state == xirang::fs::st_not_found);
 
-    BOOST_CHECK_THROW(temp_file(literal("test"), literal("path/not/exist")),  aio::io::create_failed);
+    BOOST_CHECK_THROW(temp_file(literal("test"), literal("path/not/exist")),  xirang::io::create_failed);
 
-    BOOST_CHECK_THROW(temp_dir(literal("test"), literal("path/not/exist")),  aio::io::create_failed);
+    BOOST_CHECK_THROW(temp_dir(literal("test"), literal("path/not/exist")),  xirang::io::create_failed);
 
-    aio::string tmpfilepath2;
+    xirang::string tmpfilepath2;
     {
         tmppath  = temp_dir(prefix);
         BOOST_CHECK(!tmppath.empty());
         BOOST_CHECK_NO_THROW(temp_file(literal("test"), tmppath));
-        BOOST_CHECK(state(tmppath).state == aio::fs::st_dir);
+        BOOST_CHECK(state(tmppath).state == xirang::fs::st_dir);
 
         temp_file(literal("test"), tmppath, 0, &tmpfilepath2);
     }
-    BOOST_CHECK(state(tmpfilepath2).state == aio::fs::st_regular);
-    aio::fs::remove(tmpfilepath2);
-    BOOST_CHECK(state(tmpfilepath2).state == aio::fs::st_not_found);
+    BOOST_CHECK(state(tmpfilepath2).state == xirang::fs::st_regular);
+    xirang::fs::remove(tmpfilepath2);
+    BOOST_CHECK(state(tmpfilepath2).state == xirang::fs::st_not_found);
 
-    aio::fs::remove(tmppath);
-    BOOST_CHECK(state(tmppath).state == aio::fs::st_not_found);
+    xirang::fs::remove(tmppath);
+    BOOST_CHECK(state(tmppath).state == xirang::fs::st_not_found);
 
 }
 
 BOOST_AUTO_TEST_CASE(recursive_create_dir_case)
 {
-    aio::string tmpdir  = temp_dir(literal("tmp"));
-    BOOST_CHECK(recursive_create_dir(tmpdir << literal("/a/b/c")) == aio::fs::er_ok);
+    xirang::string tmpdir  = temp_dir(literal("tmp"));
+    BOOST_CHECK(recursive_create_dir(tmpdir << literal("/a/b/c")) == xirang::fs::er_ok);
 
-    BOOST_CHECK_NO_THROW(recursive_create(tmpdir << literal("/x/y/z"), aio::io::of_create));
+    BOOST_CHECK_NO_THROW(recursive_create(tmpdir << literal("/x/y/z"), xirang::io::of_create));
     recursive_remove(tmpdir);
 }
 
@@ -102,8 +101,8 @@ BOOST_AUTO_TEST_CASE(to_aio_native_path_case)
 
 BOOST_AUTO_TEST_CASE(dir_filename_case)
 {   
-    aio::string file;
-    aio::string dir = dir_filename(literal("a/b/d"), &file);
+    xirang::string file;
+    xirang::string dir = dir_filename(literal("a/b/d"), &file);
     BOOST_CHECK(dir == literal("a/b"));
     BOOST_CHECK(file == literal("d"));
 
@@ -120,8 +119,8 @@ BOOST_AUTO_TEST_CASE(dir_filename_case)
 }
 BOOST_AUTO_TEST_CASE(ext_filename_case)
 {   
-    aio::string file;
-    aio::string ext = ext_filename(literal("a.b"), &file);
+    xirang::string file;
+    xirang::string ext = ext_filename(literal("a.b"), &file);
     BOOST_CHECK(ext == literal("b"));
     BOOST_CHECK(file == literal("a"));
 
@@ -143,18 +142,18 @@ BOOST_AUTO_TEST_CASE(ext_filename_case)
 }
 BOOST_AUTO_TEST_CASE(recreate_file_case)
 {
-    aio::string tmppath;
+    xirang::string tmppath;
 	{
-		aio::io::file file = temp_file(literal("test"), 0, &tmppath);
-		aio::buffer<aio::byte> data;
+		xirang::io::file file = temp_file(literal("test"), 0, &tmppath);
+		xirang::buffer<xirang::byte> data;
 		data.resize(100);
 		BOOST_CHECK(file.write(to_range(data)).empty());
 
-		BOOST_CHECK_NO_THROW(aio::io::file_reader((aio::string&)tmppath));
+		BOOST_CHECK_NO_THROW(xirang::io::file_reader((xirang::string&)tmppath));
 
-		BOOST_CHECK_NO_THROW(aio::io::file(tmppath, aio::io::of_open));
+		BOOST_CHECK_NO_THROW(xirang::io::file(tmppath, xirang::io::of_open));
 	}
-	aio::fs::remove(tmppath);
+	xirang::fs::remove(tmppath);
 }
 BOOST_AUTO_TEST_SUITE_END()
 

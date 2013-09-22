@@ -9,7 +9,7 @@
 #include <xirang/range.h>
 #include <xirang/buffer.h>
 
-#include <xirang/impl/shared_data.h>
+#include <xirang/string/shared_data.h>
 #include <xirang/operators.h>
 
 //STL
@@ -152,6 +152,7 @@ namespace xirang
 					|| (!rhs.empty() && (basic_range_string<CharT>::compare(
 						lhs.data(), lhs.size(), rhs.data(), rhs.size()) < 0));
 		}
+
 		friend bool operator == (const basic_range_string<CharT>& lhs
 				, const basic_range_string<CharT>& rhs)
 		{
@@ -544,9 +545,6 @@ namespace xirang
 
 	typedef basic_string<char> string;
 	typedef basic_string<wchar_t> wstring;
-
-    extern const string empty_str;
-    extern const wstring wempty_str;
 
 	template<typename CharT>
 	std::basic_ostream<CharT >& operator<<(

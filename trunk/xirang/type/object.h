@@ -1,7 +1,7 @@
 #ifndef XIRANG_OBJECT_H
 #define XIRANG_OBJECT_H
 
-#include <xirang/type.h>
+#include <xirang/type/type.h>
 
 namespace xirang { namespace type{
 	class SubObjIterator;

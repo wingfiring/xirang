@@ -7,7 +7,7 @@
 #include <xirang/buffer.h>
 #include <xirang/context_except.h>
 
-namespace xirang{ namespace type{
+namespace xirang{ 
   typedef ext_heap::handle handle;
 
   template<typename T>
@@ -19,7 +19,7 @@ namespace xirang{ namespace type{
 	  BiRangeT(const iterator& first, const iterator& last) : base(first, last){}
 
   };
-}}
+}
 
 #endif //end XIRANG_XRBASE_H
 

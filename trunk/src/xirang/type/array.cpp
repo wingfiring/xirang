@@ -1,11 +1,10 @@
-#include <xirang/array.h>
-#include <xirang/typebinder.h>
+#include <xirang/type/array.h>
+#include <xirang/type/typebinder.h>
 
 #include <xirang/buffer.h>
 #include <stdint.h>
 
-namespace xirang
-{
+namespace xirang { namespace type{
 	class ArrayImp
 	{
 	public:
@@ -15,7 +14,7 @@ namespace xirang
 			AIO_PRE_CONDITION(t.valid());
 		}
 		Type type;
-		aio::buffer<byte> data;
+		buffer<byte> data;
 		ext_heap* eheap;
 	};
 
@@ -61,7 +60,7 @@ namespace xirang
 		if (m_imp)
 		{
 			clear();
-			aio::check_delete(m_imp);
+			check_delete(m_imp);
 		}
 	}
 
@@ -345,5 +344,5 @@ namespace xirang
 		return uncheckBind<Array>(lhs).compare(uncheckBind<Array>(rhs));
 	}
 
-}
+}}
 

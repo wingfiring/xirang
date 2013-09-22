@@ -10,7 +10,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 
 BOOST_AUTO_TEST_SUITE(iterator_suite)
 
-using namespace aio;
+using namespace xirang;
 BOOST_AUTO_TEST_CASE(test_output)
 {
 	typedef output_iterator< default_itr_traits<int>> itr_type;

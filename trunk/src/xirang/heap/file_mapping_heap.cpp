@@ -1,4 +1,4 @@
-#include <aio/utility/ext1/file_mapping_heap.h>
+#include <xirang/heap/file_mapping_heap.h>
 #include <xirang/backward/atomic.h>
 #include <xirang/memory.h>
 #include <xirang/io/memory.h>
@@ -32,7 +32,7 @@
 
 const uint32_t sig_ext_heap = 0x48545845; //"EXTH"
 
-namespace aio
+namespace xirang
 {
 	using std::memcpy;
 

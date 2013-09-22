@@ -9,7 +9,7 @@
 #include <string>
 #include <sstream>
 
-namespace aio
+namespace xirang
 {		
 	namespace
 	{
@@ -25,9 +25,9 @@ namespace aio
 		/* ensure precondition <= cat <= invariant */
 		contract_category ensure_valid_contract_category(contract_category cat)
 		{
-			return cat > aio::contract_category::invariant 
-				? aio::contract_category::invariant 
-				: (cat < aio::contract_category::pre? aio::contract_category::pre: cat);
+			return cat > contract_category::invariant 
+				? contract_category::invariant 
+				: (cat < contract_category::pre? contract_category::pre: cat);
 		}
 	}
 
@@ -102,13 +102,13 @@ namespace aio
 
 		switch(type)
 		{
-			case aio::contract_category::pre:
+			case contract_category::pre:
 				AIO_THROW(pre_exception)(sstr.str().c_str());
 				break;
-			case aio::contract_category::post:
+			case contract_category::post:
 				AIO_THROW(post_exception)(sstr.str().c_str());
 				break;
-			case aio::contract_category::invariant:
+			case contract_category::invariant:
 				AIO_THROW(invariant_exception)(sstr.str().c_str());
 				break;
 		}

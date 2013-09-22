@@ -1,6 +1,6 @@
 #include <xirang/vfs/subvfs.h>
 
-namespace xirang{ namespace fs{
+namespace xirang{ namespace vfs{
 
 	SubVfs::SubVfs(IVfs& parent_, const string& dir)
 		: m_root(0), parent(parent_), m_resource(dir.empty()? dir : append_tail_slash(dir))
@@ -29,7 +29,7 @@ namespace xirang{ namespace fs{
 		return parent.copy(from, m_resource << to);
 	}
 
-	fs_error SubVfs::truncate(const string& path, aio::long_size_t s) {
+	fs_error SubVfs::truncate(const string& path, long_size_t s) {
 		AIO_PRE_CONDITION(!is_absolute(path));
         return parent.truncate(m_resource << path, s);
 	}
@@ -49,7 +49,7 @@ namespace xirang{ namespace fs{
     }
 
 	// \return mounted() ? absolute() : empty() 
-    string SubVfs::mountPoint() const { return m_root ? m_root->mountPoint(*this) : aio::empty_str;}
+    string SubVfs::mountPoint() const { return m_root ? m_root->mountPoint(*this) : string();}
 
 	// \pre !absolute(path)
 	VfsNodeRange SubVfs::children(const string& path) const{
@@ -68,7 +68,7 @@ namespace xirang{ namespace fs{
         m_root = r;
 	}
 	void** SubVfs::do_create(unsigned long long mask,
-			void* ret, aio::unique_ptr<void>& owner, const string& path, int flag){
+			void* ret, unique_ptr<void>& owner, const string& path, int flag){
         AIO_PRE_CONDITION(!is_absolute(path));
         return parent.do_create(mask, ret, owner, m_resource << path,  flag);
 	}

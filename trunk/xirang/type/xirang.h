@@ -1,10 +1,10 @@
 #ifndef XIRANG_XIRANG_H
 #define XIRANG_XIRANG_H
 
-#include <xirang/xrfwd.h>
-#include <xirang/type.h>
-#include <xirang/namespace.h>
-#include <xirang/typealias.h>
+#include <xirang/type/xrfwd.h>
+#include <xirang/type/type.h>
+#include <xirang/type/namespace.h>
+#include <xirang/type/typealias.h>
 
 namespace xirang{ namespace type{
 	class XirangImp;

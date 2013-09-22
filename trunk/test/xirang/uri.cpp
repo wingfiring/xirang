@@ -11,7 +11,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include <vector>
 
 BOOST_AUTO_TEST_SUITE(uri_suite)
-using namespace aio;
+using namespace xirang;
 
 BOOST_AUTO_TEST_CASE(uri_case)
 {

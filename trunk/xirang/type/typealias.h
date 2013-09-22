@@ -1,8 +1,8 @@
 #ifndef XIRANG_TYPE_ALIAS_H
 #define XIRANG_TYPE_ALIAS_H
 
-#include <xirang/xrfwd.h>
-#include <xirang/type.h>
+#include <xirang/type/xrfwd.h>
+#include <xirang/type/type.h>
 
 namespace xirang { namespace type{
 	class TypeAliasImp;

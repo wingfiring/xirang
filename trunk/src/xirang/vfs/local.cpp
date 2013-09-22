@@ -1,5 +1,5 @@
 #include <xirang/vfs/local.h>
-#include <xirang/xrbase.h>
+#include <xirang/type/xrbase.h>
 #include <xirang/io/file.h>
 #include <xirang/string_algo/utf8.h>
 
@@ -15,7 +15,7 @@
 #include <direct.h>
 #endif
 
-namespace xirang{ namespace fs{
+namespace xirang{ namespace vfs{
 	class LocalFileIterator
 	{
 	public:
@@ -74,48 +74,48 @@ namespace xirang{ namespace fs{
 	// \pre !absolute(path)
 	fs_error LocalFs::remove(const string& path) { 
         fs_error ret = remove_check(*this, path);
-        if (ret != aiofs::er_ok)
+        if (ret != fs::er_ok)
             return ret;
         if (path.empty())
-            return aio::fs::er_invalid;
-        return aio::fs::remove(m_resource << path);
+            return fs::er_invalid;
+        return fs::remove(m_resource << path);
 	}
 
 	// dir operations
 	// \pre !absolute(path)
 	fs_error LocalFs::createDir(const  string& path){
         if (path.empty())
-            return aio::fs::er_invalid;
-		return aio::fs::create_dir(m_resource << path);
+            return fs::er_invalid;
+		return fs::create_dir(m_resource << path);
 	}
 
-	aio::io::file LocalFs::open_create(const string& path, int flag) {
+	io::file LocalFs::open_create(const string& path, int flag) {
         AIO_PRE_CONDITION(!is_absolute(path));
         string real_path = m_resource << path;
-        return aio::io::file(real_path, flag);
+        return io::file(real_path, flag);
 
 	}
-	aio::io::file_reader LocalFs::open(const string& path){
+	io::file_reader LocalFs::open(const string& path){
         AIO_PRE_CONDITION(!is_absolute(path));
         string real_path = m_resource << path;
-        return aio::io::file_reader(real_path);
+        return io::file_reader(real_path);
 	}
 	void** LocalFs::do_create(unsigned long long mask,
-			void** base, aio::unique_ptr<void>& owner, const string& path, int flag){
-		using namespace aio::io;
+			void** base, unique_ptr<void>& owner, const string& path, int flag){
+		using namespace io;
 
 		void** ret = 0;
-		if (mask & io::get_mask<aio::io::writer, aio::io::write_view>::value ){ //write open
-			aio::unique_ptr<aio::io::file> ar(new aio::io::file(aio::get_cobj<LocalFs>(this).open_create(path, flag)));
-			aio::iref<reader, writer, aio::io::random, ioctrl, read_map, write_map> ifile(*ar);
-			ret = copy_interface<reader, writer, aio::io::random, ioctrl, read_map, write_map >::apply(mask, base, ifile, (void*)ar.get()); 
-			aio::unique_ptr<void>(std::move(ar)).swap(owner);
+		if (mask & detail::get_mask<io::writer, io::write_view>::value ){ //write open
+			unique_ptr<io::file> ar(new io::file(get_cobj<LocalFs>(this).open_create(path, flag)));
+			iref<reader, writer, io::random, ioctrl, read_map, write_map> ifile(*ar);
+			ret = copy_interface<reader, writer, io::random, ioctrl, read_map, write_map >::apply(mask, base, ifile, (void*)ar.get()); 
+			unique_ptr<void>(std::move(ar)).swap(owner);
 		}
 		else{ //read open
-			aio::unique_ptr<aio::io::file_reader> ar(new aio::io::file_reader(aio::get_cobj<LocalFs>(this).open(path)));
-			aio::iref<reader, aio::io::random, read_map> ifile(*ar);
-			ret = copy_interface<reader, aio::io::random, read_map>::apply(mask, base, ifile, (void*)ar.get()); 
-			aio::unique_ptr<void>(std::move(ar)).swap(owner);
+			unique_ptr<io::file_reader> ar(new io::file_reader(get_cobj<LocalFs>(this).open(path)));
+			iref<reader, io::random, read_map> ifile(*ar);
+			ret = copy_interface<reader, io::random, read_map>::apply(mask, base, ifile, (void*)ar.get()); 
+			unique_ptr<void>(std::move(ar)).swap(owner);
 		}
 		return ret;
 	}
@@ -132,13 +132,13 @@ namespace xirang{ namespace fs{
         }
 
         VfsNode to_node = { to, this};
-        return xirang::fs::copyFile(from_node, to_node);
+        return xirang::vfs::copyFile(from_node, to_node);
 	}
 
-	fs_error LocalFs::truncate(const string& path, aio::long_size_t s) {
+	fs_error LocalFs::truncate(const string& path, long_size_t s) {
 		AIO_PRE_CONDITION(!is_absolute(path));
 			string real_path = m_resource << path;
-            return aio::fs::truncate(m_resource << path, s);
+            return fs::truncate(m_resource << path, s);
 	}
 
 	void LocalFs::sync() { 
@@ -160,12 +160,12 @@ namespace xirang{ namespace fs{
     }
 
 	// \return mounted() ? absolute() : empty() 
-	string LocalFs::mountPoint() const { return m_root ? m_root->mountPoint(*this) : aio::empty_str;}
+	string LocalFs::mountPoint() const { return m_root ? m_root->mountPoint(*this) : string();}
 
 	// \pre !absolute(path)
 	VfsNodeRange LocalFs::children(const string& path) const{
         VfsState st = state(path);
-        if (st.state == aiofs::st_dir)
+        if (st.state == fs::st_dir)
         {
             string real_path = m_resource << path;
             return VfsNodeRange(
@@ -182,7 +182,7 @@ namespace xirang{ namespace fs{
 
         string real_path = m_resource << path;
 
-        aio::fs::fstate st = aio::fs::state(real_path);
+        fs::fstate st = fs::state(real_path);
         VfsState fst =
         {
             { path, const_cast<LocalFs*>(this)},

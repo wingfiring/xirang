@@ -10,8 +10,8 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 
 
 BOOST_AUTO_TEST_SUITE(archive_adaptor_suite)
-using namespace aio;
-using namespace aio::io;
+using namespace xirang;
+using namespace xirang::io;
 BOOST_AUTO_TEST_CASE(deflate_case)
 {
 	std::mt19937 engin;

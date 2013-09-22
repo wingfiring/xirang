@@ -7,7 +7,7 @@
 #include <deque>
 #include <xirang/string_algo/char_separator.h>
 
-namespace xirang{ namespace fs{
+namespace xirang{ namespace vfs{
 	IVfs::~IVfs(){}
 
     any IVfs::getopt(int /*id*/, const any & /*optdata = any() */) const 
@@ -77,27 +77,27 @@ namespace xirang{ namespace fs{
 
 			VfsState st = locate(pw);
 
-			if (st.state == aiofs::st_dir || (pw == aio::literal("/") && m_mount_map.empty()) )
+			if (st.state == fs::st_dir || (pw == literal("/") && m_mount_map.empty()) )
 			{
 				m_mount_map.insert(mount_value(pw, &vfs));
 				vfs.setRoot(m_host);
-				return aiofs::er_ok;
+				return fs::er_ok;
 			}
 			
-			return aiofs::er_not_a_mount_point;
+			return fs::er_not_a_mount_point;
 		}
 
 		fs_error unmount(const string& dir)
 		{
 			string pw = append_tail_slash(dir);
 			if (containMountPoint(pw))
-				return aiofs::er_busy_mounted;
+				return fs::er_busy_mounted;
 
 			mount_map::left_iterator pos = m_mount_map.left.find(pw);
 			AIO_PRE_CONDITION(pos != m_mount_map.left.end());
             pos->second->setRoot(0);
 			m_mount_map.left.erase(pos);
-			return aiofs::er_ok;
+			return fs::er_ok;
 		}
 
 		void sync()
@@ -123,7 +123,7 @@ namespace xirang{ namespace fs{
 			IVfs* fs = const_cast<IVfs*>(&p);
 			mount_map::right_const_iterator pos = m_mount_map.right.find(fs);
 			return pos == m_mount_map.right.end()
-                ? aio::empty_str
+                ? string()
 				: pos->second;
 		}
 		IVfs* mountPoint(const string& p) const
@@ -172,8 +172,8 @@ namespace xirang{ namespace fs{
 					&& pw == pos->first)
 			{
 				VfsState st = {
-					{aio::const_range_string(pw.begin() + pos->first.size(), pw.end()), pos->second},
-					aiofs::st_mount_point,
+					{const_range_string(pw.begin() + pos->first.size(), pw.end()), pos->second},
+					fs::st_mount_point,
 					0
 				};
 				return st;
@@ -187,7 +187,7 @@ namespace xirang{ namespace fs{
 				if (pw.size() >= pos->first.size()
 					&& std::equal(pos->first.begin(), pos->first.end(), pw.begin()) )
 				{
-					return pos->second->state(aio::const_range_string(path.begin() + pos->first.size(), path.end()));
+					return pos->second->state(const_range_string(path.begin() + pos->first.size(), path.end()));
 				}
 			} 
 
@@ -207,7 +207,7 @@ namespace xirang{ namespace fs{
 
 	RootFs::~RootFs()
 	{
-		aio::check_delete(m_imp);
+		check_delete(m_imp);
 	}
 
 	// \pre dir must be absolute name
@@ -261,29 +261,29 @@ namespace xirang{ namespace fs{
 		return !p.empty() && p[0] == '/';
 	}
 
-    string temp_dir(IVfs& vfs, aio::const_range_string template_, aio::const_range_string parent_dir)
+    string temp_dir(IVfs& vfs, const_range_string template_, const_range_string parent_dir)
     {
-        if (vfs.state(parent_dir).state != aio::fs::st_dir)
-            AIO_THROW(aio::io::create_failed)("failed to locate the temp directory:")(parent_dir);
+        if (vfs.state(parent_dir).state != fs::st_dir)
+            AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir);
 
         string prefix =  parent_dir.empty() ? string(template_) : append_tail_slash(parent_dir) << template_;
 
         const int max_try = 100;
         for(int i = 0; i < max_try ; ++i)
         {
-            string file_path = aio::fs::private_::gen_temp_name(prefix);
-            if (vfs.createDir(file_path) == aio::fs::er_ok)
+            string file_path = fs::private_::gen_temp_name(prefix);
+            if (vfs.createDir(file_path) == fs::er_ok)
                 return file_path;
         }
 
-        AIO_THROW(aio::io::create_failed)("failed to create temp file in directory:")(parent_dir);
+        AIO_THROW(io::create_failed)("failed to create temp file in directory:")(parent_dir);
     }
     fs_error recursive_remove(IVfs&vfs, const string& path)
     {
-        if (vfs.state(path).state == aio::fs::st_dir)
+        if (vfs.state(path).state == fs::st_dir)
         {
             VfsNodeRange rf = vfs.children(path);
-            aio::string pathprefix = append_tail_slash(path);
+            string pathprefix = append_tail_slash(path);
             std::vector<VfsNode> files;
 
             for (VfsNodeRange::iterator itr = rf.begin(); itr != rf.end(); ++itr){
@@ -291,9 +291,9 @@ namespace xirang{ namespace fs{
             }
             for (std::vector<VfsNode>::iterator itr = files.begin(); itr != files.end(); ++itr)
             {
-                aio::string newpath = pathprefix << (*itr).path;
+                string newpath = pathprefix << (*itr).path;
                 fs_error ret = recursive_remove(*itr->owner_fs, newpath);
-                if (ret != aio::fs::er_ok)
+                if (ret != fs::er_ok)
                     return ret;
             }
         }
@@ -302,38 +302,38 @@ namespace xirang{ namespace fs{
     }
     fs_error recursive_create_dir(IVfs&vfs, const string& path)
     {
-        aio::char_separator<char> sep('/');
-        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
+        char_separator<char> sep('/');
+        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
 
-        aio::string sp(normalize(path));
+        string sp(normalize(path));
 		tokenizer tokens(sp, sep);
 
         tokenizer::iterator itr = tokens.begin();
         string mpath;
         if (itr != tokens.end() && itr->empty())
         {
-            mpath = aio::literal("/");
+            mpath = literal("/");
             ++itr;
         }
 
 		for (; itr != tokens.end(); ++itr)
 		{
             mpath = mpath << *itr ;
-            aio::fs::file_state st = vfs.state(mpath).state;
-            if (st == aio::fs::st_not_found)
+            fs::file_state st = vfs.state(mpath).state;
+            if (st == fs::st_not_found)
             {
-                aio::fs::fs_error err = vfs.createDir(mpath);
-                if (err != aio::fs::er_ok)
+                fs::fs_error err = vfs.createDir(mpath);
+                if (err != fs::er_ok)
                     return err;
             }
-            else if (st != aio::fs::st_dir)
+            else if (st != fs::st_dir)
             {
-                return aio::fs::er_invalid;
+                return fs::er_invalid;
             }
 
-            mpath = mpath << aio::literal("/");
+            mpath = mpath << literal("/");
 		}
-		return aio::fs::er_ok;
+		return fs::er_ok;
     }
 
 }	//fs

@@ -8,7 +8,7 @@
 
 extern "C" _CRTIMP void __cdecl _wassert(__in_z const wchar_t * _Message, __in_z const wchar_t *_File, __in unsigned _Line);
 
-namespace aio{ 
+namespace xirang{ 
 
 //the declaration is in <xirang/assert.h>
 void wassert(const wchar_t* expr, const wchar_t* sourcefile, 

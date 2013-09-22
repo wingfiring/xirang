@@ -11,7 +11,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include "iarchive.h"
 
 BOOST_AUTO_TEST_SUITE(archive_suite)
-using namespace aio;
+using namespace xirang;
 
 
 ArchiveTester& ArchiveTester::check_reader(iref<io::reader> ar)
@@ -20,7 +20,7 @@ ArchiveTester& ArchiveTester::check_reader(iref<io::reader> ar)
 
 	BOOST_REQUIRE(rd->readable());
 
-	buffer<aio::byte> buf;
+	buffer<xirang::byte> buf;
 	buf.resize(128);
 	auto reset = block_read(*rd, to_range(buf));
 	BOOST_CHECK( reset.empty() || !rd->readable());
@@ -34,7 +34,7 @@ ArchiveTester& ArchiveTester::check_reader_random(iref<io::reader, io::random> a
 
 	BOOST_REQUIRE(rd->readable());
 
-	buffer<aio::byte> buf;
+	buffer<xirang::byte> buf;
 	buf.resize(128);
 	auto reset = block_read(*rd, to_range(buf));
 	BOOST_CHECK( reset.empty() || !rd->readable());
@@ -71,7 +71,7 @@ ArchiveTester& ArchiveTester::check_writer(iref<io::writer> ar)
 	io::writer* wr = &ar.get<io::writer>();
 	BOOST_REQUIRE(wr->writable());
 
-	buffer<aio::byte> buf(128, aio::byte('X'));
+	buffer<xirang::byte> buf(128, xirang::byte('X'));
 
 	auto reset = block_write(*wr, to_range(buf));
 	BOOST_CHECK(reset.empty());
@@ -85,7 +85,7 @@ ArchiveTester& ArchiveTester::check_writer_random(iref<io::writer, io::random> a
 	io::writer* wr = &ar.get<io::writer>();
 	BOOST_REQUIRE(wr->writable());
 
-	buffer<aio::byte> buf(128, aio::byte('X'));
+	buffer<xirang::byte> buf(128, xirang::byte('X'));
 
 	auto reset = block_write(*wr, to_range(buf));
 	BOOST_CHECK(reset.empty());
@@ -107,7 +107,7 @@ ArchiveTester& ArchiveTester::check_writer_random(iref<io::writer, io::random> a
 		BOOST_CHECK(wr->writable());
 		BOOST_CHECK(rnd->offset() == buf.size());
 
-		buffer<aio::byte>::size_type old_size = rnd->size();
+		buffer<xirang::byte>::size_type old_size = rnd->size();
 
 		rnd->seek(rnd->size() - buf.size() + 1);
 
@@ -134,15 +134,15 @@ ArchiveTester& ArchiveTester::check_forward(iref<io::forward> ar)
 
 	check_sequence(ar);
 
-	aio::long_size_t size = fwd->size();
+	xirang::long_size_t size = fwd->size();
 
-	aio::long_size_t off = fwd->offset();
+	xirang::long_size_t off = fwd->offset();
 
-	aio::long_size_t step = (fwd->size() - fwd->offset()) / 2;
+	xirang::long_size_t step = (fwd->size() - fwd->offset()) / 2;
 
 	step = std::min<long_size_t>(step, 128);
 
-	aio::long_size_t new_off = fwd->seek(off + step);
+	xirang::long_size_t new_off = fwd->seek(off + step);
 	BOOST_CHECK(new_off == fwd->offset());
 	BOOST_CHECK(new_off == off + step);
 
@@ -166,7 +166,7 @@ ArchiveTester& ArchiveTester::check_random(iref<io::random> ar)
 	io::random* rnd = &ar.get<io::random>();
 	check_forward(ar);
 
-	aio::long_size_t off = rnd->offset();
+	xirang::long_size_t off = rnd->offset();
 	BOOST_REQUIRE(off > 1);
 	BOOST_REQUIRE(off > 1);
 	rnd->seek(off - 1);	//seek back
@@ -174,7 +174,7 @@ ArchiveTester& ArchiveTester::check_random(iref<io::random> ar)
 	rnd->seek(off);	//seek forward
 	BOOST_CHECK(rnd->offset() == off);
 
-	aio::long_size_t size = rnd->size(); //random pos
+	xirang::long_size_t size = rnd->size(); //random pos
 	BOOST_CHECK(size / 2 == rnd->seek(size / 2));
 	BOOST_CHECK(rnd->offset() == size / 2);
 

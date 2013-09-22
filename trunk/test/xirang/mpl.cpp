@@ -20,7 +20,7 @@ struct Less{
 
 BOOST_AUTO_TEST_CASE(mpl_case)
 {
-	using namespace aio::mpl;
+	using namespace xirang::mpl;
 	using std::cout;
 	using std::endl;
 	

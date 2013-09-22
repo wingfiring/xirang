@@ -1,15 +1,14 @@
-#include <xirang/type.h>
+#include <xirang/type/type.h>
 #include "typeimp.h"
 #include "namespaceimp.h"
-#include <xirang/typebinder.h>
-#include <xirang/namespace.h>
+#include <xirang/type/typebinder.h>
+#include <xirang/type/namespace.h>
 
 #include "impaccessor.h"
 #include <boost/tokenizer.hpp>
 #include <xirang/string_algo/char_separator.h>
 
-namespace xirang
-{
+namespace xirang{ namespace type{
 
 	TypeItem::TypeItem (TypeItemImp * p):m_imp (p) { }
     TypeItem::TypeItem (TypeItemImp & p):m_imp (&p) { }
@@ -147,7 +146,7 @@ namespace xirang
 		}
 		sz += parents.size();
 
-		aio::string_builder name;
+		string_builder name;
 		name.reserve(sz + m_imp->name.size());
 		for (std::vector < NamespaceImp * >::reverse_iterator itr(parents.rbegin()),
 				end (parents.rend()); itr != end; ++itr)
@@ -327,8 +326,8 @@ namespace xirang
         if (!n.empty() && n[0] == dim)
             return parent().valid() ? parent().locateType(n, dim) : Type();
 
-        aio::char_separator<char> sep(dim, 0, aio::keep_empty_tokens);
-        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
+        char_separator<char> sep(dim, 0, keep_empty_tokens);
+        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
         tokenizer tokens(n, sep);
 
         tokenizer::iterator itr = tokens.begin();
@@ -371,7 +370,7 @@ namespace xirang
 	TypeBuilder::~TypeBuilder()
 	{
 		if (m_imp)
-			aio::check_delete(m_imp);
+			check_delete(m_imp);
 	}
 
 	TypeBuilder& TypeBuilder::name(const string& name)
@@ -504,7 +503,7 @@ namespace xirang
         tmp->methods = methods == 0? &DefaultMethods() : methods;
 
 		if (m_imp)
-			aio::check_delete(m_imp);
+			check_delete(m_imp);
 		m_imp = tmp;
         
         tmp->methods->beginLayout(m_imp->payload, m_offset, m_imp->alignment, m_imp->isPod);
@@ -519,7 +518,7 @@ namespace xirang
         AIO_PRE_CONDITION(!ns.findType(m_imp->name).valid());
         AIO_PRE_CONDITION(m_stage == st_end);
 
-        aio::unique_ptr<TypeImp> tmp (new TypeImp);
+        unique_ptr<TypeImp> tmp (new TypeImp);
         Type current = get();
 
         ImpAccessor<NamespaceImp>::getImp(ns)->types.insert(std::make_pair(m_imp->name, m_imp));
@@ -546,7 +545,7 @@ namespace xirang
         AIO_PRE_CONDITION(m_imp->parent);
         AIO_PRE_CONDITION(m_stage == st_end);
 
-        aio::unique_ptr<TypeImp> tmp (new TypeImp);
+        unique_ptr<TypeImp> tmp (new TypeImp);
         Type current = get();
 
         ImpAccessor<NamespaceImp>::getImp(ns)->types.insert(std::make_pair(m_imp->name, m_imp));
@@ -570,6 +569,6 @@ namespace xirang
     {
         return this->m_stage;
     }
-}
+}}
 
 

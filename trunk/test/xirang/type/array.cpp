@@ -1,20 +1,21 @@
-#include "precompile.h"
-#include <xirang/xirang.h>
-#include <xirang/object.h>
-#include <xirang/typebinder.h>
-#include <xirang/binder.h>
-#include <xirang/array.h>
+#include "../precompile.h"
+#include <xirang/type/xirang.h>
+#include <xirang/type/object.h>
+#include <xirang/type/typebinder.h>
+#include <xirang/type/binder.h>
+#include <xirang/type/array.h>
 
 #include <vector>
 #include <iostream>
 #include <stdint.h>
 using namespace xirang;
+using namespace xirang::type;
 
 BOOST_AUTO_TEST_SUITE(xirang_array_suites)
 
 BOOST_AUTO_TEST_CASE(array_case)
 {
-    Xirang xi("object_case", aio::memory::get_global_heap(), aio::memory::get_global_ext_heap());
+    Xirang xi("object_case", xirang::memory::get_global_heap(), xirang::memory::get_global_ext_heap());
 
     SetupXirang(xi);
     Type int_type = xi.root().findType("int");
@@ -108,7 +109,7 @@ BOOST_AUTO_TEST_CASE(array_case)
     Type string_type = xi.root().findType("string");
     Array arr3(xi.get_heap(), xi.get_ext_heap(), string_type);
 
-    aio::string str("42");
+    xirang::string str("42");
     CommonObject obj_str(string_type, &str);
     for (int i=0; i < 10; i++)
     {

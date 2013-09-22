@@ -1,8 +1,8 @@
 #ifndef AIO_COMMON_XIRANG_BINDER_H
 #define AIO_COMMON_XIRANG_BINDER_H
 
-#include <xirang/object.h>
-#include <xirang/itypebinder.h>
+#include <xirang/type/object.h>
+#include <xirang/type/itypebinder.h>
 
 #include <xirang/context_except.h>
 

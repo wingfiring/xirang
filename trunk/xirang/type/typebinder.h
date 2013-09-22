@@ -1,8 +1,8 @@
 #ifndef XIRANG_TYPE_BINDER_H
 #define XIRANG_TYPE_BINDER_H
 
-#include <xirang/itypebinder.h>
-#include <xirang/binder.h>
+#include <xirang/type/itypebinder.h>
+#include <xirang/type/binder.h>
 
 namespace xirang { namespace type{
 	template<typename T> struct assigner{

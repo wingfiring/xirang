@@ -1,9 +1,8 @@
-#include <xirang/ext_object.h>
-#include <xirang/binder.h>
+#include <xirang/type/ext_object.h>
+#include <xirang/type/binder.h>
 #include <xirang/backward/atomic.h>
 
-namespace xirang
-{
+namespace xirang { namespace type{
 	ExtObject::ExtObject()
 		: m_heap(0), m_ext_heap(0), m_data(0), m_counter(0)
 	{ 
@@ -196,7 +195,7 @@ namespace xirang
 		AIO_PRE_CONDITION(t.valid() && t.argCount() == 1);
 
 		TypeArg ta = t.arg(0);
-		AIO_PRE_CONDITION(ta.name() == aio::literal("value_type"));
+		AIO_PRE_CONDITION(ta.name() == literal("value_type"));
 
 		t = ta.type();
 		AIO_PRE_CONDITION(t.valid());
@@ -215,5 +214,5 @@ namespace xirang
 		};
 		return &methodsExt;
 	}
-}
+}}
 

@@ -1,13 +1,12 @@
 #include "typealiasimp.h"
-#include <xirang/typealias.h>
-#include <xirang/namespace.h>
+#include <xirang/type/typealias.h>
+#include <xirang/type/namespace.h>
 #include "namespaceimp.h"
 
 #include <memory>
 #include "impaccessor.h"
 
-namespace xirang
-{
+namespace xirang{ namespace type{
 	TypeAlias::TypeAlias(TypeAliasImp* imp )
 		: m_imp(imp)
 	{}
@@ -55,7 +54,7 @@ namespace xirang
 	TypeAliasBuilder::~TypeAliasBuilder()
 	{
 		if (m_imp)
-			aio::check_delete(m_imp);
+			check_delete(m_imp);
 	}
 	TypeAliasBuilder& TypeAliasBuilder::name(const string& alias)
 	{
@@ -79,7 +78,7 @@ namespace xirang
 		tmp->parent = 0;
 		tmp->type= 0;
 		if (m_imp)
-			aio::check_delete(m_imp);
+			check_delete(m_imp);
 		m_imp = tmp;
 
 		return *this;
@@ -94,7 +93,7 @@ namespace xirang
         AIO_PRE_CONDITION(!m_imp->name.empty());
         AIO_PRE_CONDITION(!ns.findAlias(m_imp->name).valid());
 
-        aio::unique_ptr<TypeAliasImp> tmp (new TypeAliasImp);
+        unique_ptr<TypeAliasImp> tmp (new TypeAliasImp);
         TypeAlias current = get();
 
         ImpAccessor<NamespaceImp>::getImp(ns)->alias.insert(std::make_pair(m_imp->name, m_imp));
@@ -119,7 +118,7 @@ namespace xirang
 
         AIO_PRE_CONDITION(!ns.findAlias(m_imp->name).valid());
 
-        aio::unique_ptr<TypeAliasImp> tmp (new TypeAliasImp);
+        unique_ptr<TypeAliasImp> tmp (new TypeAliasImp);
         TypeAlias current = get();
 
         ImpAccessor<NamespaceImp>::getImp(ns)->alias.insert(std::make_pair(m_imp->name, m_imp));
@@ -143,4 +142,5 @@ namespace xirang
     {
         return m_imp->typeName;
     }
-}
+}}
+

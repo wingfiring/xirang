@@ -15,7 +15,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 
 BOOST_AUTO_TEST_SUITE(assert_suite)
 
-using namespace aio;
+using namespace xirang;
 
 BOOST_AUTO_TEST_CASE(test_contract_tag)
 {

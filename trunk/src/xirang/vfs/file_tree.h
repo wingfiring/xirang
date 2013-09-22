@@ -9,12 +9,12 @@
 #include <algorithm>
 #include <unordered_map>
 
-namespace xirang{ namespace fs{ 
+namespace xirang{ namespace vfs{ 
 	AIO_EXCEPTION_TYPE(empty_local_file_name);
 	AIO_EXCEPTION_TYPE(not_all_parent_are_dir);
 }}
 
-namespace xirang{ namespace fs{ namespace private_{
+namespace xirang{ namespace vfs{ namespace private_{
 	
 	struct hash_string{
 		size_t operator()(const string& str) const{
@@ -34,7 +34,7 @@ namespace xirang{ namespace fs{ namespace private_{
 		T data;
 
 		file_node(node_type* parent_ = 0) :
-			type(aiofs::st_dir),
+			type(fs::st_dir),
 			parent(parent_),
 			data()
 		{}
@@ -42,14 +42,14 @@ namespace xirang{ namespace fs{ namespace private_{
 
 	template<typename T> struct locate_result{
 		file_node<T>* node;
-		aio::const_range_string not_found;
+		const_range_string not_found;
 	};
 
 	template <typename T>
-	locate_result<T> locate(file_node<T>& root, const aio::const_range_string& path) 
+	locate_result<T> locate(file_node<T>& root, const const_range_string& path) 
 	{
-        aio::char_separator<char> sep('/');
-        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
+        char_separator<char> sep('/');
+        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
         tokenizer tokens(path, sep);
 
 		file_node<T>* pos = &root;
@@ -67,7 +67,7 @@ namespace xirang{ namespace fs{ namespace private_{
 
 		typedef locate_result<T> return_type;
 		return return_type {
-			pos, aio::const_range_string(rest_first, path.end())
+			pos, const_range_string(rest_first, path.end())
 		};
 		//return ret;
 	}
@@ -76,8 +76,8 @@ namespace xirang{ namespace fs{ namespace private_{
 	template <typename T>
 	file_node<T>* locate_parent(file_node<T>& root, const string& path, string& base) 
 	{
-        aio::char_separator<char> sep('/');
-        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
+        char_separator<char> sep('/');
+        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
         tokenizer tokens(path, sep);
 
 
@@ -98,7 +98,7 @@ namespace xirang{ namespace fs{ namespace private_{
 			return pos->parent;
 		}
 
-		aio::string_builder sbbase;
+		string_builder sbbase;
 		for (; itr != tokens.end(); ++itr)
 		{
 			sbbase += *itr;
@@ -117,18 +117,18 @@ namespace xirang{ namespace fs{ namespace private_{
 	{
 		AIO_PRE_CONDITION(node);
         if (!node->children.empty())
-            return aiofs::er_not_empty;
+            return fs::er_not_empty;
 
 		node->parent->children.erase(node->name);
-		return aiofs::er_ok;
+		return fs::er_ok;
 	}
 
 	template<typename T> file_node<T>* create_node(file_node<T>& root, const string& path, file_state type, bool whole_path)
 	{
 		AIO_PRE_CONDITION(!path.empty());
 
-		aio::char_separator<char> sep('/');
-        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
+		char_separator<char> sep('/');
+        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
         tokenizer tokens(path, sep);
 
 		file_node<T>* pos = &root;
@@ -139,7 +139,7 @@ namespace xirang{ namespace fs{ namespace private_{
 		int create_times = 0;
 		for(;name_first != name_end; ++name_first)
 		{
-			if (pos->type != aiofs::st_dir)
+			if (pos->type != fs::st_dir)
 				AIO_THROW(not_all_parent_are_dir);
 
 			auto found = pos->children.find(*name_first);
@@ -157,7 +157,7 @@ namespace xirang{ namespace fs{ namespace private_{
 
 				std::unique_ptr<file_node<T> > fnode(new file_node<T>(pos));
 				fnode->name = *name_first;
-				fnode->type = aiofs::st_dir;
+				fnode->type = fs::st_dir;
 				auto& next = pos->children[*name_first];
 				next = std::move(fnode);
 				pos = next.get();
@@ -172,7 +172,7 @@ namespace xirang{ namespace fs{ namespace private_{
 	file_node<T>* create_node(const locate_result<T>& pos, file_state type){
 		AIO_PRE_CONDITION(pos.node);
 		AIO_PRE_CONDITION(!pos.not_found.empty());
-		AIO_PRE_CONDITION(!aio::contains(pos.not_found, '/'));
+		AIO_PRE_CONDITION(!contains(pos.not_found, '/'));
 		AIO_PRE_CONDITION(pos.node->children.count(pos.not_found) == 0);
 
 		std::unique_ptr<file_node<T> > fnode(new file_node<T>(pos.node));

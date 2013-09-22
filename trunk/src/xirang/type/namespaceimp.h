@@ -3,11 +3,10 @@
 
 #include "typeimp.h"
 #include "typealiasimp.h"
-#include <xirang/object.h>
+#include <xirang/type/object.h>
 #include <map>
 
-namespace xirang
-{
+namespace xirang{ namespace type{
 
 	class TypeImp;
 	class NamespaceImp
@@ -29,7 +28,7 @@ namespace xirang
 				for (ns_iterator itr(children.begin()),
 						end(children.end()); itr != end; ++itr)
 				{
-					aio::check_delete(itr->second);
+					check_delete(itr->second);
 				}
                 children.clear();
 
@@ -37,12 +36,12 @@ namespace xirang
 				for (std::map < string, TypeImp* >::iterator itr(types.begin()),
 						end(types.end()); itr != end; ++itr)
 				{
-					aio::check_delete(itr->second);
+					check_delete(itr->second);
 				}
 				types.clear();
 
                 for (std::map < string, TypeAliasImp * >::iterator itr = alias.begin(); itr != alias.end(); ++itr)
-                    aio::check_delete(itr->second);
+                    check_delete(itr->second);
 				alias.clear();
 
 				parent = 0;
@@ -131,6 +130,7 @@ namespace xirang
         mutable NameValuePair value;
 	};
 
-}
+}}
 
 #endif				//end XIRANG_DETAIL_NAMESPACE_IMP_H
+

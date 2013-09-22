@@ -3,12 +3,12 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 */
 
 #include "precompile.h"
-#include <aio/utility/ext1/file_mapping_heap.h>
+#include <xirang/heap/file_mapping_heap.h>
 #include <xirang/io/file.h>
 #include <xirang/fsutility.h>
 
 BOOST_AUTO_TEST_SUITE(suite_file_mapping_heap)
-using namespace aio;
+using namespace xirang;
 
 
 BOOST_AUTO_TEST_CASE(case_file_mapping_file)
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(case_file_mapping_file)
             eheap.track_unpin(p);
         }
     }
-    aio::fs::recursive_remove(temp_path);
+    xirang::fs::recursive_remove(temp_path);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

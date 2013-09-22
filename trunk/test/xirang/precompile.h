@@ -26,8 +26,8 @@ namespace
 	inline void disable_warning () // disable boost unused warning for gcc
 	{
 #if defined GNUC_COMPILER_	
-		aio::unused(boost::test_tools::check_is_close);
-		aio::unused(boost::test_tools::check_is_small);
+		xirang::unused(boost::test_tools::check_is_close);
+		xirang::unused(boost::test_tools::check_is_small);
 #endif
 
 	}

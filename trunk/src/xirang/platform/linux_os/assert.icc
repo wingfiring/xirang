@@ -22,7 +22,7 @@ void convert(const wchar_t* wstr, std::string& result)
 }
 
 }
-namespace aio{ 
+namespace xirang{ 
 
 //the declaration is in <xirang/assert.h>
 

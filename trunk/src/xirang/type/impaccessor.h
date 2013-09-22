@@ -1,8 +1,8 @@
 #ifndef XIRANG_SRC_XIRANG_IMP_ACCESSOR_H
 #define XIRANG_SRC_XIRANG_IMP_ACCESSOR_H
-#include <xirang/xrfwd.h>
+#include <xirang/type/xrfwd.h>
 
-namespace xirang{
+namespace xirang{ namespace type{
   template<typename Imp>
   class ImpAccessor
   {
@@ -11,5 +11,5 @@ namespace xirang{
       static Imp* const & getImp(const T& t) { return t.m_imp;}
   };
 
-}
+}}
 #endif

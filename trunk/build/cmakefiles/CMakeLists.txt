@@ -27,12 +27,6 @@ SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 ")
 FIND_PACKAGE(Boost COMPONENTS unit_test_framework filesystem system)
 
 
-#ADD_SUBDIRECTORY(common)
-#ADD_SUBDIRECTORY(common_test)
-
-#ADD_SUBDIRECTORY(utility1)
-#ADD_SUBDIRECTORY(utility1_test)
-
 ADD_SUBDIRECTORY(xirang)
 ADD_SUBDIRECTORY(xirang_test)
 

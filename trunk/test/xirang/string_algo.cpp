@@ -6,12 +6,12 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include <xirang/string_algo/string.h>
 
 BOOST_AUTO_TEST_SUITE(string_algo_suite)
-using namespace aio;
+using namespace xirang;
 
 BOOST_AUTO_TEST_CASE(replace_case)
 {
-    aio::string txt = literal("This is a test");
-    aio::string result = replace(txt, 'i', 'I');
+    xirang::string txt = literal("This is a test");
+    xirang::string result = replace(txt, 'i', 'I');
     BOOST_CHECK(result == literal("ThIs Is a test"));
 }
 

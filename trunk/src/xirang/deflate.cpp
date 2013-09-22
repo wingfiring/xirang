@@ -1,7 +1,7 @@
 #include <xirang/deflate.h>
 #include <zlib.h>
 
-namespace aio{ namespace zip{
+namespace xirang{ namespace zip{
 	namespace{
 		const size_t BufferSize = 64 * 1024;
 		const long_size_t ViewSize = 1024 * 1024;
@@ -11,7 +11,7 @@ namespace aio{ namespace zip{
 		return ::crc32(0L, Z_NULL, 0);
 	}
 	uint32_t crc32(io::reader& src, uint32_t crc /* = crc32_init()*/){
-		aio::buffer<byte> bin;
+		buffer<byte> bin;
 		bin.resize(BufferSize);
 		while (src.readable()){
 			auto rest = src.read(to_range(bin));
@@ -72,13 +72,13 @@ namespace aio{ namespace zip{
 				long_size_t in_bytes  = 0;
 				long_size_t out_bytes = 0;
 
-				aio::buffer<byte> bin, bout;
+				buffer<byte> bin, bout;
 				bin.resize(BufferSize);
 				bout.resize(BufferSize);
 
 				while (rd.readable()) { 
 					auto rest = rd.read(to_range(bin));
-					auto input = aio::make_range(bin.begin(), rest.begin());
+					auto input = make_range(bin.begin(), rest.begin());
 					if (input.empty()) 
 						return zip_result{ze_stream_error, in_bytes, out_bytes};
 
@@ -236,7 +236,7 @@ namespace aio{ namespace zip{
 			long_size_t in_bytes  = 0;
 			long_size_t out_bytes = 0;
 
-			aio::buffer<byte> bin, bout;
+			buffer<byte> bin, bout;
 			bin.resize(BufferSize);
 			bout.resize(BufferSize);
 
@@ -245,8 +245,8 @@ namespace aio{ namespace zip{
 				if (zstream.avail_out != bout.size())	//avaliable output
 				{
 					if (zstream.next_out != 0){
-						auto rest = block_write(wr, aio::make_range(bout.begin(), (byte*)zstream.next_out));
-						auto output = aio::make_range<io::writer::iterator>(bout.begin(), rest.begin());
+						auto rest = block_write(wr, make_range(bout.begin(), (byte*)zstream.next_out));
+						auto output = make_range<io::writer::iterator>(bout.begin(), rest.begin());
 						out_bytes += output.size();
 
 						if (!rest.empty())
@@ -284,7 +284,7 @@ namespace aio{ namespace zip{
 
 					if (ret == Z_STREAM_END)
                     {
-                        auto rest = block_write(wr, aio::make_range(bout.begin(), (byte*)zstream.next_out));
+                        auto rest = block_write(wr, make_range(bout.begin(), (byte*)zstream.next_out));
 						auto output = make_range<io::writer::iterator>(bout.begin(), rest.begin());
 						out_bytes += output.size();
 						return zip_result{rest.empty() ? ze_ok : ze_stream_error, in_bytes, out_bytes};                    

@@ -3,7 +3,7 @@
 
 #include <typeinfo>
 #include <new>
-namespace aio
+namespace xirang
 {
 	heap::~heap()
 	{}

@@ -4,11 +4,12 @@
 #include <xirang/io.h>
 #include <xirang/fsutility.h>
 #include <xirang/mpl.h>
+#include <xirang/type/xrbase.h>
 
 // STD
 #include <memory>
 
-namespace xirang { namespace vfs{ namespace io{
+namespace xirang { namespace vfs{ namespace detail{
 	template<typename T> struct interface_mask;
 
 	template<> struct interface_mask<io::sequence>{
@@ -62,7 +63,7 @@ namespace xirang { namespace vfs{ namespace io{
 		};
 
 		template<typename T, typename U> struct less_interface{
-			static const bool value = io::interface_mask<T>::value < io::interface_mask<U>::value;
+			static const bool value = detail::interface_mask<T>::value < detail::interface_mask<U>::value;
 		};
 
 		template<typename... Interfaces> struct sorted_iref{
@@ -94,7 +95,7 @@ namespace xirang { namespace vfs{ namespace io{
 			struct copy_interface_helper<mpl::seq<T, Interfaces...>> {
 			template<typename IRef>
 			static void** copy(unsigned long long mask, void** ret, const IRef& ref, void* this_){
-				if (mask & io::interface_mask<T>::value) {
+				if (mask & detail::interface_mask<T>::value) {
 					*ret++ = *(void**)&ref.template get<T>();
 					*ret++ = this_;
 				}
@@ -105,7 +106,7 @@ namespace xirang { namespace vfs{ namespace io{
 	template<typename... Interfaces> struct copy_interface{
 		template<typename CoClass> 
 			static void** apply(unsigned long long mask, void** ret, CoClass& ref, void* this_){
-				if((mask & io::get_mask<Interfaces...>::value) != mask)
+				if((mask & detail::get_mask<Interfaces...>::value) != mask)
 					AIO_THROW(unsupport_interface);
 
 				typedef typename private_::sorted_iref<Interfaces...>::sorted_seq seq;
@@ -122,7 +123,6 @@ namespace xirang { namespace vfs{ namespace io{
 
     using fs::fs_error;
     using fs::file_state;
-    using any;
 
 	struct VfsNode
 	{
@@ -179,7 +179,7 @@ namespace xirang { namespace vfs{ namespace io{
 
 		template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
 			create(const const_range_string& path, int flag){
-			return fs::create<Interfaces...>(*this, path, flag);
+			return xirang::vfs::create<Interfaces...>(*this, path, flag);
 		}
 
         /// copy file via file path
@@ -254,7 +254,7 @@ namespace xirang { namespace vfs{ namespace io{
 	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
 		create(IVfs& fs, const range_string& path, int flag){
 			typedef typename private_::sorted_iauto<Interfaces...>::type interface_type;
-			const auto mask = io::get_mask<Interfaces...>::value;
+			const auto mask = detail::get_mask<Interfaces...>::value;
 			interface_type ret;
 			target_holder<void>* holder = &ret;
 			void** last = fs.do_create(mask, (void**)(holder + 1), ret.target_ptr, path, flag);

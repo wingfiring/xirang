@@ -6,7 +6,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include <xirang/buffer.h>
 
 BOOST_AUTO_TEST_SUITE(buffer_suite)
-using namespace aio;
+using namespace xirang;
 
 BOOST_AUTO_TEST_CASE(buffer_case)
 {

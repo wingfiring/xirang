@@ -3,7 +3,7 @@
 #include <xirang/interface.h>
 
 BOOST_AUTO_TEST_SUITE(interface_suite)
-	using namespace aio;
+	using namespace xirang;
 
 struct Bar{ virtual void bar() = 0; };
 

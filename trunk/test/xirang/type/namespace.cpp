@@ -1,19 +1,20 @@
-#include "precompile.h"
-#include <xirang/xirang.h>
-#include <xirang/namespace.h>
-#include <xirang/typebinder.h>
-#include <xirang/binder.h>
-#include <xirang/object.h>
+#include "../precompile.h"
+#include <xirang/type/xirang.h>
+#include <xirang/type/namespace.h>
+#include <xirang/type/typebinder.h>
+#include <xirang/type/binder.h>
+#include <xirang/type/object.h>
 #include <vector>
 #include <iostream>
 #include <stdint.h>
 using namespace xirang;
+using namespace xirang::type;
 
 BOOST_AUTO_TEST_SUITE(namespace_suite)
 
 BOOST_AUTO_TEST_CASE(namespace_case)
 {
-	Xirang xi("test_namespace", aio::memory::get_global_heap(), aio::memory::get_global_ext_heap());
+	Xirang xi("test_namespace", xirang::memory::get_global_heap(), xirang::memory::get_global_ext_heap());
     BOOST_CHECK(xi.root().name().empty());
     BOOST_CHECK(xi.root().fullName('/') == string("/"));
 
@@ -37,7 +38,7 @@ BOOST_AUTO_TEST_CASE(namespace_case)
 
     Namespace user_include2 = user.locateNamespace("include", '.');
     BOOST_REQUIRE(user_include2 == user_include && "locate in current namespace");
-    BOOST_CHECK(user_include.fullName() == ".user.include");
+    BOOST_CHECK(user_include.fullName() == literal(".user.include"));
     BOOST_CHECK(user_include.empty());
     BOOST_CHECK(user_include.parent() == user);
     BOOST_CHECK(user_include != user);
@@ -102,7 +103,7 @@ BOOST_AUTO_TEST_CASE(namespace_case)
 
 BOOST_AUTO_TEST_CASE(namespace_builder_case)
 {
-    Xirang xi("test_namespace_builder", aio::memory::get_global_heap(), aio::memory::get_global_ext_heap());
+    Xirang xi("test_namespace_builder", xirang::memory::get_global_heap(), xirang::memory::get_global_ext_heap());
 	SetupXirang(xi);
 
     NamespaceBuilder()
@@ -121,7 +122,7 @@ BOOST_AUTO_TEST_CASE(namespace_builder_case)
     BOOST_CHECK(tb.getParent() == user);
 
     tb.name("test_name");
-    BOOST_CHECK(tb.getName() == "test_name");
+    BOOST_CHECK(tb.getName() == literal("test_name"));
 
     Namespace user_include = user.findNamespace("include");
     BOOST_CHECK(user_include.valid());

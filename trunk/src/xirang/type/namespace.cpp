@@ -1,16 +1,15 @@
 #include "namespaceimp.h"
 
-#include <xirang/namespace.h>
-#include <xirang/type.h>
-#include <xirang/typealias.h>
-#include <xirang/object.h>
+#include <xirang/type/namespace.h>
+#include <xirang/type/type.h>
+#include <xirang/type/typealias.h>
+#include <xirang/type/object.h>
 #include "impaccessor.h"
 
 #include <boost/tokenizer.hpp>
 #include <xirang/string_algo/char_separator.h>
 
-namespace xirang
-{
+namespace xirang{ namespace type{
 
 	// ************
 	//  Namespace
@@ -28,7 +27,7 @@ namespace xirang
     string Namespace::fullName(char dim /*='.'*/) const
     {
         std::vector <Namespace> parents;
-        aio::string_builder name;
+        string_builder name;
         if (!m_imp->parent)
         {
             name.push_back(dim);
@@ -61,8 +60,8 @@ namespace xirang
 	{
 		AIO_PRE_CONDITION (valid ());
 
-        aio::char_separator<char> sep(dim, 0, aio::keep_empty_tokens);
-        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
+        char_separator<char> sep(dim, 0, keep_empty_tokens);
+        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
         tokenizer tokens(n, sep);
 
         tokenizer::iterator itr = tokens.begin();
@@ -130,8 +129,8 @@ namespace xirang
 		if (n.size() == 1 && *n.begin() == dim)
 			return this->root();
 
-        aio::char_separator<char> sep(dim, 0, aio::keep_empty_tokens);
-        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
+        char_separator<char> sep(dim, 0, keep_empty_tokens);
+        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
         tokenizer tokens(n, sep);
 
 		tokenizer::iterator itr = tokens.begin();
@@ -296,8 +295,8 @@ namespace xirang
 
     NamespaceBuilder& NamespaceBuilder::createChild(const string& path, char dim /* = '.' */)
     {
-        aio::char_separator<char> sep(dim, 0, aio::keep_empty_tokens);
-        typedef boost::tokenizer<aio::char_separator<char>, string::const_iterator, aio::const_range_string> tokenizer;
+        char_separator<char> sep(dim, 0, keep_empty_tokens);
+        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
         tokenizer tokens(path, sep);
 
         tokenizer::iterator itr = tokens.begin();
@@ -348,7 +347,7 @@ namespace xirang
 		AIO_PRE_CONDITION(m_imp && ns.valid());
         AIO_PRE_CONDITION(!m_imp->parent);
         
-        aio::unique_ptr<NamespaceImp> pnew (new NamespaceImp);
+        unique_ptr<NamespaceImp> pnew (new NamespaceImp);
 
 		string name = get().name();
 		AIO_PRE_CONDITION(!name.empty() && !ns.findNamespace(name).valid());
@@ -421,7 +420,7 @@ namespace xirang
 	{
 		AIO_PRE_CONDITION(m_imp && m_imp->parent);
 
-        aio::unique_ptr<NamespaceImp> pnew (new NamespaceImp);
+        unique_ptr<NamespaceImp> pnew (new NamespaceImp);
 
         Namespace ns(m_imp->parent);
 		string name = getName();
@@ -440,7 +439,7 @@ namespace xirang
 
 	NamespaceBuilder::~NamespaceBuilder()
 	{
-		if (m_imp) aio::check_delete(m_imp);
+		if (m_imp) check_delete(m_imp);
 	}
 
 	NamespaceBuilder& NamespaceBuilder::name(const string& n)
@@ -467,4 +466,4 @@ namespace xirang
     {
         std::swap(m_imp, other.m_imp);
     }
-}
+}}

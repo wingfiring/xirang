@@ -10,8 +10,8 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include "./iarchive.h"
 
 BOOST_AUTO_TEST_SUITE(archive_adaptor_suite)
-using namespace aio;
-using namespace aio::io;
+using namespace xirang;
+using namespace xirang::io;
 
 template<template<typename> class ArchiveData, typename... Interface>
 struct test_adaptor{

@@ -1,13 +1,12 @@
 #ifndef XIRANG_DETAIL_TYPE_IMP_H
 #define XIRANG_DETAIL_TYPE_IMP_H
 
-#include <xirang/type.h>
+#include <xirang/type/type.h>
 
 #include <map>
 #include <vector>
 
-namespace xirang
-{
+namespace xirang{ namespace type{
 	class TypeImp;
 	class TypeItemImp
 	{
@@ -119,6 +118,6 @@ namespace xirang
 		RealIterator rpos;
         mutable TypeArg cache;
 	};
-}
+}}
 #endif				//end XIRANG_DETAIL_TYPE_IMP_H
 

@@ -1,6 +1,4 @@
 #include <xirang/string.h>
-namespace aio
+namespace xirang
 {
-    const string empty_str;
-    const wstring wempty_str;
 }

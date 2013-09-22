@@ -12,7 +12,7 @@
 #include <sys/stat.h>
 #endif
 
-namespace aio{ namespace io{
+namespace xirang{ namespace io{
 
 	using namespace boost::interprocess;
 	namespace bi = boost::interprocess;
@@ -76,7 +76,7 @@ namespace aio{ namespace io{
 			{
 				m_file_size = get_file_size_();
 #ifdef WIN32
-                aio::wstring wpath = utf8::decode_string(fs::to_native_path(m_path));
+                wstring wpath = utf8::decode_string(fs::to_native_path(m_path));
 				m_file = file_mapping(wpath.c_str(), mode);
 #else
                 m_file = file_mapping(m_path.c_str(), mode);
@@ -199,7 +199,7 @@ namespace aio{ namespace io{
 			int ret = stat(m_path.c_str(), &st) ;
 #else
             struct _stat st;
-            aio::wstring wpath = utf8::decode_string(m_path);
+            wstring wpath = utf8::decode_string(m_path);
 			int ret = _wstat(wpath.c_str(), &st) ;
 #endif
 			return ret == 0;
@@ -208,7 +208,7 @@ namespace aio{ namespace io{
 		void create_()
 		{
 #ifdef WIN32
-            aio::wstring wpath = utf8::decode_string(m_path);
+            wstring wpath = utf8::decode_string(m_path);
 			FILE* fp = _wfopen(wpath.c_str(), L"wb");
 #else
             FILE* fp = fopen(m_path.c_str(),"wb");
@@ -227,7 +227,7 @@ namespace aio{ namespace io{
 			if (stat(m_path.c_str(), &st) != 0)
 #else
             struct _stat st;
-            aio::wstring wpath = utf8::decode_string(m_path);
+            wstring wpath = utf8::decode_string(m_path);
 			if (_wstat(wpath.c_str(), &st))
 #endif			
 				AIO_THROW(archive_stat_file_failed)(m_path.c_str());

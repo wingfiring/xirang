@@ -1,20 +1,19 @@
 #include "xirangimp.h"
-#include <xirang/namespace.h>
-#include <xirang/type.h>
-#include <xirang/typealias.h>
-#include <xirang/object.h>
+#include <xirang/type/namespace.h>
+#include <xirang/type/type.h>
+#include <xirang/type/typealias.h>
+#include <xirang/type/object.h>
 
 #include <cctype>
 
-namespace xirang
-{
+namespace xirang{ namespace type{
 	Xirang::Xirang (const string& name, heap& al, ext_heap& eh)
 		: m_imp(new XirangImp(name, al, eh))
 	{ }
 
 	Xirang::~Xirang ()
 	{
-		aio::check_delete(m_imp);
+		check_delete(m_imp);
 	}
 
 	const string & Xirang::name () const
@@ -89,5 +88,5 @@ namespace xirang
     }
 
 	
-}
+}}
 

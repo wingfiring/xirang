@@ -6,7 +6,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include <xirang/path.h>
 
 BOOST_AUTO_TEST_SUITE(path_suite)
-using namespace aio;
+using namespace xirang;
 
 BOOST_AUTO_TEST_CASE(path_ctor_case){
 	file_path p;

@@ -1,17 +1,18 @@
-#include "precompile.h"
-#include <xirang/xirang.h>
-#include <xirang/type.h>
+#include "../precompile.h"
+#include <xirang/type/xirang.h>
+#include <xirang/type/type.h>
 
 #include <vector>
 #include <iostream>
 #include <stdint.h>
 using namespace xirang;
+using namespace xirang::type;
 
 BOOST_AUTO_TEST_SUITE(xirang_type_suites)
 
 BOOST_AUTO_TEST_CASE(type_case)
 {
-	Xirang xi("type_case", aio::memory::get_global_heap(), aio::memory::get_global_ext_heap());
+	Xirang xi("type_case", xirang::memory::get_global_heap(), xirang::memory::get_global_ext_heap());
 
     SetupXirang(xi);
 
@@ -28,8 +29,8 @@ BOOST_AUTO_TEST_CASE(type_case)
 
     BOOST_REQUIRE(pair.valid());
     BOOST_REQUIRE(pair);
-    BOOST_CHECK(pair.name() == "pair");
-    BOOST_CHECK(pair.fullName() == ".test.pair");
+    BOOST_CHECK(pair.name() == literal("pair"));
+    BOOST_CHECK(pair.fullName() == literal(".test.pair"));
     BOOST_CHECK(!pair.isMemberResolved());
     BOOST_CHECK(pair.unresolvedArgs() == 2);
     BOOST_CHECK(!pair.isComplete());
@@ -45,10 +46,10 @@ BOOST_AUTO_TEST_CASE(type_case)
     TypeItem first_member = *member_pos;
     BOOST_REQUIRE(first_member.valid());
     BOOST_CHECK(!first_member.type().valid());
-    BOOST_CHECK(first_member.name() == "first");
-    BOOST_CHECK(first_member.typeName() == "first_type");
+    BOOST_CHECK(first_member.name() == literal("first"));
+    BOOST_CHECK(first_member.typeName() == literal("first_type"));
     BOOST_CHECK(first_member.index() == 0);
-    BOOST_CHECK(first_member.offset() == Type::unknown);
+    BOOST_CHECK(first_member.offset() == Type::no_size);
     BOOST_CHECK(!first_member.isResolved());
     BOOST_CHECK(first_member == pair.member(0));
     BOOST_CHECK(first_member != pair.member(1));
@@ -66,7 +67,7 @@ BOOST_AUTO_TEST_CASE(type_case)
     TypeArg first_arg = *arg_pos;
     BOOST_REQUIRE(first_arg.valid());
     BOOST_CHECK(!first_arg.type().valid());
-    BOOST_CHECK(first_arg.name() == "first_type");
+    BOOST_CHECK(first_arg.name() == literal("first_type"));
     BOOST_CHECK(first_arg.typeName().empty());
     BOOST_CHECK(!first_arg.isBound());
     BOOST_CHECK(first_arg == pair.arg(0));
@@ -83,14 +84,14 @@ BOOST_AUTO_TEST_CASE(type_case)
     BOOST_REQUIRE(first_int_arg.valid());
     BOOST_CHECK(first_int_arg.type().valid());
     BOOST_CHECK(first_int_arg.type() == type_int);
-    BOOST_CHECK(first_int_arg.name() == "first_type");
-    BOOST_CHECK(first_int_arg.typeName() == "int");
+    BOOST_CHECK(first_int_arg.name() == literal("first_type"));
+    BOOST_CHECK(first_int_arg.typeName() == literal("int"));
     BOOST_CHECK(first_int_arg.isBound());
 
     TypeItem first_int_member = pair_int.member(0);
     BOOST_REQUIRE(first_int_member.valid());
     BOOST_CHECK(first_int_member.type() == type_int);
-    BOOST_CHECK(first_int_member.typeName() == "first_type");
+    BOOST_CHECK(first_int_member.typeName() == literal("first_type"));
     BOOST_CHECK(first_int_member.offset() == 0);
     BOOST_CHECK(first_int_member.isResolved());
 
@@ -99,7 +100,7 @@ BOOST_AUTO_TEST_CASE(type_case)
     BOOST_CHECK(pair_int.unresolvedArgs() == 1);
     BOOST_CHECK(pair_int.hasModel());
     BOOST_CHECK(pair_int.model() == pair);
-    BOOST_CHECK(pair_int.modelName() == "pair");
+    BOOST_CHECK(pair_int.modelName() == literal("pair"));
 
     Type type_long = xi.root().locateType("long", '.');
     Type pair_int_long = TypeBuilder().name("pair_int_long")
@@ -118,7 +119,7 @@ BOOST_AUTO_TEST_CASE(type_case)
     BOOST_CHECK(pair_int_long.unresolvedArgs() == 0);
     BOOST_CHECK(pair_int_long.hasModel());
     BOOST_CHECK(pair_int_long.model() == pair);
-    BOOST_CHECK(pair_int_long.modelName() == "pair");
+    BOOST_CHECK(pair_int_long.modelName() == literal("pair"));
 /*
     BOOST_CHECK(pair_int_long.align() == STDTR1::alignment_of<IntLongPair_>::value);
  */

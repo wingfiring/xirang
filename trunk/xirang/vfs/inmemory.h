@@ -11,7 +11,7 @@ namespace xirang{ namespace vfs{
 	{
 	public:
 
-        explicit InMemory(const string& resource = empty_str);
+        explicit InMemory(const string& resource = string());
 
 		~InMemory();
 

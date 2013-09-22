@@ -8,11 +8,11 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include "./iarchive.h"
 
 BOOST_AUTO_TEST_SUITE(archive_suite)
-using namespace aio;
+using namespace xirang;
 
 BOOST_AUTO_TEST_CASE(buffer_in_case)
 {
-	aio::buffer<aio::byte> buf(128, byte('X'));
+	xirang::buffer<xirang::byte> buf(128, byte('X'));
 
 	io::buffer_in ar(buf);
 	ArchiveTester tester;
@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE(buffer_in_case)
 
 BOOST_AUTO_TEST_CASE(buffer_out_case)
 {
-	aio::buffer<aio::byte> buf(128, byte('X'));
+	xirang::buffer<xirang::byte> buf(128, byte('X'));
 
 	io::buffer_out ar(buf);
 	ArchiveTester tester;
@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(buffer_out_case)
 
 BOOST_AUTO_TEST_CASE(buffer_io_case)
 {
-	aio::buffer<aio::byte> buf(128, byte('X'));
+	xirang::buffer<xirang::byte> buf(128, byte('X'));
 
 	io::buffer_io ar(buf);
 	ArchiveTester tester;
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(buffer_io_case)
 
 BOOST_AUTO_TEST_CASE(mem_read_archive_case)
 {
-	aio::buffer<aio::byte> buf(128, byte('X'));
+	xirang::buffer<xirang::byte> buf(128, byte('X'));
 
 	io::mem_reader ar(buf);
 	ArchiveTester tester;

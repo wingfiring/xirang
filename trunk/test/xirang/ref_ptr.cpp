@@ -15,7 +15,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 
 BOOST_AUTO_TEST_SUITE(ref_ptr_suite)
 
-using namespace aio;
+using namespace xirang;
 
 typedef boost::mpl::list<int, const int, std::string, const std::string> test_types;
 

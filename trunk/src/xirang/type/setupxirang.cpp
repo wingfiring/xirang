@@ -1,12 +1,11 @@
-#include <xirang/xirang.h>
-#include <xirang/typebinder.h>
-#include <xirang/nativetype.h>
+#include <xirang/type/xirang.h>
+#include <xirang/type/typebinder.h>
+#include <xirang/type/nativetype.h>
 #include <xirang/io/string.h>
-#include <xirang/array.h>
+#include <xirang/type/array.h>
 
 #include <assert.h>
-namespace xirang
-{
+namespace xirang{ namespace type{
 	namespace {
 	    template<typename T>
         TypeMethods* getPrimitiveMethods()
@@ -17,11 +16,9 @@ namespace xirang
         
 		struct TypeDesc
 		{
-			aio::const_range_string name;
+			const_range_string name;
 			TypeMethods* methods;
 		};
-
-		using aio::literal;
 
 		TypeDesc g_systype_table[] =
 		{
@@ -54,7 +51,7 @@ namespace xirang
 
 			{literal("string"),	getPrimitiveMethods<string>()},
 
-            {literal("byte_buffer"), getPrimitiveMethods<aio::byte_buffer>()},
+            {literal("byte_buffer"), getPrimitiveMethods<byte_buffer>()},
             {literal(""),0}
 		};
 	}
@@ -76,7 +73,7 @@ namespace xirang
 
             TypeAliasBuilder()
                 .name(itr->name)
-                .typeName(aio::literal(".sys.") << itr->name)
+                .typeName(literal(".sys.") << itr->name)
                 .setType(t)
                 .adoptBy(root);
 		}
@@ -126,4 +123,5 @@ namespace xirang
                 .adoptBy(root);
 		}
 	}
-}
+}}
+

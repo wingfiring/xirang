@@ -1,17 +1,18 @@
-#include "precompile.h"
-#include <xirang/xirang.h>
-#include <xirang/typealias.h>
+#include "../precompile.h"
+#include <xirang/type/xirang.h>
+#include <xirang/type/typealias.h>
 
 #include <vector>
 #include <iostream>
 #include <stdint.h>
 using namespace xirang;
+using namespace xirang::type;
 
 BOOST_AUTO_TEST_SUITE(xirang_type_suites)
 
 BOOST_AUTO_TEST_CASE(typealias_case)
 {
-	Xirang xi("typealias_case", aio::memory::get_global_heap(), aio::memory::get_global_ext_heap());
+	Xirang xi("typealias_case", xirang::memory::get_global_heap(), xirang::memory::get_global_ext_heap());
 
     SetupXirang(xi);
 
@@ -22,8 +23,8 @@ BOOST_AUTO_TEST_CASE(typealias_case)
     TypeAlias tmp = builder.get();
 
     BOOST_CHECK(tmp.valid());
-    BOOST_CHECK(builder.getName() == "int_alias");
-    BOOST_CHECK(builder.getTypeName() == ".sys.int");
+    BOOST_CHECK(builder.getName() == literal("int_alias"));
+    BOOST_CHECK(builder.getTypeName() == literal(".sys.int"));
 
     TypeAlias int_alias = builder.adoptBy(xi.root());    
 

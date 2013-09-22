@@ -11,16 +11,16 @@ BOOST_AUTO_TEST_CASE(zipfs_case)
 {
     using namespace xirang::fs;
     using namespace xirang;
-    using aio::io::archive_mode;
-    using aio::io::open_flag;
+    using xirang::io::archive_mode;
+    using xirang::io::open_flag;
 
-    aio::io::mem_read_write_archive ar;
+    xirang::io::mem_read_write_archive ar;
     {
         InMemory cache;
         ZipFs vfs(ar, cache, "test zipfs");
 
-        aio::any ret = vfs.getopt(vo_readonly);
-        BOOST_CHECK(!ret.empty() && !aio::any_cast<bool>(ret));
+        xirang::any ret = vfs.getopt(vo_readonly);
+        BOOST_CHECK(!ret.empty() && !xirang::any_cast<bool>(ret));
 
         VfsTester tester;
         tester.test_mount(vfs);
@@ -28,14 +28,14 @@ BOOST_AUTO_TEST_CASE(zipfs_case)
         tester.test_modification(vfs);
     }
     {
-        using namespace aio::io;
-        typedef multiplex_deletor<multiplex_reader<multiplex_random<multiplex_base<reader, aio::io::random, aio::ideletor> > > > multiplex_read_archive;
+        using namespace xirang::io;
+        typedef multiplex_deletor<multiplex_reader<multiplex_random<multiplex_base<reader, xirang::io::random, xirang::ideletor> > > > multiplex_read_archive;
         multiplex_read_archive ar2(&ar);
         InMemory cache;
         ZipFs vfs(ar2, cache);
 
-        aio::any ret = vfs.getopt(vo_readonly);
-        BOOST_CHECK(!ret.empty() && aio::any_cast<bool>(ret));
+        xirang::any ret = vfs.getopt(vo_readonly);
+        BOOST_CHECK(!ret.empty() && xirang::any_cast<bool>(ret));
 
         VfsTester tester;
         tester.test_readonly(vfs);

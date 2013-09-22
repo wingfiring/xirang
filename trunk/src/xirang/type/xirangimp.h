@@ -1,20 +1,19 @@
 #ifndef XIRANG_DETAIL_XIRANG_IMP_H
 #define XIRANG_DETAIL_XIRANG_IMP_H
 
-#include <xirang/xirang.h>
+#include <xirang/type/xirang.h>
 #include "typeimp.h"
 #include "namespaceimp.h"
 
-#include <xirang/typebinder.h>
-#include <xirang/object.h>
+#include <xirang/type/typebinder.h>
+#include <xirang/type/object.h>
 
 #include <memory>
 #include <algorithm>
 #include <set>
 #include <map>
 #include "impaccessor.h"
-namespace xirang
-{
+namespace xirang{ namespace type{
 	class XirangImp
 	{
 		public:
@@ -66,7 +65,7 @@ namespace xirang
 					NamespaceImp* pChild = iter->second;
 					destroyObj_(*pChild);
 					pImp->children.erase(iter);		
-					aio::check_delete(pChild);
+					check_delete(pChild);
 					return true;
 				}
 				return false;
@@ -93,7 +92,7 @@ namespace xirang
 						end(pImp->children.end()); itr != end; ++itr)
 				{
 					destroyObj_(*itr->second);
-					aio::check_delete(itr->second);
+					check_delete(itr->second);
 				}
 				pImp->children.clear();
 			}
@@ -154,6 +153,6 @@ namespace xirang
 				ns.objects.clear();
 			}
 	};
-}
+}}
 
 #endif //end XIRANG_DETAIL_XIRANG_IMP_H

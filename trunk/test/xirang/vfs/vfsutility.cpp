@@ -5,10 +5,10 @@
 BOOST_AUTO_TEST_SUITE(vfs_suite)
 using namespace xirang::fs;
 using namespace xirang;
-using aio::io::archive_mode;
-using aio::io::open_flag;
+using xirang::io::archive_mode;
+using xirang::io::open_flag;
 
-// TODO: move them into aio
+// TODO: move them into xirang
 BOOST_AUTO_TEST_CASE(utility_case)
 {
 	string path = "/test";

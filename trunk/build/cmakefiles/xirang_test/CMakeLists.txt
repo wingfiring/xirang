@@ -8,7 +8,7 @@ INCLUDE_DIRECTORIES(${BOOST_INCLUDE})
 LINK_DIRECTORIES(${BOOST_LINK})
 #source directory
 AUX_SOURCE_DIRECTORY(${AIO_ROOT}/test/xirang DIR_SRCS)
-AUX_SOURCE_DIRECTORY(${AIO_ROOT}/test/xirang/vfs DIR_SRCS)
+#AUX_SOURCE_DIRECTORY(${AIO_ROOT}/test/xirang/vfs DIR_SRCS)
 AUX_SOURCE_DIRECTORY(${AIO_ROOT}/test/xirang/type DIR_SRCS)
 
 
@@ -21,7 +21,6 @@ ADD_TEST(xirang_test xirang_test)
 TARGET_LINK_LIBRARIES(
 	xirang_test
  	xirang
-	aio_common
 	${ZLIB}
 	${Boost_LIBRARIES}
 	)

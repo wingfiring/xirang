@@ -1,5 +1,5 @@
 #include <xirang/io/memory.h>
-namespace aio{ namespace io{
+namespace xirang{ namespace io{
 
 	bool in_size_t_range(long_size_t n){
 		return (n & ~long_size_t(size_t(-1))) == 0;

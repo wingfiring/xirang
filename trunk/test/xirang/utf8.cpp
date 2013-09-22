@@ -15,7 +15,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include <iostream>
 
 BOOST_AUTO_TEST_SUITE(utf8_suite)
-using namespace aio;
+using namespace xirang;
 using  std::ostream_iterator;
 using  std::cout;
 

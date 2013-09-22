@@ -11,7 +11,7 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include <boost/mpl/list.hpp>
 
 BOOST_AUTO_TEST_SUITE(atomic_suite)
-using namespace aio;
+using namespace xirang;
 
 typedef boost::mpl::list<int, long> test_types;
 

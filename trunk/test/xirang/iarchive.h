@@ -5,7 +5,7 @@
 
 BOOST_AUTO_TEST_SUITE(archive_suite)
 
-using namespace aio;
+using namespace xirang;
 
 class ArchiveTester
 {

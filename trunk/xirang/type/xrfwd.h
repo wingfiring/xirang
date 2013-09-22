@@ -1,11 +1,10 @@
 #ifndef XIRANG_XRFWD_H
 #define XIRANG_XRFWD_H
 
-#include <xirang/xrbase.h>
+#include <xirang/type/xrbase.h>
 #include <iterator>
 
-namespace xirang
-{
+namespace xirang { namespace type{
   class TypeMethods;
   extern TypeMethods& DefaultMethods();
 
@@ -81,7 +80,7 @@ namespace xirang
 	template<typename T> assigner<T> get_assigner(T*);
 	template<typename T> layout<T> get_layout(T*);
 	template<typename T> extendMethods<T> get_extendMethods(T*);
-}
+}}
 
 
 

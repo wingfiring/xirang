@@ -3,7 +3,7 @@
 #include <vector>
 
 
-namespace aio{
+namespace xirang{
     namespace{
         const auto onedot = literal(".");
         const auto twodot = literal("..");
@@ -77,7 +77,7 @@ namespace aio{
 	const_range_string sub_file_path::str() const{
 		return m_str;
 	}
-	aio::string sub_file_path::native_str() const{
+	string sub_file_path::native_str() const{
 #ifdef WIN_OS_
 		auto ret = replace(m_str, dim, '\\');
 		if (is_absolute() && !is_network()){
@@ -88,10 +88,10 @@ namespace aio{
 		return str();
 #endif
 	}
-	aio::wstring sub_file_path::native_wstr() const{
+	wstring sub_file_path::native_wstr() const{
 		return utf8::decode_string(native_str());
 	}
-	aio::wstring sub_file_path::wstr() const{
+	wstring sub_file_path::wstr() const{
 		return utf8::decode_string(m_str);
 	}
 	sub_file_path::iterator sub_file_path::begin() const{
@@ -363,17 +363,17 @@ namespace aio{
 		m_str.swap(rhs.m_str);
 	}
 
-	const aio::string& file_path::str() const{
+	const string& file_path::str() const{
 		return m_str;
 	}
 
-	aio::string file_path::native_str() const{
+	string file_path::native_str() const{
 		return as_sub_path().native_str();
 	}
-	aio::wstring file_path::native_wstr() const{
+	wstring file_path::native_wstr() const{
 		return as_sub_path().native_wstr();
 	}
-	aio::wstring file_path::wstr() const{
+	wstring file_path::wstr() const{
 		return as_sub_path().wstr();
 	}
 
@@ -659,7 +659,7 @@ namespace aio{
 		m_str.swap(rhs.m_str);
 	}
 
-	const aio::string& simple_path::str() const{
+	const string& simple_path::str() const{
 		return m_str;
 	}
 

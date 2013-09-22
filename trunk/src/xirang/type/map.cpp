@@ -1,10 +1,9 @@
-#include <xirang/map.h>
+#include <xirang/type/map.h>
 
 
 #include <map>
 
-namespace xirang
-{
+namespace xirang{ namespace type{
 	struct Comp
 	{
 		Comp(Type key) : m_key(key)
@@ -198,7 +197,7 @@ namespace xirang
 	Map::const_iterator::~const_iterator() 
 	{
 		if (valid())
-			aio::check_delete(m_imp);
+			check_delete(m_imp);
 	}
 
 	Map::const_iterator::value_type Map::const_iterator::first() const
@@ -325,7 +324,7 @@ namespace xirang
 		if (valid())
 		{
 			clear();
-			aio::check_delete(m_imp);
+			check_delete(m_imp);
 		}
 	}
 
@@ -469,4 +468,4 @@ namespace xirang
 		return m_imp->clear();
 	}
 
-}
+}}
