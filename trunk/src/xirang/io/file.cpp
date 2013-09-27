@@ -48,19 +48,19 @@ namespace xirang{ namespace io{
 		typedef reader::iterator iterator;
 		typedef writer::const_iterator const_iterator;
 
-		file_imp(const string& path, int of, bi::mode_t mode)
+		file_imp(const file_path& path, int of, bi::mode_t mode)
 			: m_path(path), m_pos(0), m_mode(mode), m_file_size(0), m_flag(of)
 		{
 			switch (of & of_low_mask)
 			{
 				case of_open:
 					if (!exists_())
-						AIO_THROW(archive_open_file_failed)(m_path.c_str());
+						AIO_THROW(archive_open_file_failed)(m_path.str());
 
 					break;
 				case of_create:
 					if (exists_())
-						AIO_THROW(archive_create_file_failed)(m_path.c_str());
+						AIO_THROW(archive_create_file_failed)(m_path.str());
 					create_();
 
 					break;
@@ -76,22 +76,21 @@ namespace xirang{ namespace io{
 			{
 				m_file_size = get_file_size_();
 #ifdef WIN32
-                wstring wpath = utf8::decode_string(fs::to_native_path(m_path));
-				m_file = file_mapping(wpath.c_str(), mode);
+				m_file = file_mapping(m_path.native_wstr().c_str(), mode);
 #else
                 m_file = file_mapping(m_path.c_str(), mode);
 #endif
 			}
 			catch(...)
 			{
-				AIO_THROW(archive_open_file_failed)(m_path.c_str());
+				AIO_THROW(archive_open_file_failed)(m_path.str());
 			}
 		}
         ~file_imp()
         {
             if (m_flag & of_remove_on_close)
             {
-                m_file.remove(m_path.c_str());
+                m_file.remove(m_path.str());
             }
             else
             {
@@ -140,17 +139,11 @@ namespace xirang{ namespace io{
 
 		long_size_t truncate(long_size_t nsize)
 		{
-#ifndef MSVC_COMPILER_
-			::truncate(m_path.c_str(), nsize);
-#else
-            SetFilePointer(m_file.get_mapping_handle().handle, (LONG)nsize, 0, FILE_BEGIN);
-            SetEndOfFile(m_file.get_mapping_handle().handle);
+			fs::truncate(m_path, nsize);
 
-            //mapped_region reg(m_file, m_mode, 0, numeric_cast<size_t>(nsize));
-#endif
 			long_size_t fsize = get_file_size_();
 			if (fsize != nsize)
-				AIO_THROW(archive_append_failed)(to_string(nsize).c_str());
+				AIO_THROW(archive_append_failed)(to_string(nsize));
 			m_file_size = nsize;
 			if (m_pos > m_file_size)
 				m_pos = m_file_size;
@@ -194,27 +187,19 @@ namespace xirang{ namespace io{
 		bool exists_()
 		{
 			
-#ifndef MSVC_COMPILER_
-            struct stat st;
-			int ret = stat(m_path.c_str(), &st) ;
-#else
-            struct _stat st;
-            wstring wpath = utf8::decode_string(m_path);
-			int ret = _wstat(wpath.c_str(), &st) ;
-#endif
-			return ret == 0;
+			return fs::exists(m_path);
 		}
 
 		void create_()
 		{
 #ifdef WIN32
-            wstring wpath = utf8::decode_string(m_path);
+            wstring wpath = m_path.native_wstr();
 			FILE* fp = _wfopen(wpath.c_str(), L"wb");
 #else
             FILE* fp = fopen(m_path.c_str(),"wb");
 #endif
 			if (fp == 0)
-				AIO_THROW(archive_create_file_failed)(m_path.c_str());
+				AIO_THROW(archive_create_file_failed)(m_path.str());
 
 			fclose(fp);
 		}
@@ -222,20 +207,14 @@ namespace xirang{ namespace io{
 		long_size_t get_file_size_()
 		{
 			
-#ifndef MSVC_COMPILER_
-            struct stat st;
-			if (stat(m_path.c_str(), &st) != 0)
-#else
-            struct _stat st;
-            wstring wpath = utf8::decode_string(m_path);
-			if (_wstat(wpath.c_str(), &st))
-#endif			
+			auto st = fs::state(m_path);
+			if (st == st_not_found)
 				AIO_THROW(archive_stat_file_failed)(m_path.c_str());
 			return st.st_size;
 		}
 
 
-		string m_path;
+		file_path m_path;
 		long_size_t m_pos;
 		bi::mode_t m_mode;
 		long_size_t m_file_size;
@@ -244,7 +223,7 @@ namespace xirang{ namespace io{
 	};
 
 	/////////////////////////////////////////////////
-	file_reader::file_reader(const string& path)
+	file_reader::file_reader(const file_path& path)
 		: m_imp(new file_imp(path, of_open, read_only))
 	{
 	}
@@ -266,7 +245,7 @@ namespace xirang{ namespace io{
 
 	/////////////////////////////////////////////////
 
-	file_writer::file_writer(const string& path,  int of)
+	file_writer::file_writer(const file_path& path,  int of)
 		: m_imp(new file_imp(path, of, read_write))
 	{}
 
@@ -286,7 +265,7 @@ namespace xirang{ namespace io{
 
 	/////////////////////////////////////////////////
 
-	file::file(const string& path, int of)
+	file::file(const file_path& path, int of)
 		: m_imp(new file_imp(path, of, read_write))
 	{}
 	file::~file()	{ check_delete(m_imp);}

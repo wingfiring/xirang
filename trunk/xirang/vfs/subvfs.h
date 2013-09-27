@@ -9,24 +9,24 @@ namespace xirang{ namespace vfs{
 	{
 	public:
 
-		explicit SubVfs(IVfs& parent, const string& dir);
+		explicit SubVfs(IVfs& parent, sub_file_path dir);
 
 		~SubVfs();
 
 		// common operations of dir and file
 		// \pre !absolute(path)
-		virtual fs_error remove(const string& path);
+		virtual fs_error remove(sub_file_path path);
 
 		// dir operations
 		// \pre !absolute(path)
-		virtual fs_error createDir(const  string& path);
+		virtual fs_error createDir(sub_file_path path);
 
 		// \pre !absolute(to)
 		// if from and to in same fs, it may have a more effective implementation
 		// otherwise, from should be a
-		virtual fs_error copy(const string& from, const string& to);
+		virtual fs_error copy(sub_file_path from, sub_file_path to);
 
-		virtual fs_error truncate(const string& path, long_size_t s);
+		virtual fs_error truncate(sub_file_path path, long_size_t s);
 
 		virtual void sync();
 
@@ -41,25 +41,25 @@ namespace xirang{ namespace vfs{
 		virtual bool mounted() const;
 
 		// \return mounted() ? absolute() : empty() 
-		virtual string mountPoint() const;
+		virtual sub_file_path mountPoint() const;
 
 		// \pre !absolute(path)
-		virtual VfsNodeRange children(const string& path) const;
+		virtual VfsNodeRange children(sub_file_path path) const;
 
 		// \pre !absolute(path)
-		virtual VfsState state(const string& path) const;
+		virtual VfsState state(sub_file_path path) const;
 
         IVfs& parentFs() const;
 
 		virtual void** do_create(unsigned long long mask,
-				void* ret, unique_ptr<void>& owner, const string& path, int flag);
+				void* ret, unique_ptr<void>& owner, sub_file_path path, int flag);
 	private:
 		// if r == null, means unmount
 		virtual void setRoot(RootFs* r);
 
         RootFs* m_root;
         IVfs& parent;
-        string m_resource;
+        file_path m_resource;
     
 
         SubVfs(const SubVfs&); //disable

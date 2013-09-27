@@ -109,7 +109,7 @@ namespace xirang{ namespace str_algo {
     }
 
     template<typename ContT, typename ValueT>
-    bool contains(ContT& src, ValueT var){
+    bool contains(const ContT& src, ValueT var){
         return find(src, var) != src.end();
     }
 

@@ -2,19 +2,12 @@
 #include <xirang/type/xrbase.h>
 #include <xirang/io/file.h>
 #include <xirang/string_algo/utf8.h>
+#include <xirang/vfs/vfs_common.h>
 
 // BOOST
 #include <boost/filesystem.hpp>
 
-#include <sys/stat.h>
-
-#include <xirang/vfs/vfs_common.h>
-#include <xirang/string_algo/utf8.h>
-
-#ifdef MSVC_COMPILER_
-#include <direct.h>
-#endif
-
+#include <unistd.h>
 namespace xirang{ namespace vfs{
 	class LocalFileIterator
 	{
@@ -25,22 +18,29 @@ namespace xirang{ namespace vfs{
             m_node.owner_fs = 0;
         }
 
-		explicit LocalFileIterator(const string& rpath, IVfs* fs)
-			: m_itr(rpath.c_str())
+		explicit LocalFileIterator(const file_path& rpath, IVfs* fs)
+#ifdef MSVC_COMPILER_
+			: m_itr(
+					(rpath.is_network() || rpath.is_pure_disk())
+					? wstring(rpath.native_wstr() << literal("/")).c_str()
+					: rpath.native_wstr().c_str()
+					)
+#else
+			: m_itr(rpath.str())
+#endif
 		{ 
             m_node.owner_fs = fs;
         }
 
 		const VfsNode& operator*() const
 		{
-            m_node.path = m_itr->path().leaf().string() ;
+            m_node.path = file_path(m_itr->path().leaf().c_str());
 			return m_node;
 		}
 
         const VfsNode* operator->() const
 		{
-            m_node.path = m_itr->path().leaf().string() ;
-			return &m_node;
+			return &**this;
 		}
 
 		LocalFileIterator& operator++()	{ ++m_itr; return *this;}
@@ -58,11 +58,15 @@ namespace xirang{ namespace vfs{
 			return m_itr == rhs.m_itr;
 		}
 	private:
+#ifdef MSVC_COMPILER_
+		boost::filesystem::wdirectory_iterator m_itr;
+#else
 		boost::filesystem::directory_iterator m_itr;
+#endif
         mutable VfsNode m_node;
 	};
 
-	LocalFs::LocalFs(const string& dir)
+	LocalFs::LocalFs(const file_path& dir)
 		: m_root(0), m_resource(append_tail_slash(dir))
 	{
 	}
@@ -72,47 +76,47 @@ namespace xirang{ namespace vfs{
 
 	// common operations of dir and file
 	// \pre !absolute(path)
-	fs_error LocalFs::remove(const string& path) { 
+	fs_error LocalFs::remove(sub_file_path path) { 
+        AIO_PRE_CONDITION(!path.is_absolute());
         fs_error ret = remove_check(*this, path);
         if (ret != fs::er_ok)
             return ret;
         if (path.empty())
             return fs::er_invalid;
-        return fs::remove(m_resource << path);
+        return fs::remove(m_resource / path);
 	}
 
 	// dir operations
 	// \pre !absolute(path)
-	fs_error LocalFs::createDir(const  string& path){
+	fs_error LocalFs::createDir(sub_file_path path){
+        AIO_PRE_CONDITION(!path.is_absolute());
         if (path.empty())
             return fs::er_invalid;
-		return fs::create_dir(m_resource << path);
+		return fs::create_dir(m_resource / path);
 	}
 
-	io::file LocalFs::open_create(const string& path, int flag) {
-        AIO_PRE_CONDITION(!is_absolute(path));
-        string real_path = m_resource << path;
-        return io::file(real_path, flag);
+	io::file LocalFs::writeOpen(sub_file_path path, int flag) {
+        AIO_PRE_CONDITION(!path.is_absolute());
+        return io::file(m_resource / path, flag);
 
 	}
-	io::file_reader LocalFs::open(const string& path){
-        AIO_PRE_CONDITION(!is_absolute(path));
-        string real_path = m_resource << path;
-        return io::file_reader(real_path);
+	io::file_reader LocalFs::readOpen(sub_file_path path){
+        AIO_PRE_CONDITION(!path.is_absolute());
+        return io::file_reader(m_resource / path);
 	}
 	void** LocalFs::do_create(unsigned long long mask,
-			void** base, unique_ptr<void>& owner, const string& path, int flag){
+			void** base, unique_ptr<void>& owner, sub_file_path path, int flag){
 		using namespace io;
 
 		void** ret = 0;
 		if (mask & detail::get_mask<io::writer, io::write_view>::value ){ //write open
-			unique_ptr<io::file> ar(new io::file(get_cobj<LocalFs>(this).open_create(path, flag)));
+			unique_ptr<io::file> ar(new io::file(writeOpen(path, flag)));
 			iref<reader, writer, io::random, ioctrl, read_map, write_map> ifile(*ar);
 			ret = copy_interface<reader, writer, io::random, ioctrl, read_map, write_map >::apply(mask, base, ifile, (void*)ar.get()); 
 			unique_ptr<void>(std::move(ar)).swap(owner);
 		}
 		else{ //read open
-			unique_ptr<io::file_reader> ar(new io::file_reader(get_cobj<LocalFs>(this).open(path)));
+			unique_ptr<io::file_reader> ar(new io::file_reader(readOpen(path)));
 			iref<reader, io::random, read_map> ifile(*ar);
 			ret = copy_interface<reader, io::random, read_map>::apply(mask, base, ifile, (void*)ar.get()); 
 			unique_ptr<void>(std::move(ar)).swap(owner);
@@ -122,7 +126,8 @@ namespace xirang{ namespace vfs{
 
 	// \pre !absolute(to)
 	// if from and to in same fs, it may have a more effective implementation
-	fs_error LocalFs::copy(const string& from, const string& to){
+	fs_error LocalFs::copy(sub_file_path from, sub_file_path to){
+        AIO_PRE_CONDITION(!to.is_absolute());
 		
         VfsNode from_node = { from, this};
         if (is_absolute(from))
@@ -135,20 +140,17 @@ namespace xirang{ namespace vfs{
         return xirang::vfs::copyFile(from_node, to_node);
 	}
 
-	fs_error LocalFs::truncate(const string& path, long_size_t s) {
-		AIO_PRE_CONDITION(!is_absolute(path));
-			string real_path = m_resource << path;
-            return fs::truncate(m_resource << path, s);
+	fs_error LocalFs::truncate(sub_file_path path, long_size_t s) {
+        AIO_PRE_CONDITION(!path.is_absolute());
+		return fs::truncate(m_resource / path, s);
 	}
 
 	void LocalFs::sync() { 
-#ifndef MSVC_COMPILER_
         ::sync();
-#endif
     }
 
 	// query
-	const string& LocalFs::resource() const { return m_resource; }
+	const string& LocalFs::resource() const { return m_resource.str(); }
 
 	// volume
 	// if !mounted, return null
@@ -160,16 +162,16 @@ namespace xirang{ namespace vfs{
     }
 
 	// \return mounted() ? absolute() : empty() 
-	string LocalFs::mountPoint() const { return m_root ? m_root->mountPoint(*this) : string();}
+	file_path LocalFs::mountPoint() const { return m_root ? m_root->mountPoint(*this) : file_path();}
 
 	// \pre !absolute(path)
-	VfsNodeRange LocalFs::children(const string& path) const{
+	VfsNodeRange LocalFs::children(sub_file_path path) const{
+        AIO_PRE_CONDITION(!path.is_absolute());
         VfsState st = state(path);
         if (st.state == fs::st_dir)
         {
-            string real_path = m_resource << path;
             return VfsNodeRange(
-                VfsNodeRange::iterator(LocalFileIterator(real_path, const_cast<LocalFs*>(this))),
+                VfsNodeRange::iterator(LocalFileIterator(m_resource/path, const_cast<LocalFs*>(this))),
                 VfsNodeRange::iterator(LocalFileIterator())
                 );
         }
@@ -177,12 +179,10 @@ namespace xirang{ namespace vfs{
 	}
 
 	// \pre !absolute(path)
-	VfsState LocalFs::state(const string& path) const {
-        AIO_PRE_CONDITION(!is_absolute(path));
+	VfsState LocalFs::state(sub_file_path path) const {
+        AIO_PRE_CONDITION(!path.is_absolute());
 
-        string real_path = m_resource << path;
-
-        fs::fstate st = fs::state(real_path);
+        fs::fstate st = fs::state(m_resource/path);
         VfsState fst =
         {
             { path, const_cast<LocalFs*>(this)},

@@ -21,6 +21,8 @@ namespace xirang{
 		public:
 			static const char dim;
 			sub_file_path();
+			explicit sub_file_path(const_range_string str);
+
 			explicit sub_file_path(string::const_iterator first,
 					string::const_iterator last);
 			sub_file_path& operator=(const sub_file_path& rhs);
@@ -34,8 +36,13 @@ namespace xirang{
 			bool is_absolute() const;
 			bool is_network() const;
 			bool is_root() const;
+			bool has_disk() const;
+			bool is_pure_disk() const;
 			bool is_normalized() const;
 			bool empty() const;
+			
+			bool under(sub_file_path path) const;
+			bool contains(sub_file_path path) const;
 
 			const_range_string str() const;
 			string native_str() const;
@@ -121,9 +128,13 @@ namespace xirang{
 			bool is_absolute() const;
 			bool is_network() const;
 			bool is_root() const;
+			bool has_disk() const;
+			bool is_pure_disk() const;
 			bool is_normalized() const;
 			bool empty() const;
 
+			bool under(sub_file_path path) const;
+			bool contains(sub_file_path path) const;
 
 			file_path& normalize(path_process pp = pp_default);
 
@@ -168,6 +179,7 @@ namespace xirang{
 		public:
 			static const char dim;
 			sub_simple_path();
+			explicit sub_simple_path(const_range_string str);
 			explicit sub_simple_path(string::const_iterator first,
 					string::const_iterator last);
 			sub_simple_path& operator=(const sub_simple_path& rhs);
@@ -179,6 +191,9 @@ namespace xirang{
 			bool is_root() const;
 			bool is_normalized() const;
 			bool empty() const;
+
+			bool under(sub_simple_path path) const;
+			bool contains(sub_simple_path path) const;
 
 			const_range_string str() const;
 
@@ -256,6 +271,8 @@ namespace xirang{
 			bool is_root() const;
 			bool is_normalized() const;
 			bool empty() const;
+			bool under(sub_simple_path path) const;
+			bool contains(sub_simple_path path) const;
 
 			simple_path& normalize(path_process pp = pp_default);
 			simple_path& operator/=(const sub_simple_path& rhs);

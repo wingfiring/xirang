@@ -45,9 +45,10 @@ namespace xirang { namespace io{
 	/// describe how to open an archive
 	enum open_flag
 	{
-		of_open,	///< just open an existing archive
-		of_create,	///< just create a non-exsting archive
-		of_create_or_open,	///< as name
+		of_open = 0,	///< just open an existing archive
+		of_create = 1,	///< just create a non-exsting archive
+		of_create_or_open = 2,	///< as name
+		of_open_create_mask = 3,
 
         of_low_mask = 0xffff,
 

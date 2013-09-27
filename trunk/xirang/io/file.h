@@ -3,6 +3,7 @@
 
 #include <xirang/io.h>
 #include <xirang/memory.h>
+#include <xirang/path.h>
 
 namespace xirang{ namespace io{
 	struct file_imp;
@@ -11,7 +12,7 @@ namespace xirang{ namespace io{
 	{
 		typedef reader::iterator iterator;
 
-		explicit file_reader(const string& path);
+		explicit file_reader(const file_path& path);
 		~file_reader();
 
 		range<iterator> read(const range<iterator>& buf);
@@ -36,7 +37,7 @@ namespace xirang{ namespace io{
 		typedef writer::const_iterator const_iterator;
 		typedef writer::const_iterator iterator;
 
-		explicit file_writer(const string& path,  int of);
+		explicit file_writer(const file_path& path,  int of);
 		~file_writer();
 
 		range<const_iterator> write(const range<const_iterator>& r);
@@ -58,7 +59,7 @@ namespace xirang{ namespace io{
 		typedef reader::iterator iterator;
 		typedef writer::const_iterator const_iterator;
 
-		explicit file(const string& path, int of);
+		explicit file(const file_path& path, int of);
 		~file();
 
 		range<iterator> read(const range<iterator>& buf);

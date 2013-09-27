@@ -126,13 +126,13 @@ namespace xirang { namespace vfs{ namespace detail{
 
 	struct VfsNode
 	{
-		string path;
+		file_path path;
 		IVfs* owner_fs;
 	};
 
 	struct MountInfo
 	{
-		string path;
+		file_path path;
 		IVfs* fs;
 	};
 
@@ -153,7 +153,7 @@ namespace xirang { namespace vfs{ namespace detail{
 	typedef BiRangeT<const_itr_traits<MountInfo> > VfsRange;
 	typedef BiRangeT<const_itr_traits<VfsNode> > VfsNodeRange;
 	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
-		create(IVfs& fs, const const_range_string& path, int flag);
+		create(IVfs& fs, sub_file_path path, int flag);
 
     /// \notes 1. all vfs modifications will return er_ok or not null archive_ptr if succeeded.
     ///     2. the path or file name must be xirang style, separated by "/".
@@ -168,17 +168,17 @@ namespace xirang { namespace vfs{ namespace detail{
         /// \pre path must not end with '/'. 
 		/// \pre !absolute(path)
         /// \notes the result of removeing a opended file is depends on implementation capability.. 
-		virtual fs_error remove(const string& path) = 0;
+		virtual fs_error remove(sub_file_path path) = 0;
 
 		/// create dir
         /// \pre path must not end with '/'. 
 		/// \pre !absolute(path)
         /// \notes if the parent of path is not exist, failed.
         /// \notes the result depends on implementation capability.
-		virtual fs_error createDir(const  string& path) = 0;
+		virtual fs_error createDir(sub_file_path path) = 0;
 
 		template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
-			create(const const_range_string& path, int flag){
+			create(sub_file_path path, int flag){
 			return xirang::vfs::create<Interfaces...>(*this, path, flag);
 		}
 
@@ -188,12 +188,12 @@ namespace xirang { namespace vfs{ namespace detail{
         /// \pre !absolute(from) || mounted()
 		/// if from and to in same fs, it may have a more effective implementation
         /// \notes copy to self is imp defined.
-		virtual fs_error copy(const string& from, const string& to) = 0;
+		virtual fs_error copy(sub_file_path from, sub_file_path to) = 0;
 
         /// truncate a file with given size
         /// \pre path must not end with '/'. 
 		/// \pre !absolute(to)
-		virtual fs_error truncate(const string& path, long_size_t s) = 0;
+		virtual fs_error truncate(sub_file_path path, long_size_t s) = 0;
 
         /// flush buffered data to underly media. implementation defined.
 		virtual void sync() = 0;
@@ -209,17 +209,17 @@ namespace xirang { namespace vfs{ namespace detail{
 		virtual bool mounted() const = 0;
 
 		/// \return mounted() ? absolute() : empty() 
-		virtual string mountPoint() const = 0;
+		virtual file_path mountPoint() const = 0;
 
         /// \pre path must not end with '/'. 
 		/// \pre !absolute(path)
         /// \return returned path in VfsNode is file name, not full path.
-		virtual VfsNodeRange children(const string& path) const = 0;
+		virtual VfsNodeRange children(sub_file_path path) const = 0;
 
         /// \pre path must not end with '/'. 
 		/// \pre !absolute(path)
         /// \return returned path in VfsNode is full path. it's different from children()
-		virtual VfsState state(const string& path) const = 0;
+		virtual VfsState state(sub_file_path path) const = 0;
 	
         /// get the option with given id and data
         /// if failed, return a empty any, otherwise depends on the input value.
@@ -243,7 +243,7 @@ namespace xirang { namespace vfs{ namespace detail{
         /// \notes if the parent of path is not exist, failed.
         /// \notes the result depends on implementation capability.
 		virtual void** do_create(unsigned long long mask,
-				void* ret, unique_ptr<void>& owner, const string& path, int flag) = 0;
+				void* ret, unique_ptr<void>& owner, sub_file_path path, int flag) = 0;
 
 	private:
 		// if r == null, means unmount, used by RootFs only
@@ -252,12 +252,12 @@ namespace xirang { namespace vfs{ namespace detail{
 		friend class RootFsImp;
 	};
 	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
-		create(IVfs& fs, const range_string& path, int flag){
+		create(IVfs& vfs, sub_file_path path, int flag){
 			typedef typename private_::sorted_iauto<Interfaces...>::type interface_type;
 			const auto mask = detail::get_mask<Interfaces...>::value;
 			interface_type ret;
 			target_holder<void>* holder = &ret;
-			void** last = fs.do_create(mask, (void**)(holder + 1), ret.target_ptr, path, flag);
+			void** last = vfs.do_create(mask, (void**)(holder + 1), ret.target_ptr, path, flag);
 			AIO_PRE_CONDITION(last == (void**)&ret.target_ptr);
 			holder->target = ret.target_ptr.get();
 			return std::move(ret);
@@ -265,19 +265,19 @@ namespace xirang { namespace vfs{ namespace detail{
 
 	template<typename CoClass> struct IVfsCoBase : public IVfs
 	{
-		virtual fs_error remove(const string& path) {
+		virtual fs_error remove(sub_file_path path) {
 			return get_cobj<CoClass>(this).remove(path);
 		}
 
-		virtual fs_error createDir(const  string& path){
+		virtual fs_error createDir(sub_file_path path){
 			return get_cobj<CoClass>(this).createDir(path);
 		}
 
-		virtual fs_error copy(const string& from, const string& to){
+		virtual fs_error copy(sub_file_path from, sub_file_path to){
 			return get_cobj<CoClass>(this).copy(from, to);
 		}
 
-		virtual fs_error truncate(const string& path, long_size_t s){
+		virtual fs_error truncate(sub_file_path path, long_size_t s){
 			return get_cobj<CoClass>(this).truncate(path, s);
 		}
 
@@ -297,15 +297,15 @@ namespace xirang { namespace vfs{ namespace detail{
 			return get_cobj<CoClass>(this).mounted();
 		}
 
-		virtual string mountPoint() const{
+		virtual sub_file_path mountPoint() const{
 			return get_cobj<CoClass>(this).mountPoint();
 		}
 
-		virtual VfsNodeRange children(const string& path) const{
+		virtual VfsNodeRange children(sub_file_path path) const{
 			return get_cobj<CoClass>(this).children(path);
 		}
 
-		virtual VfsState state(const string& path) const{
+		virtual VfsState state(sub_file_path path) const{
 			return get_cobj<CoClass>(this).state(path);
 		}
 	
@@ -319,7 +319,7 @@ namespace xirang { namespace vfs{ namespace detail{
 
 	private:
 		virtual void** do_create(unsigned long long mask,
-				void** base, unique_ptr<void>& owner, const string& path, int flag) = 0;
+				void** base, unique_ptr<void>& owner, sub_file_path path, int flag) = 0;
 
 		virtual void setRoot(RootFs* r){
 			return get_cobj<CoClass>(this).setRoot(r);
@@ -329,7 +329,7 @@ namespace xirang { namespace vfs{ namespace detail{
 	template<typename CoClass>
 	struct IVfsCo : IVfsCoBase<CoClass>{
 		virtual void** do_create(unsigned long long mask,
-				void** base, unique_ptr<void>& owner, const string& path, int flag){
+				void** base, unique_ptr<void>& owner, sub_file_path path, int flag){
 			return get_cobj<CoClass>(this).do_create(mask, base, owner, path, flag);
 		}
 	};
@@ -339,30 +339,53 @@ namespace xirang { namespace vfs{ namespace detail{
 
 	class RootFs 
 	{
-		public:	
-			explicit RootFs(const string& res);
-			~RootFs();
+	public:	
+		explicit RootFs(sub_file_path res);
+		~RootFs();
 
-			// \pre dir must be absolute name
-			fs_error mount(const string& dir, IVfs& vfs);
-			fs_error unmount(const string& dir);
+		// \pre dir must be absolute name
+		fs_error mount(sub_file_path dir, IVfs& vfs);
+		fs_error mount(sub_file_path dir, aio::unique_ptr<IVfs>& vfs);
+		fs_error unmount(sub_file_path dir);
 
-			void sync();
+		void sync();
 
-			// query
-			const string& resource() const;
+		// query
+		const string& resource() const;
 
-			// volume
-			// return absolute name
-		string mountPoint(const IVfs& p) const;
-		IVfs* mountPoint(const string& p) const;
+		// volume
+		// return absolute name
+		file_path mountPoint(const IVfs& p) const;
+		IVfs* mountPoint(sub_file_path p) const;
 
 		VfsRange mountedFS() const;
-		VfsState locate(const string& path) const;
+		VfsState locate(sub_file_path path) const;
 
         // return true if path contains mount pointer in direct/indirect subdir, excluding self.
-		bool containMountPoint(const string& path) const;
+		bool containMountPoint(sub_file_path path) const;
+		
 
+		//Methods of IVfs
+		fs_error remove(sub_file_path path);
+		fs_error createDir(sub_file_path path);
+		fs_error copy(sub_file_path from, sub_file_path to) ;
+		fs_error truncate(sub_file_path path, long_size_t s) ;
+		VfsNodeRange children(sub_file_path path) const ;
+		VfsState state(sub_file_path path) const ;
+		void** do_create(unsigned long long mask,
+				void* ret, unique_ptr<void>& owner, sub_file_path path, int flag);
+
+	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
+		create(sub_file_path path, int flag){
+			typedef typename private_::sorted_iauto<Interfaces...>::type interface_type;
+			const auto mask = detail::get_mask<Interfaces...>::value;
+			interface_type ret;
+			target_holder<void>* holder = &ret;
+			void** last = this->do_create(mask, (void**)(holder + 1), ret.target_ptr, path, flag);
+			AIO_PRE_CONDITION(last == (void**)&ret.target_ptr);
+			holder->target = ret.target_ptr.get();
+			return std::move(ret);
+		}
 	private:
 		RootFsImp* m_imp;
 	};
@@ -370,53 +393,43 @@ namespace xirang { namespace vfs{ namespace detail{
 	AIO_EXCEPTION_TYPE(PermisionDenied);
 	AIO_EXCEPTION_TYPE(FileExist);
 	AIO_EXCEPTION_TYPE(FileNotFound);
-
-    using fs::append_tail_slash;
-	using fs::normalize;
-	using fs::is_normalized;
-    using fs::is_filename;
-    using fs::dir_filename;
-    using fs::ext_filename;
-
-    // return true if p[0] is '/';
-	extern bool is_absolute(const string& p);
+	AIO_EXCEPTION_TYPE(BadFileType);
 
 	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
-    temp_file(IVfs& vfs, const_range_string template_ , const_range_string parent_dir
-			, int flag = io::of_remove_on_close, string* path = 0){
+    temp_file(IVfs& vfs, sub_file_path template_ , sub_file_path parent_dir
+			, int flag = io::of_remove_on_close, file_path* path = 0){
         AIO_PRE_CONDITION(flag == 0 ||  flag  == io::of_remove_on_close);
+        AIO_PRE_CONDITION(!parent_dir.is_root());
         flag |= io::of_create;
 
         if (vfs.state(parent_dir).state != fs::st_dir)
-            AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir);
-
-        //avoid to make parent start with '/'
-        string parent =  parent_dir.empty()? string(parent_dir) : append_tail_slash(parent_dir);
+			AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir.str());
 
         const int max_try = 10;
         for(int i = 0; i < max_try ; ++i)
         {
-            string_builder file_path = parent;
-            file_path += fs::private_::gen_temp_name(template_);
-			if (vfs.state(string(file_path)).state != fs::st_not_found)
+			auto fpath = parent_dir / fs::private_::gen_temp_name(template_);
+
+			if (vfs.state(fpath).state != fs::st_not_found)
 				continue;
-			auto ret = create<Interfaces...>(vfs, string(file_path), flag);
-			*path = file_path;
+			auto ret = create<Interfaces...>(vfs, fpath, flag);
+			if (path)
+				*path = fpath;
 			return std::move(ret);
         }
 
-        AIO_THROW(io::create_failed)("failed to create temp file in directory:")(parent_dir);
+        AIO_THROW(io::create_failed)("failed to create temp file in directory:")(parent_dir.str());
     }
 
-    string temp_dir(IVfs& vfs, const_range_string template_, const_range_string parent_dir);
-    fs_error recursive_remove(IVfs&vfs, const string& path);
-    fs_error recursive_create_dir(IVfs&vfs, const string& path);
+    file_path temp_dir(IVfs& vfs, sub_file_path template_, sub_file_path parent_dir);
+    fs_error recursive_remove(IVfs&vfs, sub_file_path path);
+    fs_error recursive_create_dir(IVfs&vfs, sub_file_path path);
 
 	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
-    recursive_create(IVfs&vfs, const string& path, int flag){
-        fs_error err = recursive_create_dir(vfs, dir_filename(path));
-        if (err != fs::er_ok && err != fs::er_exist)
-			AIO_THROW(io::create_failed)("failed to create the parent directory:")(path);
+    recursive_create(IVfs&vfs, sub_file_path path, int flag){
+        fs_error err = recursive_create_dir(vfs, path.parent());
+        if (err != fs::er_ok)
+			AIO_THROW(io::create_failed)("failed to create the parent directory:")(path.str());
 
         return create<Interfaces...>(vfs, path, flag);
 	}

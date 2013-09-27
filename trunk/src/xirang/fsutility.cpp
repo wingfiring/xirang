@@ -58,17 +58,19 @@ namespace xirang {namespace fs{
 			return name.str();
 		}
 
-        string gen_temp_name(const_range_string template_)
+        file_path gen_temp_name(sub_file_path template_)
         {
-			if (!contains(template_, '?'))	//back compatibility
-				return template_ << gen_temp_name_();
+			if (!contains(template_.str(), '?'))	//back compatibility
+				return file_path(string(template_.str() << gen_temp_name_()), pp_none);
 
-			return replace(string(template_).range_str(), literal("?"), gen_temp_name_().range_str());
+			return file_path(replace(template_.str(), literal("?"), gen_temp_name_().range_str()), pp_none);
         }
     }
 #ifdef GNUC_COMPILER_
-    fs_error move(const string& from, const string& to)
+    fs_error move(const file_path& from_, const file_path& to_)
     {
+		string from(from_.str());
+		string to(to.str());
 		int res = link(from.c_str(), to.c_str());
 		if (res == 0){
 			unlink(from.c_str());
@@ -94,9 +96,10 @@ namespace xirang {namespace fs{
 		}
     }
 
-    fs_error remove(const string& path)
+    fs_error remove(const file_path& path_)
     {
-        if (state(path).state == st_dir)
+		string path(path_.str());
+        if (state(path_).state == st_dir)
         {
             return rmdir(path.c_str()) == 0 
                 ? er_ok
@@ -109,21 +112,21 @@ namespace xirang {namespace fs{
                 : er_system_error;
         }
     }
-    fs_error create_dir(const  string& path)
+    fs_error create_dir(const file_path& path)
     {
         if (state(path).state != st_not_found)
             return er_exist;
 
-        return (::mkdir(path.c_str(), S_IRWXU|S_IRWXG|S_IRWXO) != 0)
+        return (::mkdir(path.str().c_str(), S_IRWXU|S_IRWXG|S_IRWXO) != 0)
             ? er_system_error
             : er_ok;
     }
 
-    fstate state(const string& path)
+    fstate state(const file_path& path)
     {
         fstate fst = {path, st_not_found, 0};
         struct stat st;
-        if (stat(path.c_str(), &st) == 0)
+        if (stat(path.str().c_str(), &st) == 0)
         {
             if (S_ISREG(st.st_mode))
                 fst.state = st_regular;
@@ -144,23 +147,23 @@ namespace xirang {namespace fs{
         return fst;
     }
 
-    fs_error truncate(const string& path, long_size_t s)
+    fs_error truncate(const file_path& path, long_size_t s)
     {
         int ret = ::truncate(path.c_str(), s);
         return ret == 0 ? er_ok : er_system_error;
     }
 #elif defined(MSVC_COMPILER_)
-    fs_error move(const string& from, const string& to)
+    fs_error move(const file_path& from, const file_path& to)
     {
-        wstring wfrom = utf8::decode_string(to_native_path(from));
-        wstring wto = utf8::decode_string(to_native_path(to));
+        wstring wfrom = from.native_wstr();
+        wstring wto = to.native_wstr();
 		return MoveFileW(wfrom.c_str(), wto.c_str()) ? er_ok : er_system_error;
 
     }
 
-    fs_error remove(const string& path)
+    fs_error remove(const file_path& path)
     {
-        wstring wpath = utf8::decode_string(to_native_path(path));
+        wstring wpath = path.native_wstr();
         if (state(path).state == st_dir)
         {
         
@@ -176,38 +179,28 @@ namespace xirang {namespace fs{
         }
     }
 
-    fs_error create_dir(const  string& path)
+    fs_error create_dir(const file_path& path)
     {
         if (state(path).state != st_not_found)
             return er_exist;
 
-        wstring wpath = utf8::decode_string(to_native_path(path));
+        wstring wpath = path.native_wstr();
         return (_wmkdir(wpath.c_str()) != 0)
             ? er_system_error
             : er_ok;
     }
     
-    fstate state(const string& path)
+    fstate state(const file_path& path)
     {   
         // NOTES: on windows, the pure disk letter or network dir MUST endded with '\'.
         // Network file MUST NOT end with '\'
         // A local dir or file path  MUST NOT ended with '\'.
         // I was freaked out!
 
-        bool is_disk = path.size() == 2 && path[1] == ':';
-        bool is_network = !path.empty() && path[0] == '/';
-        bool is_dir_or_network = is_disk || is_network;
+        fstate fst = {path, st_not_found, 0};
+        struct _stat st={};
 
-        
-        string tmppath = is_dir_or_network? append_tail_slash(path) : remove_tail_slash(path);
-        fstate fst = {remove_tail_slash(path), st_not_found, 0};
-
-        struct _stat st;
-        wstring_builder wpath;
-
-        wpath.reserve(tmppath.size() + 1);
-        utf8::decode(to_range(tmppath), std::back_inserter(wpath));
-        //wstring wpath = utf8::decode_string(to_native_path(tmppath)); // for network path, try as dir at first
+		wstring wpath = path.native_wstr();	// try without end '/' first
         if (_wstat(wpath.c_str(), &st) == 0)
         {
             if (_S_IFREG & st.st_mode)
@@ -218,11 +211,9 @@ namespace xirang {namespace fs{
                 fst.state = st_unknown;
             fst.size = st.st_size;
         }
-        else if (is_network) //retry as a file
+        else 
         {
-            wpath.clear();
-            utf8::decode(to_range(to_native_path(fst.path)), std::back_inserter(wpath));
-            //wstring wpath = utf8::decode_string(to_native_path(fst.path));
+			wpath = wpath << literal("/");	//try with ending '/'
             if (_wstat(wpath.c_str(), &st) == 0)
             {
                 if (_S_IFREG & st.st_mode)
@@ -238,9 +229,9 @@ namespace xirang {namespace fs{
         return fst;
     }
 
-    fs_error truncate(const string& path, long_size_t s)
+    fs_error truncate(const file_path& path, long_size_t s)
     {
-        wstring wpath = utf8::decode_string(to_native_path(path));
+        wstring wpath = path.native_wstr();
         HANDLE hFile = CreateFileW(wpath.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
         if (hFile == INVALID_HANDLE_VALUE)
             return er_system_error;
@@ -252,7 +243,7 @@ namespace xirang {namespace fs{
     }
 #endif
 
-    void copy(const string& from, const string& to)
+    void copy(const file_path& from, const file_path& to)
     {
 		io::file_reader src(from);
 		io::file_writer dest(to, io::of_create_or_open);
@@ -264,7 +255,6 @@ namespace xirang {namespace fs{
 			AIO_THROW(file_copy_error);
     }
 
-
     class file_iterator
 	{
 	public:
@@ -273,18 +263,26 @@ namespace xirang {namespace fs{
 		{
         }
 
-		explicit file_iterator(const string& rpath)
-			: m_itr(rpath.c_str())
-		{   
+		explicit file_iterator(const file_path& rpath)
+#ifdef MSVC_COMPILER_
+			: m_itr(
+					(rpath.is_network() || rpath.is_pure_disk())
+					? wstring(rpath.native_wstr() << literal("/")).c_str()
+					: rpath.native_wstr().c_str()
+					)
+#else
+			: m_itr(rpath.str())
+#endif
+		{ 
         }
 
-		const string& operator*() const
+		const file_path& operator*() const
 		{
-            m_path = m_itr->path().leaf().string() ;
+            m_path = file_path(m_itr->path().leaf().c_str());
 			return m_path;
 		}
 
-        const string* operator->() const
+        const file_path* operator->() const
 		{
             return &**this;
 		}
@@ -304,11 +302,15 @@ namespace xirang {namespace fs{
 			return m_itr == rhs.m_itr;
 		}
 	private:
+#ifdef MSVC_COMPILER_
+		boost::filesystem::wdirectory_iterator m_itr;
+#else
 		boost::filesystem::directory_iterator m_itr;
-        mutable string m_path;
+#endif
+        mutable file_path m_path;
 	};
 
-    file_range children(const string& path)
+    file_range children(const file_path& path)
     {
         fstate st = state(path);
         return (st.state == st_dir)
@@ -316,210 +318,92 @@ namespace xirang {namespace fs{
             : file_range();
     }
 
-	io::file temp_file(const_range_string template_/* = "tmpf"*/, int flag /*= io::of_create | io::of_remove_on_close*/, string* path/* = 0*/)
+	io::file temp_file(const file_path& template_/* = "tmpf"*/, int flag /*= io::of_create | io::of_remove_on_close*/, file_path* path/* = 0*/)
     {   
         const char* tmpdir = getenv("TMPDIR");
         if (!tmpdir)
             tmpdir = getenv("TMP");
 
         string prefix = as_range_string((tmpdir == 0) ? P_tmpdir : tmpdir);
-        return temp_file(template_, to_xirang_path(prefix), flag, path);
+        return temp_file(template_, file_path(prefix), flag, path);
     }
     
-	io::file temp_file(const_range_string template_, const_range_string parent_dir, int flag /*= io::of_create | io::of_remove_on_close*/, string* path/* = 0*/)
+	io::file temp_file(const file_path& template_, const file_path& parent_dir, int flag /*= io::of_create | io::of_remove_on_close*/, file_path* path/* = 0*/)
     {
         AIO_PRE_CONDITION(flag == 0 ||  flag  == io::of_remove_on_close);
         flag |= io::of_create;
 
         if (state(parent_dir).state != st_dir)
-            AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir);
-
-        string parent =  append_tail_slash(parent_dir);
+            AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir.str());
 
         const int max_try = 100;
         for(int i = 0; i < max_try ; ++i)
         {
-            string_builder file_path = parent;
-            file_path += private_::gen_temp_name(template_);
-
+			auto fpath = parent_dir / private_::gen_temp_name(template_);
 			if (path)
-				*path = file_path;
-			return io::file(file_path.str(), flag);
+				*path = fpath;
+			return io::file(fpath, flag);
         }
 
-        AIO_THROW(io::create_failed)("failed to create temp file in directory:")(parent_dir);
+        AIO_THROW(io::create_failed)("failed to create temp file in directory:")(parent_dir.str());
     }
 
     
-    string temp_dir(const_range_string template_/* = "tmpd"*/)
+    file_path temp_dir(const file_path& template_/* = "tmpd"*/)
     {
         const char* tmpdir = getenv("TMPDIR");
         if (!tmpdir)
             tmpdir = getenv("TMP");
 
         string prefix = as_range_string((tmpdir == 0) ? P_tmpdir : tmpdir);
-        return temp_dir(template_, to_xirang_path(prefix));
+        return temp_dir(template_, file_path(prefix));
     }
 
     
-    string temp_dir(const_range_string template_, const_range_string parent_dir)
+    file_path temp_dir(const file_path& template_, const file_path& parent_dir)
     {
         if (state(parent_dir).state != st_dir)
-            AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir);
+            AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir.str());
 
-        string prefix =  append_tail_slash(parent_dir) << template_;
+        string prefix =  parent_dir / template_;
 
         const int max_try = 100;
         for(int i = 0; i < max_try ; ++i)
         {
-            string file_path = private_::gen_temp_name(prefix);
-            if (create_dir(file_path) == er_ok)
+            if (create_dir(private_::gen_temp_name(prefix)) == er_ok)
                 return file_path;
         }
 
-        AIO_THROW(io::create_failed)("failed to create temp file in directory:")(parent_dir);
+        AIO_THROW(io::create_failed)("failed to create temp file in directory:")(parent_dir.str());
     }
 
-    bool exists(const_range_string file)
+    bool exists(const file_path& file)
     {
         return state(file).state != st_not_found;
     }
 
-    string append_tail_slash(const string& p)
-	{
-		return p.empty() || *(p.end() - 1) != '/'
-			? p << literal("/")
-			: p;
-	}
-
-    string remove_tail_slash(const string& p){
-        return !p.empty() && *(p.end() - 1) == '/'
-			? string(make_range(p.begin(), p.end() - 1))
-			: p;
-    }
-	bool has_tail_slash(const string& p){
-		return !p.empty() && *(p.end() - 1) == '/';
-	}
-
-    string normalize(const string& p)
-	{
-        bool is_abs = !p.empty() && *p.begin() == '/';
-		bool end_slash = !p.empty() && *(p.end() - 1) == '/';
-
-		char_separator<char> sep('/');
-        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
-        tokenizer tokens(p, sep);
-
-		std::deque<string> stack;
-		bool append_slash = false;
-		for (tokenizer::iterator itr = tokens.begin(); itr != tokens.end(); ++itr)
-		{
-			if (*itr == onedot)
-			{
-				append_slash = true;
-				continue;
-			}
-			if (*itr == twodot)
-			{
-				if (!stack.empty()) stack.pop_back();
-				append_slash = true;
-				continue;
-			}
-			if (!itr->empty())
-				stack.push_back(string(*itr));
-			append_slash = end_slash;
-		}
-
-		string_builder result;
-		if (is_abs){
-			result.push_back('/');
-            if (p.size() > 1 && p[1] == '/') // start with "//" 
-                result.push_back('/');
-        }
-
-		for (std::deque<string>::iterator itr = stack.begin(); itr != stack.end(); ++itr)
-		{
-			result += *itr;
-			result.push_back('/');
-		}
-		if (!append_slash && !stack.empty() )	//remove end slash if p doesn't end with '/'
-			result.resize(result.size() - 1);
-		return string(result);
-	}
-
-    bool is_normalized(const string& p)
-	{
-		char_separator<char> sep('/');
-        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
-		tokenizer tokens(p, sep);
-
-        
-		for (tokenizer::iterator itr = tokens.begin(); itr != tokens.end(); ++itr)
-		{
-            const_range_string tmp = *itr;
-			if (tmp == onedot || tmp == twodot)
-				return false;
-		}
-		return true;
-
-	}
-
-	bool is_filename(const string& p)
-	{
-		return find(p, '/') == p.end();
-	}
-
-    string to_native_path(const string& p)
+    fs_error recursive_remove(const file_path& path)
     {
-#ifndef MSVC_COMPILER_
-        return replace(p, '\\', '/');
-#endif
-        return replace(p, '/', '\\');
-        
-    }
-
-    string to_xirang_path(const string& p)
-    {
-        return replace(p, '\\', '/');
-    }
-
-    fs_error recursive_remove(const string& path)
-    {
-        if (state(path).state == st_dir)
-        {
-            file_range rf = children(path);
-            string pathprefix = append_tail_slash(path);
-            for (file_range::iterator itr = rf.begin(); itr != rf.end(); ++itr){
-                recursive_remove(pathprefix << *itr);
-            }
-        }
+		for (auto& p: children(path))
+			recursive_remove(path / p);
         
         return remove(path);
     }
 
-    fs_error recursive_create_dir(const string& path)
+    fs_error recursive_create_dir(const file_path& path)
     {
-        char_separator<char> sep('/', 0, keep_empty_tokens);
-        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
-        string normalized_path = normalize(path);
-		tokenizer tokens(normalized_path, sep);
+		if (path.empty())
+			return er_ok;
 
-        tokenizer::iterator itr = tokens.begin();
-        string_builder mpath;
-        if (itr != tokens.end() && itr->empty())
-        {
-            mpath.push_back('/');
-            ++itr;
-        }
+		auto fisrt(path.begin()), last(path.end());
 
-		for (; itr != tokens.end(); ++itr)
-		{
-            mpath.append(*itr);
-            string fpath(mpath);
-            fs::file_state st = state(fpath).state;
+		file_path current(*first);
+		++first;
+		for (;first != last;){
+            fs::file_state st = state(current).state;
             if (st == st_not_found)
             {
-                fs_error err = create_dir(fpath);
+                fs_error err = create_dir(current);
                 if (err != er_ok)
                     return err;
             }
@@ -528,61 +412,20 @@ namespace xirang {namespace fs{
                 return er_invalid;
             }
 
-            mpath.push_back('/');
+			current /= *first;
 		}
+
 		return er_ok;
     }
 
-    io::file recursive_create(const string& path, int flag)
+    io::file recursive_create(const file_path& path, int flag)
     {
-        fs_error err = recursive_create_dir(dir_filename(path));
-        if (err != er_ok && err != er_exist)
+        fs_error err = recursive_create_dir(path.parent());
+        if (err != er_ok)
         {
-			AIO_THROW(io::create_failed)(path);
+			AIO_THROW(io::create_failed)(path.str());
         }
         return io::file(path, flag);
     }
 
-    string dir_filename(const string& path, string* file/* = 0*/)
-    {
-        string::const_iterator pos = rfind(path, '/');
-        string::const_iterator fileStart = pos;
-
-        if (pos == path.end()) 
-        {
-             pos = path.begin();
-             fileStart = pos;
-        }
-        else
-        {
-            ++fileStart;
-        }
-        string dir (make_range(path.begin(), pos));
-        if (file)
-        {
-            *file = string(make_range(fileStart, path.end()));
-        }
-
-        return dir;
-    }
-
-    string ext_filename(const string& p, string* file/* = 0*/)
-    {
-        return ext_filename('.', p, file);
-    }
-
-    string ext_filename(char seprator, const string& path, string* file /*= 0*/)
-    {
-        string::const_iterator pos = rfind(path, seprator);
-        string::const_iterator extStart = pos;
-
-        if (pos != path.end()) 
-            ++extStart;
-
-        string ext = string(make_range(extStart, path.end()));
-        if (file)
-            *file = string (make_range(path.begin(), pos));
-            
-        return ext;
-    }
 }}

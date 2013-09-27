@@ -1,6 +1,7 @@
 #include <xirang/path.h>
 #include <algorithm>
 #include <vector>
+#include <xirang/string_algo/string.h>
 
 
 namespace xirang{
@@ -16,6 +17,9 @@ namespace xirang{
 
 	sub_file_path::sub_file_path(){}
 
+	sub_file_path::sub_file_path(const_range_string str)
+		: m_str(str)
+	{ }
 	sub_file_path::sub_file_path(string::const_iterator first,
 			string::const_iterator last)
 		: m_str(first, last)
@@ -67,11 +71,31 @@ namespace xirang{
 	bool sub_file_path::is_root() const{
 		return m_str.size() == 1 && m_str[0] == dim;
 	}
+	bool sub_file_path::has_disk() const{
+		return m_str.size() > 2
+			&& m_str[2] == ':';
+	}
+	bool sub_file_path::is_pure_disk() const{
+		return m_str.size() == 3
+			&& m_str[2] == ':';
+	}
 	bool sub_file_path::is_normalized() const{
 		return std::none_of(begin(), end(), [](const sub_file_path& p){ return p.str().empty() || p.str() == onedot || p.str() == twodot;});
 	}
 	bool sub_file_path::empty() const{
 		return m_str.empty();
+	}
+	bool sub_file_path::under(sub_file_path path) const{
+		if( m_str.size() <= path.size())
+			return false;
+		auto pos = std::mismatch(m_str.begin(), m_str.end(), path.str().begin());
+		if (pos.second != path.str().end())
+			return false;
+		return *pos.first == dim;
+		
+	}
+	bool sub_file_path::contains(sub_file_path path) const{
+		return path.under(*this);
 	}
 
 	const_range_string sub_file_path::str() const{
@@ -259,12 +283,24 @@ namespace xirang{
 	bool file_path::is_root() const{
 		return as_sub_path().is_root();
 	}
+	bool file_path::has_disk() const{
+		return as_sub_path().has_disk();
+	}
+	bool file_path::is_pure_disk() const{
+		return as_sub_path().is_pure_disk();
+	}
 
 	bool file_path::is_normalized() const{
 		return as_sub_path().is_normalized();
 	}
 	bool file_path::empty() const{
 		return m_str.empty();
+	}
+	bool file_path::under(sub_file_path path) const{
+		return as_sub_path().under(path);
+	}
+	bool file_path::contains(sub_file_path path) const{
+		return as_sub_path().contains(path);
 	}
 
     file_path& file_path::normalize(path_process pp)
@@ -402,6 +438,9 @@ namespace xirang{
 	const char sub_simple_path::dim = '.';
 	sub_simple_path::sub_simple_path(){}
 
+	sub_simple_path::sub_simple_path(const_range_string str)
+		: m_str(str)
+	{ }
 	sub_simple_path::sub_simple_path(string::const_iterator first,
 			string::const_iterator last)
 		: m_str(first, last)
@@ -440,6 +479,19 @@ namespace xirang{
 	}
 	bool sub_simple_path::empty() const{
 		return m_str.empty();
+	}
+
+	bool sub_simple_path::under(sub_simple_path path) const{
+		if( m_str.size() <= path.size())
+			return false;
+		auto pos = std::mismatch(m_str.begin(), m_str.end(), path.str().begin());
+		if (pos.second != path.str().end())
+			return false;
+		return *pos.first == dim;
+		
+	}
+	bool sub_simple_path::contains(sub_simple_path path) const{
+		return path.under(*this);
 	}
 
 	const_range_string sub_simple_path::str() const{
@@ -594,6 +646,12 @@ namespace xirang{
 
 	bool simple_path::empty() const{
 		return as_sub_path().empty();
+	}
+	bool simple_path::under(sub_simple_path path) const{
+		return as_sub_path().under(path);
+	}
+	bool simple_path::contains(sub_simple_path path) const{
+		return as_sub_path().contains(path);
 	}
     simple_path& simple_path::normalize(path_process pp)
 	{

@@ -12,7 +12,7 @@ using namespace xirang;
 BOOST_AUTO_TEST_CASE(tempfile_case)
 {
     xirang::string prefix("test");
-    xirang::string test_name = fs::private_::gen_temp_name(prefix);
+    xirang::string test_name = fs::private_::gen_temp_name(sub_file_path(prefix)).str();
 
     BOOST_CHECK(prefix.size() < test_name.size());
     BOOST_CHECK(std::equal(prefix.begin(), prefix.end(), test_name.begin()));

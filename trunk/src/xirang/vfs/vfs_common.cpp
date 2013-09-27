@@ -1,14 +1,14 @@
 #include <xirang/vfs/vfs_common.h>
 
 namespace xirang{ namespace vfs{ 
-    fs_error remove_check(IVfs& fs, const string& path)
+    fs_error remove_check(IVfs& fs, sub_file_path path)
 	{
-		AIO_PRE_CONDITION(!is_absolute(path));
+		AIO_PRE_CONDITION(!path.is_absolute());
 
 		if (fs.mounted())
 		{
-			string mount_point = fs.root()->mountPoint(fs);
-			if (fs.root()->containMountPoint(mount_point << path))
+			auto mount_point = fs.root()->mountPoint(fs);
+			if (fs.root()->containMountPoint(mount_point / path))
 				return fs::er_busy_mounted;
 		}
 

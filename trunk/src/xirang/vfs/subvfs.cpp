@@ -2,8 +2,8 @@
 
 namespace xirang{ namespace vfs{
 
-	SubVfs::SubVfs(IVfs& parent_, const string& dir)
-		: m_root(0), parent(parent_), m_resource(dir.empty()? dir : append_tail_slash(dir))
+	SubVfs::SubVfs(IVfs& parent_, sub_file_path dir)
+		: m_root(0), parent(parent_), m_resource(dir)
 	{
 	}
 
@@ -13,31 +13,34 @@ namespace xirang{ namespace vfs{
 
 	// common operations of dir and file
 	// \pre !absolute(path)
-	fs_error SubVfs::remove(const string& path) { 
-        return parent.remove(m_resource << path);
+	fs_error SubVfs::remove(sub_file_path path) { 
+        AIO_PRE_CONDITION(!path.is_absolute());
+        return parent.remove(m_resource / path);
 	}
 
 	// dir operations
 	// \pre !absolute(path)
-	fs_error SubVfs::createDir(const  string& path){
-        return parent.createDir(m_resource << path);
+	fs_error SubVfs::createDir(sub_file_path path){
+        AIO_PRE_CONDITION(!path.is_absolute());
+        return parent.createDir(m_resource / path);
 	}
 
 	// \pre !absolute(to)
 	// if from and to in same fs, it may have a more effective implementation
-	fs_error SubVfs::copy(const string& from, const string& to){
-		return parent.copy(from, m_resource << to);
+	fs_error SubVfs::copy(sub_file_path from, sub_file_path to){
+        AIO_PRE_CONDITION(!to.is_absolute());
+		return parent.copy(from, m_resource / to);
 	}
 
-	fs_error SubVfs::truncate(const string& path, long_size_t s) {
-		AIO_PRE_CONDITION(!is_absolute(path));
-        return parent.truncate(m_resource << path, s);
+	fs_error SubVfs::truncate(sub_file_path path, long_size_t s) {
+        AIO_PRE_CONDITION(!path.is_absolute());
+        return parent.truncate(m_resource / path, s);
 	}
 
 	void SubVfs::sync() { parent.sync();  }
 
 	// query
-	const string& SubVfs::resource() const { return m_resource; }
+	const string& SubVfs::resource() const { return m_resource.str(); }
 
 	// volume
 	// if !mounted, return null
@@ -49,17 +52,18 @@ namespace xirang{ namespace vfs{
     }
 
 	// \return mounted() ? absolute() : empty() 
-    string SubVfs::mountPoint() const { return m_root ? m_root->mountPoint(*this) : string();}
+    file_path SubVfs::mountPoint() const { return m_root ? m_root->mountPoint(*this) : file_path();}
 
 	// \pre !absolute(path)
-	VfsNodeRange SubVfs::children(const string& path) const{
-        return parent.children(m_resource << path);
+	VfsNodeRange SubVfs::children(sub_file_path path) const{
+        AIO_PRE_CONDITION(!path.is_absolute());
+        return parent.children(m_resource / path);
 	}
 
 	// \pre !absolute(path)
-	VfsState SubVfs::state(const string& path) const {
-        AIO_PRE_CONDITION(!is_absolute(path));
-        return parent.state(m_resource << path);
+	VfsState SubVfs::state(sub_file_path path) const {
+        AIO_PRE_CONDITION(!path.is_absolute());
+        return parent.state(m_resource / path);
 	}
 
 	// if r == null, means unmount
@@ -68,9 +72,9 @@ namespace xirang{ namespace vfs{
         m_root = r;
 	}
 	void** SubVfs::do_create(unsigned long long mask,
-			void* ret, unique_ptr<void>& owner, const string& path, int flag){
-        AIO_PRE_CONDITION(!is_absolute(path));
-        return parent.do_create(mask, ret, owner, m_resource << path,  flag);
+			void* ret, unique_ptr<void>& owner, sub_file_path path, int flag){
+        AIO_PRE_CONDITION(!path.is_absolute());
+        return parent.do_create(mask, ret, owner, m_resource / path,  flag);
 	}
 
 } }

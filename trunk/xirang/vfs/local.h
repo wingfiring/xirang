@@ -10,28 +10,28 @@ namespace xirang{ namespace vfs{
 	{
 	public:
 
-		explicit LocalFs(const string& dir);
+		explicit LocalFs(file_path dir);
 
 		~LocalFs();
 
 		// common operations of dir and file
 		// \pre !absolute(path)
-		virtual fs_error remove(const string& path);
+		virtual fs_error remove(file_path path);
 
 		// dir operations
 		// \pre !absolute(path)
-		virtual fs_error createDir(const  string& path);
+		virtual fs_error createDir(file_path path);
 
 		// file operations
-		io::file open_create(const string& path, int flag);
-		io::file_reader open(const string& path);
+		io::file writeOpen(file_path path, int flag);
+		io::file_reader readOpen(file_path path);
 
 		// \pre !absolute(to)
 		// if from and to in same fs, it may have a more effective implementation
 		// otherwise, from should be a
-		virtual fs_error copy(const string& from, const string& to);
+		virtual fs_error copy(file_path from, const string& to);
 
-		virtual fs_error truncate(const string& path, long_size_t s);
+		virtual fs_error truncate(file_path path, long_size_t s);
 
 		virtual void sync();
 
@@ -46,22 +46,22 @@ namespace xirang{ namespace vfs{
 		virtual bool mounted() const;
 
 		// \return mounted() ? absolute() : empty() 
-		virtual string mountPoint() const;
+		virtual sub_file_path mountPoint() const;
 
 		// \pre !absolute(path)
-		virtual VfsNodeRange children(const string& path) const;
+		virtual VfsNodeRange children(file_path path) const;
 
 		// \pre !absolute(path)
-		virtual VfsState state(const string& path) const;
+		virtual VfsState state(file_path path) const;
 
 		virtual void** do_create(unsigned long long mask,
-				void** base, unique_ptr<void>& owner, const string& path, int flag);
+				void** base, unique_ptr<void>& owner, file_path path, int flag);
 	private:
 		// if r == null, means unmount
 		virtual void setRoot(RootFs* r);
 
 		RootFs* m_root;
-		string m_resource;
+		file_path m_resource;
 
 
 		LocalFs(const LocalFs&); //disable

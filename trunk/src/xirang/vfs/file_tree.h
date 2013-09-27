@@ -2,10 +2,8 @@
 #define SRC_XIRANG_VFS_FILE_TREE_H
 
 #include <xirang/vfs.h>
-#include <xirang/string_algo/char_separator.h>
 #include <xirang/string_algo/string.h>
 
-#include <boost/tokenizer.hpp>
 #include <algorithm>
 #include <unordered_map>
 
@@ -15,20 +13,21 @@ namespace xirang{ namespace vfs{
 }}
 
 namespace xirang{ namespace vfs{ namespace private_{
-	
-	struct hash_string{
-		size_t operator()(const string& str) const{
-			return str.hash();
+
+	struct hash_file_path{
+		size_t operator()(const file_path& path) const{
+			return path.str().hash();
 		}
 	};
 
+	
 	template<typename T> struct file_node
 	{
 		typedef file_node<T> node_type;
 
 		string name;
 		file_state type;	//dir or normal
-		std::unordered_map<string, std::unique_ptr<node_type>, hash_string> children;
+		std::unordered_map<file_path, std::unique_ptr<node_type>, hash_file_path> children;
 		node_type* parent;
 
 		T data;
@@ -42,80 +41,34 @@ namespace xirang{ namespace vfs{ namespace private_{
 
 	template<typename T> struct locate_result{
 		file_node<T>* node;
-		const_range_string not_found;
+		sub_file_path not_found;
 	};
 
 	template <typename T>
-	locate_result<T> locate(file_node<T>& root, const const_range_string& path) 
+	locate_result<T> locate(file_node<T>& root, sub_file_path path) 
 	{
-        char_separator<char> sep('/');
-        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
-        tokenizer tokens(path, sep);
-
 		file_node<T>* pos = &root;
-        tokenizer::iterator itr = tokens.begin();
-		for (; itr != tokens.end(); ++itr)
-		{
+		
+		auto itr = path.begin();
+		for (auto end(path.end()); itr != end; ++itr ){
 			auto child = pos->children.find(*itr);
 			if (child != pos->children.end())
 				pos = child->second.get();
 			else
 				break;
 		}
-
-		auto rest_first = itr == tokens.end()?  path.end() : itr->begin();
 
 		typedef locate_result<T> return_type;
 		return return_type {
-			pos, const_range_string(rest_first, path.end())
+			pos, sub_file_path(itr->str().begin(), path.end())
 		};
-		//return ret;
 	}
 
-
-	template <typename T>
-	file_node<T>* locate_parent(file_node<T>& root, const string& path, string& base) 
-	{
-        char_separator<char> sep('/');
-        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
-        tokenizer tokens(path, sep);
-
-
-		file_node<T>* pos = &root;
-        tokenizer::iterator itr = tokens.begin();
-		for (; itr != tokens.end(); ++itr)
-		{
-			auto child = pos->children.find(*itr);
-			if (child != pos->children.end())
-				pos = child->second.get();
-			else
-				break;
-		}
-
-		if (itr == tokens.end())
-		{
-			base = pos->name;
-			return pos->parent;
-		}
-
-		string_builder sbbase;
-		for (; itr != tokens.end(); ++itr)
-		{
-			sbbase += *itr;
-			sbbase.push_back('/');
-		}
-
-		if (!sbbase.empty())
-			sbbase.pop_back();
-		base = sbbase;
-
-		return pos;
-	}
 
 	template<typename T>
 	fs_error removeNode(file_node<T>* node)
 	{
-		AIO_PRE_CONDITION(node);
+		AIO_PRE_CONDITION(node && node->parent && node->parent->children.count(node->name));
         if (!node->children.empty())
             return fs::er_not_empty;
 
@@ -123,65 +76,44 @@ namespace xirang{ namespace vfs{ namespace private_{
 		return fs::er_ok;
 	}
 
-	template<typename T> file_node<T>* create_node(file_node<T>& root, const string& path, file_state type, bool whole_path)
-	{
-		AIO_PRE_CONDITION(!path.empty());
-
-		char_separator<char> sep('/');
-        typedef boost::tokenizer<char_separator<char>, string::const_iterator, const_range_string> tokenizer;
-        tokenizer tokens(path, sep);
-
-		file_node<T>* pos = &root;
-
-        tokenizer::iterator name_first = tokens.begin(); 
-		tokenizer::iterator name_end = tokens.end(); 
-
-		int create_times = 0;
-		for(;name_first != name_end; ++name_first)
-		{
-			if (pos->type != fs::st_dir)
-				AIO_THROW(not_all_parent_are_dir);
-
-			auto found = pos->children.find(*name_first);
-			if (found != pos->children.end())
-			{
-				pos = found->second.get();
-			}
-			else
-			{
-				if (!whole_path && create_times != 0)
-				{
-					pos->parent->children.erase(pos->name);
-					return 0;
-				}
-
-				std::unique_ptr<file_node<T> > fnode(new file_node<T>(pos));
-				fnode->name = *name_first;
-				fnode->type = fs::st_dir;
-				auto& next = pos->children[*name_first];
-				next = std::move(fnode);
-				pos = next.get();
-				++create_times;
-			}
-		}
-		pos->type = type;
-		return pos;
-	}
 
 	template<typename T>
-	file_node<T>* create_node(const locate_result<T>& pos, file_state type){
+	file_node<T>* create_node(const locate_result<T>& pos, file_state type, bool whole_path){
 		AIO_PRE_CONDITION(pos.node);
 		AIO_PRE_CONDITION(!pos.not_found.empty());
 		AIO_PRE_CONDITION(!contains(pos.not_found, '/'));
 		AIO_PRE_CONDITION(pos.node->children.count(pos.not_found) == 0);
 
-		std::unique_ptr<file_node<T> > fnode(new file_node<T>(pos.node));
-		fnode->name = pos.not_found;
-		fnode->type = type;
-		auto& new_node = pos.node->children[fnode->name];
-		new_node = std::move(fnode);
+		bool first_create = true;
 
-		return new_node.get();
+		auto node = pos.node;
+		for (auto& item : pos.not_found){
+			AIO_PRE_CONDITION(!node->children.count(item));
+
+			if (!whole_path && !file_node){
+				node->parent->children.erase(node->name);
+				return 0;
+			}
+
+			std::unique_ptr<file_node<T> > fnode(new file_node<T>(node));
+			fnode->name = item;
+			fnode->type = fs::st_dir;
+			auto& new_node = pos.node->children[fnode->name];
+			new_node = std::move(fnode);
+			pos = new_node.get();
+			first_create = false;
+		}
+		node->type = type;
+	}
+	template<typename T> file_node<T>* create_node(file_node<T>& root, sub_file_path path, file_state type, bool whole_path)
+	{
+		AIO_PRE_CONDITION(!path.empty());
+
+		auto result = locate(root, path);
+		if (result.not_found.empty())
+			return 0;
+
+		return create_node(result, type, whole_path);
 	}
 
 	template<typename T>

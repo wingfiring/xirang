@@ -296,7 +296,14 @@ namespace xirang
 			m_data = src.size() > 0 ? new_data(h, src.data(), src.size()) : 0;
 		}
 		
-#if 1
+		template<size_t N>
+		basic_string(const CharT (&src)[N]) 
+			: m_data(0)
+		{
+			if (N > 0)
+				m_data = new_data(get_heap(), src, N - 1);
+		}
+
 		basic_string(const_pointer src) 
 			: m_data(0)
 		{
@@ -313,7 +320,6 @@ namespace xirang
 			size_type len = traits_type::length(src);
 			m_data = len > 0 ? new_data(h, src, len) : 0;
 		}
-#endif	
 		basic_string(basic_string&& rhs) 
 			: m_data(rhs.m_data)
 		{
@@ -445,6 +451,13 @@ namespace xirang
 		template<typename T, typename U>
 		friend struct concator;
 	};
+
+	struct hash_string{
+		size_t operator()(const string& str) const{
+			return str.hash();
+		}
+	};
+
 
 	template<typename T, typename U>
 	struct concator{

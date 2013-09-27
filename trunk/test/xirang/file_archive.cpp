@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(file_archive)
 	//prepare
 
     string temp_path = fs::temp_dir(literal("tfar_"));
-	string file_name =  temp_path << fs::private_::gen_temp_name(literal("/fa"));
+	string file_name =  temp_path << fs::private_::gen_temp_name(sub_file_path(literal("/fa"))).str();
 
 
 	const string text=literal("This is file archive UT content. --over--");

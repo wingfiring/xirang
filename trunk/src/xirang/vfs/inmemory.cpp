@@ -22,9 +22,9 @@ namespace xirang{ namespace vfs{
 		~InMemoryImp()
 		{ }
 
-		fs_error remove(const string& path)
+		fs_error remove(sub_file_path path)
 		{
-            AIO_PRE_CONDITION(!is_absolute(path));
+            AIO_PRE_CONDITION(!path.is_absolute());
             if (m_readonly)
                 return fs::er_permission_denied;
 
@@ -42,9 +42,9 @@ namespace xirang{ namespace vfs{
 		}
 		// dir operations
 		// \pre !absolute(path)
-		fs_error createDir(const  string& path)
+		fs_error createDir(sub_file_path path)
 		{
-			AIO_PRE_CONDITION(!is_absolute(path));
+			AIO_PRE_CONDITION(!path.is_absolute());
             if (m_readonly)
                 return fs::er_permission_denied;
 
@@ -54,25 +54,27 @@ namespace xirang{ namespace vfs{
 			if (pos.node->type != fs::st_dir)
 				return fs::er_not_dir;
 
-			if (contains(pos.not_found, '/'))
+			if (!pos.not_found.parent().empty())
 				return fs::er_not_found;
 
-			create_node(pos, fs::st_dir);
+			auto ret = create_node(pos, fs::st_dir, false);
+			unuse(ret);
+			AIO_POST_CONDITION(ret);
 			return fs::er_ok;
 		}
 
 
 		// file operations
-		io::buffer_io create(const string& path, int flag)
+		io::buffer_io create(sub_file_path path, int flag)
 		{
-			AIO_PRE_CONDITION(!is_absolute(path));
+			AIO_PRE_CONDITION(!path.is_absolute());
 
             if ( m_readonly) AIO_THROW(PermisionDenied);
 
             auto pos = locate(m_root_node, path);
-            if(flag == io::of_create && pos.not_found.empty()) AIO_THROW(FileExist);
-			if(flag == io::of_open && (!pos.not_found.empty() || pos.node == &m_root_node)) AIO_THROW(FileNotFound);
-			if (pos.node->type != fs::st_regular || contains(pos.not_found, '/'))
+            if((flag & io::of_open_create_mask) == io::of_create && pos.not_found.empty()) AIO_THROW(FileExist);
+			if((flag & io::of_open_create_mask) == io::of_open && !pos.not_found.empty()) AIO_THROW(FileNotFound);
+			if (pos.node->type != fs::st_regular || pos.not_found.parent().empty())
 				AIO_THROW(FileNotFound);
 
 			if (!pos.not_found.empty())
@@ -84,13 +86,13 @@ namespace xirang{ namespace vfs{
 				return io::buffer_io(pos.node->data);
 		}
 
-		io::buffer_in readOpen(const string& path){
-			AIO_PRE_CONDITION(!is_absolute(path));
+		io::buffer_in readOpen(sub_file_path path){
+			AIO_PRE_CONDITION(!path.is_absolute());
 
             auto pos = locate(m_root_node, path);
-			if(!pos.not_found.empty() || pos.node == &m_root_node) AIO_THROW(FileNotFound);
-			if (pos.node->type != fs::st_regular || contains(pos.not_found, '/'))
-				AIO_THROW(FileNotFound);
+			if(!pos.not_found.empty()) AIO_THROW(FileNotFound);
+			if (pos.node->type != fs::st_regular)
+				AIO_THROW(BadFileType);
 
 			return io::buffer_in(pos.node->data);
 		}
@@ -98,14 +100,14 @@ namespace xirang{ namespace vfs{
 		// \pre !absolute(to)
 		// if from and to in same fs, it may have a more effective implementation
 		// otherwise, from should be a
-		fs_error copy(const string& from, const string& to)
+		fs_error copy(sub_file_path from, sub_file_path to)
 		{
-            AIO_PRE_CONDITION(!is_absolute(to));
+            AIO_PRE_CONDITION(!to.is_absolute());
             if (m_readonly)
                 return fs::er_permission_denied;
 
 			VfsNode from_node = { from, m_host};
-			if (is_absolute(from))
+			if (from.is_absolute())
 			{
 				AIO_PRE_CONDITION(mounted());
 				from_node = m_root->locate(from).node;
@@ -115,9 +117,9 @@ namespace xirang{ namespace vfs{
 			return xirang::vfs::copyFile(from_node, to_node);
 		}
 
-		fs_error truncate(const string& path, long_size_t s)
+		fs_error truncate(sub_file_path path, long_size_t s)
 		{
-            AIO_PRE_CONDITION(!is_absolute(path));
+            AIO_PRE_CONDITION(!path.is_absolute());
             if (m_readonly)
                 return fs::er_permission_denied;
 
@@ -145,13 +147,13 @@ namespace xirang{ namespace vfs{
 		bool mounted() const { return m_root != 0; }
 
 		// \return mounted() ? absolute() : empty() 
-		string mountPoint() const 
+		file_path mountPoint() const 
 		{
-			return m_root ? m_root->mountPoint(*m_host) : string();
+			return m_root ? m_root->mountPoint(*m_host) : file_path();
 		}
 
 		// \pre !absolute(path)
-		VfsNodeRange children(const string& path) const 
+		VfsNodeRange children(sub_file_path path) const 
 		{
 			auto pos = locate(const_cast<file_node&>(m_root_node), path);
 			typedef private_::FileNodeIterator<buffer<byte> > FileIterator;
@@ -169,9 +171,9 @@ namespace xirang{ namespace vfs{
 
 
 		// \pre !absolute(path)
-		VfsState state(const string& path) const
+		VfsState state(sub_file_path path) const
 		{
-			AIO_PRE_CONDITION(!is_absolute(path));
+			AIO_PRE_CONDITION(!path.is_absolute());
 			VfsState fst = 
 			{
 				{ path, m_host}, fs::st_not_found, 0
@@ -225,32 +227,32 @@ namespace xirang{ namespace vfs{
 
 	// common operations of dir and file
 	// \pre !absolute(path)
-	fs_error InMemory::remove(const string& path)
+	fs_error InMemory::remove(sub_file_path path)
 	{
 		return m_imp->remove(path);
 	}
 
 	// dir operations
 	// \pre !absolute(path)
-	fs_error InMemory::createDir(const  string& path) { return m_imp->createDir(path);}
+	fs_error InMemory::createDir(sub_file_path path) { return m_imp->createDir(path);}
 
 	// file operations
-	io::buffer_io InMemory::create(const string& path, int flag){
+	io::buffer_io InMemory::writeOpen(sub_file_path path, int flag){
 		return m_imp->create(path, flag);
 	}
-	io::buffer_in InMemory::readOpen(const string& path){
+	io::buffer_in InMemory::readOpen(sub_file_path path){
 		return m_imp->readOpen(path);
 	}
 
 	// \pre !absolute(to)
 	// if from and to in same fs, it may have a more effective implementation
 	// otherwise, from should be a
-	fs_error InMemory::copy(const string& from, const string& to)
+	fs_error InMemory::copy(sub_file_path from, sub_file_path to)
 	{
 		return m_imp->copy(from, to);
 	}
 
-	fs_error InMemory::truncate(const string& path, long_size_t s)
+	fs_error InMemory::truncate(sub_file_path path, long_size_t s)
 	{
 		return m_imp->truncate(path, s);
 	}
@@ -268,13 +270,13 @@ namespace xirang{ namespace vfs{
 	bool InMemory::mounted() const { return m_imp->mounted(); }
 
 	// \return mounted() ? absolute() : empty() 
-	string InMemory::mountPoint() const { return m_imp->mountPoint();}
+	file_path InMemory::mountPoint() const { return m_imp->mountPoint();}
 
 	// \pre !absolute(path)
-	VfsNodeRange InMemory::children(const string& path) const { return m_imp->children(path); }
+	VfsNodeRange InMemory::children(sub_file_path path) const { return m_imp->children(path); }
 
 	// \pre !absolute(path)
-	VfsState InMemory::state(const string& path) const { return m_imp->state(path); }
+	VfsState InMemory::state(sub_file_path path) const { return m_imp->state(path); }
 	// if r == null, means unmount
 	void InMemory::setRoot(RootFs* r) { return m_imp->setRoot(r); }
 
@@ -287,17 +289,17 @@ namespace xirang{ namespace vfs{
 		return m_imp->setopt(id, optdata, indata);
 	}
 	void** InMemory::do_create(unsigned long long mask,
-			void** base, unique_ptr<void>& owner, const string& path, int flag){
+			void** base, unique_ptr<void>& owner, sub_file_path path, int flag){
 
 		void** ret = 0;
 		if (mask & detail::get_mask<io::writer, io::write_map>::value ){ //write open
-			unique_ptr<io::buffer_io> ar(new io::buffer_io(get_cobj<InMemory>(this).create(path, flag)));
+			unique_ptr<io::buffer_io> ar(new io::buffer_io(writeOpen(path, flag)));
 			iref<io::reader, io::writer, io::random, io::ioctrl, io::read_map, io::write_map> ifile(*ar);
 			ret = copy_interface<io::reader, io::writer, io::random, io::ioctrl, io::read_map, io::write_map>::apply(mask, base, ifile, (void*)ar.get()); 
 			unique_ptr<void>(std::move(ar)).swap(owner);
 		}
 		else{ //read open
-			unique_ptr<io::buffer_in> ar(new io::buffer_in(get_cobj<InMemory>(this).readOpen(path)));
+			unique_ptr<io::buffer_in> ar(new io::buffer_in(readOpen(path)));
 			iref<io::reader, io::random, io::read_map> ifile(*ar);
 			ret = copy_interface<io::reader, io::random, io::read_map>::apply(mask, base, ifile, (void*)ar.get()); 
 			unique_ptr<void>(std::move(ar)).swap(owner);
@@ -305,6 +307,5 @@ namespace xirang{ namespace vfs{
 		return ret;
 	}
 }}
-
 
 
