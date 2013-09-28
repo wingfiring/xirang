@@ -22,8 +22,8 @@ using archive_suite::ArchiveTester;
 BOOST_AUTO_TEST_CASE(file_archive_wchar_case)
 {
     //prepare
-    xirang::string tmp = xirang::fs::temp_dir();
-    xirang::string file_name = tmp << literal("/\xd0\xa0\xd0\xb0\xd0\xb7\xd0\xbd\xd0\xbe\xd0\xb5");
+    file_path tmp = xirang::fs::temp_dir();
+    file_path file_name = tmp / file_path(literal("/\xd0\xa0\xd0\xb0\xd0\xb7\xd0\xbd\xd0\xbe\xd0\xb5"), pp_none);
 
     const string text= literal("This is file archive UT content. --over--");
     file wr(file_name, of_create_or_open);
@@ -32,20 +32,15 @@ BOOST_AUTO_TEST_CASE(file_archive_wchar_case)
     wr.write(string_to_c_range(text));
     BOOST_CHECK(wr.size() == text.size());
 
-#ifndef MSVC_COMPILER_
-	unlink(file_name.c_str());
-#else
-    xirang::wstring wpath = utf8::decode_string(file_name);
-    _wunlink(wpath.c_str());
-#endif
+	xirang::fs::remove(file_name);
     xirang::fs::remove(tmp);
 }
 BOOST_AUTO_TEST_CASE(file_archive)
 {
 	//prepare
 
-    string temp_path = fs::temp_dir(literal("tfar_"));
-	string file_name =  temp_path << fs::private_::gen_temp_name(sub_file_path(literal("/fa"))).str();
+    file_path temp_path = fs::temp_dir(sub_file_path(literal("tfar_")));
+	file_path file_name =  temp_path / fs::private_::gen_temp_name(sub_file_path(literal("fa")));
 
 
 	const string text=literal("This is file archive UT content. --over--");

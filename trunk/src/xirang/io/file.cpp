@@ -8,10 +8,6 @@
 #include <xirang/string_algo/utf8.h>
 #include <xirang/fsutility.h>
 
-#ifdef MSVC_COMPILER_
-#include <sys/stat.h>
-#endif
-
 namespace xirang{ namespace io{
 
 	using namespace boost::interprocess;
@@ -78,7 +74,7 @@ namespace xirang{ namespace io{
 #ifdef WIN32
 				m_file = file_mapping(m_path.native_wstr().c_str(), mode);
 #else
-                m_file = file_mapping(m_path.c_str(), mode);
+                m_file = file_mapping(m_path.str().c_str(), mode);
 #endif
 			}
 			catch(...)
@@ -90,7 +86,8 @@ namespace xirang{ namespace io{
         {
             if (m_flag & of_remove_on_close)
             {
-                m_file.remove(m_path.str());
+				file_mapping(std::move(m_file)); //close file_mapping first;
+				xirang::fs::remove(m_path);
             }
             else
             {
@@ -196,7 +193,7 @@ namespace xirang{ namespace io{
             wstring wpath = m_path.native_wstr();
 			FILE* fp = _wfopen(wpath.c_str(), L"wb");
 #else
-            FILE* fp = fopen(m_path.c_str(),"wb");
+            FILE* fp = fopen(m_path.str().c_str(),"wb");
 #endif
 			if (fp == 0)
 				AIO_THROW(archive_create_file_failed)(m_path.str());
@@ -208,9 +205,9 @@ namespace xirang{ namespace io{
 		{
 			
 			auto st = fs::state(m_path);
-			if (st == st_not_found)
-				AIO_THROW(archive_stat_file_failed)(m_path.c_str());
-			return st.st_size;
+			if (st.state == fs::st_not_found)
+				AIO_THROW(archive_stat_file_failed)(m_path.str());
+			return st.size;
 		}
 
 

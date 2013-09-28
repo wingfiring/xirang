@@ -86,11 +86,12 @@ namespace xirang{
 		return m_str.empty();
 	}
 	bool sub_file_path::under(sub_file_path path) const{
-		if( m_str.size() <= path.size())
+		if( m_str.size() <= path.str().size())
 			return false;
 		auto pos = std::mismatch(m_str.begin(), m_str.end(), path.str().begin());
 		if (pos.second != path.str().end())
 			return false;
+
 		return *pos.first == dim;
 		
 	}
@@ -334,8 +335,10 @@ namespace xirang{
 
 
 	file_path& file_path::operator/=(const sub_file_path& rhs){
-		if (rhs.is_root())
+		if (rhs.is_root()){
+			if (empty()) m_str = rhs.str();
 			return *this;
+		}
 
 		if (is_root())
 		{
@@ -482,7 +485,7 @@ namespace xirang{
 	}
 
 	bool sub_simple_path::under(sub_simple_path path) const{
-		if( m_str.size() <= path.size())
+		if( m_str.size() <= path.str().size())
 			return false;
 		auto pos = std::mismatch(m_str.begin(), m_str.end(), path.str().begin());
 		if (pos.second != path.str().end())

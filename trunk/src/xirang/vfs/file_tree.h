@@ -90,7 +90,7 @@ namespace xirang{ namespace vfs{ namespace private_{
 		for (auto& item : pos.not_found){
 			AIO_PRE_CONDITION(!node->children.count(item));
 
-			if (!whole_path && !file_node){
+			if (!whole_path && !first_create){
 				node->parent->children.erase(node->name);
 				return 0;
 			}

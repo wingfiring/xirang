@@ -451,12 +451,19 @@ namespace xirang
 		template<typename T, typename U>
 		friend struct concator;
 	};
+	typedef basic_string<char> string;
+	typedef basic_string<wchar_t> wstring;
 
-	struct hash_string{
-		size_t operator()(const string& str) const{
+
+	template<typename CharT>
+	struct hash_str{
+		size_t operator()(const basic_string<CharT>& str) const{
 			return str.hash();
 		}
 	};
+
+	typedef hash_str<char> hash_string;
+	typedef hash_str<wchar_t> hash_wstring;
 
 
 	template<typename T, typename U>
@@ -555,9 +562,6 @@ namespace xirang
             ( lhs.hash() == rhs.hash()
             && static_cast<range_type>(lhs) == static_cast<range_type>(rhs));
 	}
-
-	typedef basic_string<char> string;
-	typedef basic_string<wchar_t> wstring;
 
 	template<typename CharT>
 	std::basic_ostream<CharT >& operator<<(

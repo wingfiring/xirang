@@ -126,7 +126,15 @@ BOOST_AUTO_TEST_CASE(path_is_replace_case)
 BOOST_AUTO_TEST_CASE(path_windows_case)
 {
 	BOOST_CHECK(file_path(literal("c:/a/b"), pp_localfile) == file_path(literal("/c:/a/b")));
+	BOOST_CHECK(file_path(literal("c:/a/b"), pp_localfile).has_disk());
+	BOOST_CHECK(!file_path(literal("c/a/b"), pp_localfile).has_disk());
 
+	BOOST_CHECK(!file_path(literal("c:/a/b"), pp_localfile).is_pure_disk());
+	BOOST_CHECK(file_path(literal("c:/a"), pp_localfile).parent().is_pure_disk());
+}
+BOOST_AUTO_TEST_CASE(path_under_contain_case){
+	BOOST_CHECK(file_path(literal("c/a")).contains(file_path(literal("c/a/b"))));
+	BOOST_CHECK(file_path(literal("c/b/a")).under(file_path(literal("c/b"))));
 }
 
 BOOST_AUTO_TEST_CASE(simple_path_ctor_case){
@@ -200,5 +208,10 @@ BOOST_AUTO_TEST_CASE(simple_path_is_replace_case)
 	BOOST_CHECK(simple_path(literal("a.b")).to_absolute() == simple_path(literal(".a.b")));
 	BOOST_CHECK(simple_path(literal(".a.b.c.cpp")).remove_absolute() == simple_path(literal("a.b.c.cpp")));
 }
+BOOST_AUTO_TEST_CASE(simple_path_under_contain_case){
+	BOOST_CHECK(simple_path(literal("c.a")).contains(simple_path(literal("c.a.b"))));
+	BOOST_CHECK(simple_path(literal("c.b.a")).under(simple_path(literal("c.b"))));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 

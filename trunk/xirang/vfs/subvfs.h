@@ -41,7 +41,7 @@ namespace xirang{ namespace vfs{
 		virtual bool mounted() const;
 
 		// \return mounted() ? absolute() : empty() 
-		virtual sub_file_path mountPoint() const;
+		virtual file_path mountPoint() const;
 
 		// \pre !absolute(path)
 		virtual VfsNodeRange children(sub_file_path path) const;

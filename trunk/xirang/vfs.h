@@ -345,7 +345,7 @@ namespace xirang { namespace vfs{ namespace detail{
 
 		// \pre dir must be absolute name
 		fs_error mount(sub_file_path dir, IVfs& vfs);
-		fs_error mount(sub_file_path dir, aio::unique_ptr<IVfs>& vfs);
+		fs_error mount(sub_file_path dir, xirang::unique_ptr<IVfs>& vfs);
 		fs_error unmount(sub_file_path dir);
 
 		void sync();

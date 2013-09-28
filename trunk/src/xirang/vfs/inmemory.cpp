@@ -79,7 +79,7 @@ namespace xirang{ namespace vfs{
 
 			if (!pos.not_found.empty())
 			{
-				auto res = create_node(pos, fs::st_regular);
+				auto res = create_node(pos, fs::st_regular, false);
 				return io::buffer_io(res->data);
 			}
 			else

@@ -146,6 +146,7 @@ struct basic_to_string
 	}
 
 	const CharT* c_str() const { return str.c_str();}
+	operator basic_range_string<const CharT> () const { return str;}
 
 	///append result
 	basic_string_builder<CharT> str;

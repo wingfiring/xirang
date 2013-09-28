@@ -70,7 +70,7 @@ namespace xirang {namespace fs{
     fs_error move(const file_path& from_, const file_path& to_)
     {
 		string from(from_.str());
-		string to(to.str());
+		string to(to_.str());
 		int res = link(from.c_str(), to.c_str());
 		if (res == 0){
 			unlink(from.c_str());
@@ -80,7 +80,7 @@ namespace xirang {namespace fs{
 		auto err = errno;
 		if(EXDEV == err){
 			try{
-				copy(from, to);
+				copy(from_, to_);
 				unlink(from.c_str());
 			} catch(...){
 				return er_system_error;
@@ -149,7 +149,7 @@ namespace xirang {namespace fs{
 
     fs_error truncate(const file_path& path, long_size_t s)
     {
-        int ret = ::truncate(path.c_str(), s);
+        int ret = ::truncate(path.str().c_str(), s);
         return ret == 0 ? er_ok : er_system_error;
     }
 #elif defined(MSVC_COMPILER_)
@@ -271,7 +271,7 @@ namespace xirang {namespace fs{
 					: rpath.native_wstr().c_str()
 					)
 #else
-			: m_itr(rpath.str())
+			: m_itr(rpath.str().c_str())
 #endif
 		{ 
         }
@@ -365,13 +365,12 @@ namespace xirang {namespace fs{
         if (state(parent_dir).state != st_dir)
             AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir.str());
 
-        string prefix =  parent_dir / template_;
-
         const int max_try = 100;
         for(int i = 0; i < max_try ; ++i)
         {
-            if (create_dir(private_::gen_temp_name(prefix)) == er_ok)
-                return file_path;
+			file_path path = parent_dir / private_::gen_temp_name(template_);
+            if (create_dir(path) == er_ok)
+                return path;
         }
 
         AIO_THROW(io::create_failed)("failed to create temp file in directory:")(parent_dir.str());
@@ -395,11 +394,12 @@ namespace xirang {namespace fs{
 		if (path.empty())
 			return er_ok;
 
-		auto fisrt(path.begin()), last(path.end());
+		auto first(path.begin()), last(path.end());
 
-		file_path current(*first);
-		++first;
-		for (;first != last;){
+		file_path current;
+
+		for (;first != last; ++first){
+			current /= *first;
             fs::file_state st = state(current).state;
             if (st == st_not_found)
             {
@@ -412,7 +412,6 @@ namespace xirang {namespace fs{
                 return er_invalid;
             }
 
-			current /= *first;
 		}
 
 		return er_ok;

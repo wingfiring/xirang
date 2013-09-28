@@ -30,5 +30,3 @@ FIND_PACKAGE(Boost COMPONENTS unit_test_framework filesystem system)
 ADD_SUBDIRECTORY(xirang)
 ADD_SUBDIRECTORY(xirang_test)
 
-#ADD_SUBDIRECTORY(demo)
-
