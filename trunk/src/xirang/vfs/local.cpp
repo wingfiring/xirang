@@ -26,7 +26,7 @@ namespace xirang{ namespace vfs{
 					: rpath.native_wstr().c_str()
 					)
 #else
-			: m_itr(rpath.str())
+			: m_itr(rpath.str().c_str())
 #endif
 		{ 
             m_node.owner_fs = fs;
@@ -67,7 +67,7 @@ namespace xirang{ namespace vfs{
 	};
 
 	LocalFs::LocalFs(const file_path& dir)
-		: m_root(0), m_resource(append_tail_slash(dir))
+		: m_root(0), m_resource(dir)
 	{
 	}
 	LocalFs::~LocalFs()
@@ -130,7 +130,7 @@ namespace xirang{ namespace vfs{
         AIO_PRE_CONDITION(!to.is_absolute());
 		
         VfsNode from_node = { from, this};
-        if (is_absolute(from))
+        if (from.is_absolute())
         {
             AIO_PRE_CONDITION(mounted());
             from_node = m_root->locate(from).node;

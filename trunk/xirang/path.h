@@ -167,7 +167,19 @@ namespace xirang{
 	inline bool operator<(const file_path& lhs, const file_path& rhs){
 		return lhs.str() < rhs.str();
 	}
+	inline bool operator<(sub_file_path lhs, const file_path& rhs){
+		return lhs.str() < rhs.str();
+	}
+	inline bool operator<(const file_path& lhs, sub_file_path rhs){
+		return lhs.str() < rhs.str();
+	}
 	inline bool operator==(const file_path& lhs, const file_path& rhs){
+		return lhs.str() == rhs.str();
+	}
+	inline bool operator==(sub_file_path lhs, const file_path& rhs){
+		return lhs.str() == rhs.str();
+	}
+	inline bool operator==(const file_path& lhs, sub_file_path rhs){
 		return lhs.str() == rhs.str();
 	}
 
@@ -295,7 +307,19 @@ namespace xirang{
 	inline bool operator<(const simple_path& lhs, const simple_path& rhs){
 		return lhs.str() < rhs.str();
 	}
+	inline bool operator<(sub_simple_path lhs, const simple_path& rhs){
+		return lhs.str() < rhs.str();
+	}
+	inline bool operator<(const simple_path& lhs, sub_simple_path rhs){
+		return lhs.str() < rhs.str();
+	}
 	inline bool operator==(const simple_path& lhs, const simple_path& rhs){
+		return lhs.str() == rhs.str();
+	}
+	inline bool operator==(sub_simple_path lhs, const simple_path& rhs){
+		return lhs.str() == rhs.str();
+	}
+	inline bool operator==(const simple_path& lhs, sub_simple_path rhs){
 		return lhs.str() == rhs.str();
 	}
 

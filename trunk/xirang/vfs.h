@@ -340,7 +340,7 @@ namespace xirang { namespace vfs{ namespace detail{
 	class RootFs 
 	{
 	public:	
-		explicit RootFs(sub_file_path res);
+		explicit RootFs(const string& res);
 		~RootFs();
 
 		// \pre dir must be absolute name

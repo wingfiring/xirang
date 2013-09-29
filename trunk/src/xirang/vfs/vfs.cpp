@@ -4,7 +4,7 @@
 #include <xirang/string_algo/string.h>
 
 
-#include <deque>
+#include <unordered_map>
 
 namespace xirang{ namespace vfs{
 	IVfs::~IVfs(){}
@@ -65,7 +65,7 @@ namespace xirang{ namespace vfs{
 			AIO_PRE_CONDITION(host);
 		}
 
-		fs_error mount(sub_file_path dir, aio::unique_ptr<IVfs>& vfs){
+		fs_error mount(sub_file_path dir, xirang::unique_ptr<IVfs>& vfs){
 			AIO_PRE_CONDITION(vfs);
 			auto ret = mount(dir, *vfs);
 			if (ret == fs::er_ok){
@@ -101,7 +101,7 @@ namespace xirang{ namespace vfs{
 			AIO_PRE_CONDITION(pos != m_mount_map.left.end());
             pos->second->setRoot(0);
 			m_mount_map.left.erase(pos);
-			m_owned_fs.erase(dir);
+			m_owned_fs.erase(dir.str());
 			return fs::er_ok;
 		}
 
@@ -144,7 +144,7 @@ namespace xirang{ namespace vfs{
 		{
 			AIO_PRE_CONDITION(path.is_absolute());
 
-            mount_map::left_const_iterator pos = m_mount_map.left.lower_bound(dir);
+            mount_map::left_const_iterator pos = m_mount_map.left.lower_bound(path);
 			for(; pos != m_mount_map.left.end(); ++pos){
 				if (pos->first.under(path))
 					return true;
@@ -169,7 +169,7 @@ namespace xirang{ namespace vfs{
 			{
 				VfsState st = {
 					{file_path(), pos->second},
-					aiofs::st_mount_point,
+					fs::st_mount_point,
 					0
 				};
 				return st;
@@ -179,8 +179,8 @@ namespace xirang{ namespace vfs{
 			{
 				if (pos->first == path || pos->first.contains(path))
 				{
-					sub_file_path rest(path.begin() + pos->first.size(), path.end());
-					file_path path = rest.is_root() ? sub_file_path(rest.begin() + 1, rest.end()) : rest;
+					sub_file_path rest(path.str().begin() + pos->first.str().size(), path.str().end());
+					file_path path = rest.is_root() ? sub_file_path(rest.str().begin() + 1, rest.str().end()) : rest;
 					auto ret = pos->second->state(path);
 					ret.node.path = path;
 				}
@@ -189,8 +189,8 @@ namespace xirang{ namespace vfs{
 			if (pos != m_mount_map.left.end()){
 				if (pos->first == path || pos->first.contains(path))
 				{
-					sub_file_path rest(path.begin() + pos->first.size(), path.end());
-					file_path path = rest.is_root() ? sub_file_path(rest.begin() + 1, rest.end()) : rest;
+					sub_file_path rest(path.str().begin() + pos->first.str().size(), path.str().end());
+					file_path path = rest.is_root() ? sub_file_path(rest.str().begin() + 1, rest.str().end()) : rest;
 					auto ret = pos->second->state(path);
 					ret.node.path = path;
 				}
@@ -200,7 +200,7 @@ namespace xirang{ namespace vfs{
 		}
 	private:
 		mount_map m_mount_map;
-		std::unordered_map<string, aio::unique_ptr<IVfs>, hash_string> m_owned_fs;
+		std::unordered_map<string, xirang::unique_ptr<IVfs>, hash_string> m_owned_fs;
 		string m_resource;
 		RootFs* m_host;
 	};
@@ -221,7 +221,7 @@ namespace xirang{ namespace vfs{
 		return m_imp->mount(dir, vfs);
 	}
 
-	fs_error RootFs::mount(sub_file_path dir, aio::unique_ptr<IVfs>& vfs)
+	fs_error RootFs::mount(sub_file_path dir, xirang::unique_ptr<IVfs>& vfs)
 	{
 		return m_imp->mount(dir, vfs);
 	}
@@ -284,19 +284,19 @@ namespace xirang{ namespace vfs{
 		return ret.node.owner_fs->copy(ret.node.path, to);
 	}
 	fs_error RootFs::truncate(sub_file_path path, long_size_t s){
-		auto ret = locate(from);
+		auto ret = locate(path);
 		if (!ret.node.owner_fs)
 			return fs::er_not_found;
 		return ret.node.owner_fs->truncate(ret.node.path, s);
 	}
 	VfsNodeRange RootFs::children(sub_file_path path) const {
-		auto ret = locate(from);
+		auto ret = locate(path);
 		if (!ret.node.owner_fs)
-			return VfsNodeRange()
+			return VfsNodeRange();
 		return ret.node.owner_fs->children(ret.node.path);
 	}
 	VfsState RootFs::state(sub_file_path path) const{
-		auto ret = locate(from);
+		auto ret = locate(path);
 		if (!ret.node.owner_fs)
 			return ret;
 		return ret.node.owner_fs->state(ret.node.path);
@@ -304,19 +304,13 @@ namespace xirang{ namespace vfs{
 	}
 	void** RootFs::do_create(unsigned long long mask,
 			void* ret, unique_ptr<void>& owner, sub_file_path path, int flag){
-		auto ret = locate(from);
-		if (!ret.node.owner_fs)
+		auto result = locate(path);
+		if (!result.node.owner_fs)
 			return 0;
-		return ret.node.owner_fs->do_create(mask, ret, owner, ret.node.path, flag);
+		return result.node.owner_fs->do_create(mask, ret, owner, result.node.path, flag);
 	}
 
-    // return true if p[0] is '/';
-	bool is_absolute(const string& p)
-	{
-		return !p.empty() && p[0] == '/';
-	}
-
-    string temp_dir(IVfs& vfs, sub_file_path template_, sub_file_path parent_dir)
+    file_path temp_dir(IVfs& vfs, sub_file_path template_, sub_file_path parent_dir)
     {
         if (vfs.state(parent_dir).state != fs::st_dir)
             AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir.str());
@@ -339,11 +333,11 @@ namespace xirang{ namespace vfs{
         if (vfs.state(path).state == fs::st_dir)
         {
             auto rf = vfs.children(path);
-            std::vector<VfsNode> files(ref.begin(), ref.end());
+            std::vector<VfsNode> files(rf.begin(), rf.end());
 
             for (auto& node : files)
             {
-                fs_error ret = recursive_remove(*itr->owner_fs, path / node.path);
+                fs_error ret = recursive_remove(*node.owner_fs, path / node.path);
                 if (ret != fs::er_ok)
                     return ret;
             }
@@ -354,29 +348,28 @@ namespace xirang{ namespace vfs{
     fs_error recursive_create_dir(IVfs& vfs, sub_file_path path)
     {
 		if (path.empty())
-			return er_ok;
+			return fs::er_ok;
 
-		auto fisrt(path.begin()), last(path.end());
+		auto first(path.begin()), last(path.end());
 
-		file_path current(*first);
-		++first;
-		for (;first != last;){
+		file_path current;
+		for (auto & p : path){
+			current /= p;
+
             fs::file_state st = vfs.state(current).state;
-            if (st == st_not_found)
+            if (st == fs::st_not_found)
             {
-                fs_error err = vfs.create_dir(current);
-                if (err != er_ok)
+                fs_error err = vfs.createDir(current);
+                if (err != fs::er_ok)
                     return err;
             }
-            else if (st != st_dir)
+            else if (st != fs::st_dir)
             {
-                return er_invalid;
+                return fs::er_invalid;
             }
-
-			current /= *first;
 		}
 
-		return er_ok;
+		return fs::er_ok;
     }
 
 }	//vfs

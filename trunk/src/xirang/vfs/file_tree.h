@@ -25,9 +25,10 @@ namespace xirang{ namespace vfs{ namespace private_{
 	{
 		typedef file_node<T> node_type;
 
-		string name;
+		file_path name;
 		file_state type;	//dir or normal
-		std::unordered_map<file_path, std::unique_ptr<node_type>, hash_file_path> children;
+		typedef std::unordered_map<file_path, std::unique_ptr<node_type>, hash_file_path> children_type;
+		children_type children;
 		node_type* parent;
 
 		T data;
@@ -60,7 +61,7 @@ namespace xirang{ namespace vfs{ namespace private_{
 
 		typedef locate_result<T> return_type;
 		return return_type {
-			pos, sub_file_path(itr->str().begin(), path.end())
+			pos, sub_file_path(itr->str().begin(), path.str().end())
 		};
 	}
 
@@ -81,7 +82,6 @@ namespace xirang{ namespace vfs{ namespace private_{
 	file_node<T>* create_node(const locate_result<T>& pos, file_state type, bool whole_path){
 		AIO_PRE_CONDITION(pos.node);
 		AIO_PRE_CONDITION(!pos.not_found.empty());
-		AIO_PRE_CONDITION(!contains(pos.not_found, '/'));
 		AIO_PRE_CONDITION(pos.node->children.count(pos.not_found) == 0);
 
 		bool first_create = true;
@@ -100,10 +100,11 @@ namespace xirang{ namespace vfs{ namespace private_{
 			fnode->type = fs::st_dir;
 			auto& new_node = pos.node->children[fnode->name];
 			new_node = std::move(fnode);
-			pos = new_node.get();
+			node = new_node.get();
 			first_create = false;
 		}
 		node->type = type;
+		return node;
 	}
 	template<typename T> file_node<T>* create_node(file_node<T>& root, sub_file_path path, file_state type, bool whole_path)
 	{
@@ -121,7 +122,7 @@ namespace xirang{ namespace vfs{ namespace private_{
 	{
 	public:
 		typedef file_node<T> node_type;
-		typedef typename std::unordered_map<string, std::unique_ptr<node_type>, hash_string>::iterator iterator;
+		typedef typename node_type::children_type::iterator iterator;
 		FileNodeIterator()
 			: m_itr() 
 		{
