@@ -25,15 +25,15 @@ BOOST_AUTO_TEST_CASE(tempfile_case)
     }
     BOOST_CHECK(state(tmppath).state == xirang::fs::st_not_found);
 
-    BOOST_CHECK_THROW(temp_file(file_path(literal("test")), file_path(literal("path/not/exist"))),  xirang::io::create_failed);
+    BOOST_CHECK_THROW((temp_file(file_path(literal("test")), file_path(literal("path/not/exist")))),  fs::not_found_exception);
 
-    BOOST_CHECK_THROW(temp_dir(file_path(literal("test")), file_path(literal("path/not/exist"))),  xirang::io::create_failed);
+    BOOST_CHECK_THROW((temp_dir(file_path(literal("test")), file_path(literal("path/not/exist")))),  fs::not_found_exception);
 
     file_path tmpfilepath2;
     {
         tmppath  = temp_dir(prefix);
         BOOST_CHECK(!tmppath.empty());
-        BOOST_CHECK_NO_THROW(temp_file(file_path(literal("test")), tmppath));
+        BOOST_CHECK_NO_THROW((temp_file(file_path(literal("test")), tmppath)));
         BOOST_CHECK(state(tmppath).state == xirang::fs::st_dir);
 
         temp_file(sub_file_path(literal("test")), tmppath, 0, &tmpfilepath2);
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(recursive_create_dir_case)
     file_path tmpdir  = temp_dir(sub_file_path(literal("tmp")));
     BOOST_CHECK(recursive_create_dir(tmpdir / sub_file_path(literal("/a/b/c"))) == xirang::fs::er_ok);
 
-    BOOST_CHECK_NO_THROW(recursive_create(tmpdir / sub_file_path(literal("/x/y/z")), xirang::io::of_create));
+    BOOST_CHECK_NO_THROW((recursive_create(tmpdir / sub_file_path(literal("/x/y/z")), xirang::io::of_create)));
 
     recursive_remove(tmpdir);
 }
@@ -66,9 +66,9 @@ BOOST_AUTO_TEST_CASE(recreate_file_case)
 		data.resize(100);
 		BOOST_CHECK(file.write(to_range(data)).empty());
 
-		BOOST_CHECK_NO_THROW((xirang::io::file_reader) (tmppath));
+		BOOST_CHECK_NO_THROW((xirang::io::file_reader)(tmppath));
 
-		BOOST_CHECK_NO_THROW(xirang::io::file(tmppath, xirang::io::of_open));
+		BOOST_CHECK_NO_THROW((xirang::io::file(tmppath, xirang::io::of_open)));
 	}
 	xirang::fs::remove(tmppath);
 }

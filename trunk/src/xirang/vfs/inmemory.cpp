@@ -69,13 +69,13 @@ namespace xirang{ namespace vfs{
 		{
 			AIO_PRE_CONDITION(!path.is_absolute());
 
-            if ( m_readonly) AIO_THROW(PermisionDenied);
+            if ( m_readonly) AIO_THROW(fs::permission_denied_exception);
 
             auto pos = locate(m_root_node, path);
-            if((flag & io::of_open_create_mask) == io::of_create && pos.not_found.empty()) AIO_THROW(FileExist);
-			if((flag & io::of_open_create_mask) == io::of_open && !pos.not_found.empty()) AIO_THROW(FileNotFound);
+            if((flag & io::of_open_create_mask) == io::of_create && pos.not_found.empty()) AIO_THROW(fs::exist_exception);
+			if((flag & io::of_open_create_mask) == io::of_open && !pos.not_found.empty()) AIO_THROW(fs::not_found_exception);
 			if (pos.node->type != fs::st_regular || pos.not_found.parent().empty())
-				AIO_THROW(FileNotFound);
+				AIO_THROW(fs::not_found_exception);
 
 			if (!pos.not_found.empty())
 			{
@@ -90,9 +90,9 @@ namespace xirang{ namespace vfs{
 			AIO_PRE_CONDITION(!path.is_absolute());
 
             auto pos = locate(m_root_node, path);
-			if(!pos.not_found.empty()) AIO_THROW(FileNotFound);
+			if(!pos.not_found.empty()) AIO_THROW(fs::not_found_exception);
 			if (pos.node->type != fs::st_regular)
-				AIO_THROW(BadFileType);
+				AIO_THROW(fs::file_type_exception);
 
 			return io::buffer_in(pos.node->data);
 		}

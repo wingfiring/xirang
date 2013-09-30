@@ -52,7 +52,7 @@ namespace xirang{ namespace vfs{
         IVfs& parentFs() const;
 
 		virtual void** do_create(unsigned long long mask,
-				void* ret, unique_ptr<void>& owner, sub_file_path path, int flag);
+				void** ret, unique_ptr<void>& owner, sub_file_path path, int flag);
 	private:
 		// if r == null, means unmount
 		virtual void setRoot(RootFs* r);

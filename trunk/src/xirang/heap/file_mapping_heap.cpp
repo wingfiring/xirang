@@ -36,7 +36,6 @@ namespace xirang
 {
 	using std::memcpy;
 
-	AIO_EXCEPTION_TYPE(bad_ext_heap_format);
 
 	using boost::numeric_cast;
 
@@ -487,12 +486,12 @@ namespace xirang
 			
 			std::size_t tail_size = sizeof(long_offset_t) + sizeof(uint32_t);
 			if (arinfo.size() < tail_size)
-				AIO_THROW(bad_ext_heap_format);
+				AIO_THROW(ext_heap_format_exception);
 			auto tail_view = reader_().view_rd(ext_heap::handle(arinfo.size() - tail_size, arinfo.size()));
 			const uint32_t& sig = *reinterpret_cast<const uint32_t*>(tail_view.get<io::read_view>().address().begin());
 			const long_offset_t& end_pos = *reinterpret_cast<const long_offset_t*>(tail_view.get<io::read_view>().address().begin() + sizeof(uint32_t));
 			if (sig != sig_ext_heap)
-				AIO_THROW(bad_ext_heap_format);
+				AIO_THROW(ext_heap_format_exception);
 			auto manager_view = reader_().view_rd(ext_heap::handle(end_pos, arinfo.size() - tail_size));
 			buffer<byte> buf(manager_view.get<io::read_view>().address());
 

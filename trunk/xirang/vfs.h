@@ -243,7 +243,7 @@ namespace xirang { namespace vfs{ namespace detail{
         /// \notes if the parent of path is not exist, failed.
         /// \notes the result depends on implementation capability.
 		virtual void** do_create(unsigned long long mask,
-				void* ret, unique_ptr<void>& owner, sub_file_path path, int flag) = 0;
+				void** ret, unique_ptr<void>& owner, sub_file_path path, int flag) = 0;
 
 	private:
 		// if r == null, means unmount, used by RootFs only
@@ -373,7 +373,7 @@ namespace xirang { namespace vfs{ namespace detail{
 		VfsNodeRange children(sub_file_path path) const ;
 		VfsState state(sub_file_path path) const ;
 		void** do_create(unsigned long long mask,
-				void* ret, unique_ptr<void>& owner, sub_file_path path, int flag);
+				void** ret, unique_ptr<void>& owner, sub_file_path path, int flag);
 
 	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
 		create(sub_file_path path, int flag){
@@ -390,11 +390,6 @@ namespace xirang { namespace vfs{ namespace detail{
 		RootFsImp* m_imp;
 	};
 
-	AIO_EXCEPTION_TYPE(PermisionDenied);
-	AIO_EXCEPTION_TYPE(FileExist);
-	AIO_EXCEPTION_TYPE(FileNotFound);
-	AIO_EXCEPTION_TYPE(BadFileType);
-
 	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
     temp_file(IVfs& vfs, sub_file_path template_ , sub_file_path parent_dir
 			, int flag = io::of_remove_on_close, file_path* path = 0){
@@ -403,7 +398,7 @@ namespace xirang { namespace vfs{ namespace detail{
         flag |= io::of_create;
 
         if (vfs.state(parent_dir).state != fs::st_dir)
-			AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir.str());
+			AIO_THROW(fs::not_found_exception)("failed to locate the temp directory:")(parent_dir.str());
 
         const int max_try = 10;
         for(int i = 0; i < max_try ; ++i)
@@ -418,7 +413,7 @@ namespace xirang { namespace vfs{ namespace detail{
 			return std::move(ret);
         }
 
-        AIO_THROW(io::create_failed)("failed to create temp file in directory:")(parent_dir.str());
+        AIO_THROW(fs::open_failed_exception)("failed to create temp file in directory:")(parent_dir.str());
     }
 
     file_path temp_dir(IVfs& vfs, sub_file_path template_, sub_file_path parent_dir);
@@ -429,7 +424,7 @@ namespace xirang { namespace vfs{ namespace detail{
     recursive_create(IVfs&vfs, sub_file_path path, int flag){
         fs_error err = recursive_create_dir(vfs, path.parent());
         if (err != fs::er_ok)
-			AIO_THROW(io::create_failed)("failed to create the parent directory:")(path.str());
+			AIO_THROW(fs::open_failed_exception)("failed to create the parent directory:")(path.str());
 
         return create<Interfaces...>(vfs, path, flag);
 	}

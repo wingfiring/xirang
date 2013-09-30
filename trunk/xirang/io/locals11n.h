@@ -36,7 +36,7 @@ namespace xirang{ namespace io{ namespace local{
 			byte* last = reinterpret_cast<byte*>(&t + 1);
 
 			if (!io::block_read(get_interface<io::reader>(rd.get()), make_range(first, last)).empty() )
-				AIO_THROW(io::read_failed);
+				AIO_THROW(io::read_exception);
 
 			return rd;
 		}

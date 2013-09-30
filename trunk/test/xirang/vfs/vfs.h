@@ -3,8 +3,8 @@
 class VfsTester
 {
 public:
-    void test_mount(xirang::fs::IVfs& vfs);
-    void test_on_empty(xirang::fs::IVfs& vfs);
-    void test_modification(xirang::fs::IVfs& vfs);
-    void test_readonly(xirang::fs::IVfs& vfs);
+    void test_mount(xirang::vfs::IVfs& vfs);
+    void test_on_empty(xirang::vfs::IVfs& vfs);
+    void test_modification(xirang::vfs::IVfs& vfs);
+    void test_readonly(xirang::vfs::IVfs& vfs);
 };

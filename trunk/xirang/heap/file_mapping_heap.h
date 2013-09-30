@@ -7,6 +7,7 @@
 
 namespace xirang
 {
+	AIO_EXCEPTION_TYPE(ext_heap_format_exception);
 	struct file_mapping_heap_imp;
 	struct file_mapping_heap_info
 	{

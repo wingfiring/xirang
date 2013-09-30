@@ -380,10 +380,10 @@ namespace xirang { namespace io{
 		return copy_data(get_interface<Input>(in), get_interface<Output>(out), max_size);
 	}
 
-	AIO_EXCEPTION_TYPE(read_failed);
-	AIO_EXCEPTION_TYPE(write_failed);
-	AIO_EXCEPTION_TYPE(seek_failed);
-    AIO_EXCEPTION_TYPE(create_failed);
+	AIO_EXCEPTION_TYPE(read_exception);
+	AIO_EXCEPTION_TYPE(write_exception);
+	AIO_EXCEPTION_TYPE(seek_exception);
+    AIO_EXCEPTION_TYPE(create_exception);
 
 
 }}

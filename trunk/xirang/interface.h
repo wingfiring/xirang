@@ -277,8 +277,8 @@ namespace xirang
 		{
 		}
 
-		void release(){
-			target_ptr.release();
+		void reset(){
+			target_ptr.reset();
 			this->target = 0;
 		}
 

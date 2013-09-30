@@ -1,5 +1,6 @@
 #include "../precompile.h"
-#include <xirang/io/mem_archive.h>
+#if 0
+#include <xirang/io/memory.h>
 #include <xirang/vfs/zip.h>
 #include <xirang/vfs/inmemory.h>
 #include <xirang/io/adaptor.h>
@@ -11,7 +12,6 @@ BOOST_AUTO_TEST_CASE(zipfs_case)
 {
     using namespace xirang::fs;
     using namespace xirang;
-    using xirang::io::archive_mode;
     using xirang::io::open_flag;
 
     xirang::io::mem_read_write_archive ar;
@@ -45,3 +45,5 @@ BOOST_AUTO_TEST_CASE(zipfs_case)
 
 
 BOOST_AUTO_TEST_SUITE_END()
+
+#endif

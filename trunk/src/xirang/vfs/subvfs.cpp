@@ -72,7 +72,7 @@ namespace xirang{ namespace vfs{
         m_root = r;
 	}
 	void** SubVfs::do_create(unsigned long long mask,
-			void* ret, unique_ptr<void>& owner, sub_file_path path, int flag){
+			void** ret, unique_ptr<void>& owner, sub_file_path path, int flag){
         AIO_PRE_CONDITION(!path.is_absolute());
         return parent.do_create(mask, ret, owner, m_resource / path,  flag);
 	}

@@ -39,7 +39,26 @@ namespace xirang{ namespace fs{
 		er_permission_denied,
         er_not_empty,
 		er_data_error,
+		er_file_type,
+		er_create,
     };
+	AIO_EXCEPTION_TYPE(invalid_exception);
+	AIO_EXCEPTION_TYPE(busy_mounted_exception);
+	AIO_EXCEPTION_TYPE(not_found_exception);
+	AIO_EXCEPTION_TYPE(exist_exception);
+	AIO_EXCEPTION_TYPE(used_mount_point_exception);
+	AIO_EXCEPTION_TYPE(not_a_mount_point_exception);
+	AIO_EXCEPTION_TYPE(unmount_root_exception);
+	AIO_EXCEPTION_TYPE(fs_not_found_exception);
+	AIO_EXCEPTION_TYPE(system_error_exception);
+	AIO_EXCEPTION_TYPE(open_failed_exception);
+	AIO_EXCEPTION_TYPE(file_busy_exception);
+	AIO_EXCEPTION_TYPE(not_regular_exception);
+	AIO_EXCEPTION_TYPE(not_dir_exception);
+	AIO_EXCEPTION_TYPE(permission_denied_exception);
+	AIO_EXCEPTION_TYPE(not_empty_exception);
+	AIO_EXCEPTION_TYPE(file_type_exception);
+	AIO_EXCEPTION_TYPE(create_exception);
 
     enum file_state
 	{

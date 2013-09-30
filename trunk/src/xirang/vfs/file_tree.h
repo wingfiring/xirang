@@ -7,11 +7,6 @@
 #include <algorithm>
 #include <unordered_map>
 
-namespace xirang{ namespace vfs{ 
-	AIO_EXCEPTION_TYPE(empty_local_file_name);
-	AIO_EXCEPTION_TYPE(not_all_parent_are_dir);
-}}
-
 namespace xirang{ namespace vfs{ namespace private_{
 
 	struct hash_file_path{

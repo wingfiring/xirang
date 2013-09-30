@@ -3,16 +3,10 @@
 #include "./vfs.h"
 
 BOOST_AUTO_TEST_SUITE(vfs_suite)
-using namespace xirang::fs;
-using namespace xirang;
-using xirang::io::archive_mode;
-using xirang::io::open_flag;
-
 BOOST_AUTO_TEST_CASE(inmemfs_case)
 {
-    using namespace xirang::fs;
+    using namespace xirang::vfs;
     using namespace xirang;
-    using xirang::io::archive_mode;
     using xirang::io::open_flag;
 
     InMemory vfs;

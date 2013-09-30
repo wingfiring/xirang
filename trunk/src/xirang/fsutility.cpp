@@ -334,7 +334,7 @@ namespace xirang {namespace fs{
         flag |= io::of_create;
 
         if (state(parent_dir).state != st_dir)
-            AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir.str());
+            AIO_THROW(fs::open_failed_exception)("failed to locate the temp directory:")(parent_dir.str());
 
         const int max_try = 100;
         for(int i = 0; i < max_try ; ++i)
@@ -345,7 +345,7 @@ namespace xirang {namespace fs{
 			return io::file(fpath, flag);
         }
 
-        AIO_THROW(io::create_failed)("failed to create temp file in directory:")(parent_dir.str());
+        AIO_THROW(fs::open_failed_exception)("failed to create temp file in directory:")(parent_dir.str());
     }
 
     
@@ -363,7 +363,7 @@ namespace xirang {namespace fs{
     file_path temp_dir(const file_path& template_, const file_path& parent_dir)
     {
         if (state(parent_dir).state != st_dir)
-            AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir.str());
+            AIO_THROW(fs::open_failed_exception)("failed to locate the temp directory:")(parent_dir.str());
 
         const int max_try = 100;
         for(int i = 0; i < max_try ; ++i)
@@ -373,7 +373,7 @@ namespace xirang {namespace fs{
                 return path;
         }
 
-        AIO_THROW(io::create_failed)("failed to create temp file in directory:")(parent_dir.str());
+        AIO_THROW(fs::open_failed_exception)("failed to create temp file in directory:")(parent_dir.str());
     }
 
     bool exists(const file_path& file)
@@ -422,7 +422,7 @@ namespace xirang {namespace fs{
         fs_error err = recursive_create_dir(path.parent());
         if (err != er_ok)
         {
-			AIO_THROW(io::create_failed)(path.str());
+			AIO_THROW(fs::open_failed_exception)(path.str());
         }
         return io::file(path, flag);
     }

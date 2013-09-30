@@ -303,7 +303,7 @@ namespace xirang{ namespace vfs{
 
 	}
 	void** RootFs::do_create(unsigned long long mask,
-			void* ret, unique_ptr<void>& owner, sub_file_path path, int flag){
+			void** ret, unique_ptr<void>& owner, sub_file_path path, int flag){
 		auto result = locate(path);
 		if (!result.node.owner_fs)
 			return 0;
@@ -313,7 +313,7 @@ namespace xirang{ namespace vfs{
     file_path temp_dir(IVfs& vfs, sub_file_path template_, sub_file_path parent_dir)
     {
         if (vfs.state(parent_dir).state != fs::st_dir)
-            AIO_THROW(io::create_failed)("failed to locate the temp directory:")(parent_dir.str());
+            AIO_THROW(fs::not_found_exception)("failed to locate the temp directory:")(parent_dir.str());
 
 		file_path prefix = parent_dir / template_;
 
@@ -325,7 +325,7 @@ namespace xirang{ namespace vfs{
                 return fpath;
         }
 
-        AIO_THROW(io::create_failed)("failed to create temp file in directory:")(parent_dir.str());
+        AIO_THROW(fs::create_exception)("failed to create temp file in directory:")(parent_dir.str());
     }
 
     fs_error recursive_remove(IVfs&vfs, sub_file_path path)
