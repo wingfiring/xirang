@@ -113,13 +113,13 @@ namespace xirang{ namespace vfs{
 			unique_ptr<io::file> ar(new io::file(writeOpen(path, flag)));
 			iref<reader, writer, io::random, ioctrl, read_map, write_map> ifile(*ar);
 			ret = copy_interface<reader, writer, io::random, ioctrl, read_map, write_map >::apply(mask, base, ifile, (void*)ar.get()); 
-			unique_ptr<void>(std::move(ar)).swap(owner);
+			owner = std::move(ar);
 		}
 		else{ //read open
 			unique_ptr<io::file_reader> ar(new io::file_reader(readOpen(path)));
 			iref<reader, io::random, read_map> ifile(*ar);
 			ret = copy_interface<reader, io::random, read_map>::apply(mask, base, ifile, (void*)ar.get()); 
-			unique_ptr<void>(std::move(ar)).swap(owner);
+			owner = std::move(ar);
 		}
 		return ret;
 	}

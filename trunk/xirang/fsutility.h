@@ -41,6 +41,7 @@ namespace xirang{ namespace fs{
 		er_data_error,
 		er_file_type,
 		er_create,
+		er_is_root,
     };
 	AIO_EXCEPTION_TYPE(invalid_exception);
 	AIO_EXCEPTION_TYPE(busy_mounted_exception);
@@ -59,6 +60,7 @@ namespace xirang{ namespace fs{
 	AIO_EXCEPTION_TYPE(not_empty_exception);
 	AIO_EXCEPTION_TYPE(file_type_exception);
 	AIO_EXCEPTION_TYPE(create_exception);
+	AIO_EXCEPTION_TYPE(is_root_exception);
 
     enum file_state
 	{

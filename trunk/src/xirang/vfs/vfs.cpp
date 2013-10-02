@@ -180,9 +180,10 @@ namespace xirang{ namespace vfs{
 				if (pos->first == path || pos->first.contains(path))
 				{
 					sub_file_path rest(path.str().begin() + pos->first.str().size(), path.str().end());
-					file_path path = rest.is_root() ? sub_file_path(rest.str().begin() + 1, rest.str().end()) : rest;
-					auto ret = pos->second->state(path);
-					ret.node.path = path;
+					file_path relative_path = file_path(rest).remove_absolute();
+					auto ret = pos->second->state(relative_path);
+					ret.node.path = relative_path;
+					return ret;
 				}
 			} 
 
@@ -190,9 +191,10 @@ namespace xirang{ namespace vfs{
 				if (pos->first == path || pos->first.contains(path))
 				{
 					sub_file_path rest(path.str().begin() + pos->first.str().size(), path.str().end());
-					file_path path = rest.is_root() ? sub_file_path(rest.str().begin() + 1, rest.str().end()) : rest;
-					auto ret = pos->second->state(path);
-					ret.node.path = path;
+					file_path relative_path = file_path(rest).remove_absolute();
+					auto ret = pos->second->state(relative_path);
+					ret.node.path = relative_path;
+					return ret;
 				}
 			}
 
@@ -312,8 +314,12 @@ namespace xirang{ namespace vfs{
 
     file_path temp_dir(IVfs& vfs, sub_file_path template_, sub_file_path parent_dir)
     {
-        if (vfs.state(parent_dir).state != fs::st_dir)
+		auto ret = vfs.state(parent_dir).state;
+		if (ret == fs::st_not_found)
             AIO_THROW(fs::not_found_exception)("failed to locate the temp directory:")(parent_dir.str());
+
+        if (ret != fs::st_dir)
+            AIO_THROW(fs::not_dir_exception)("failed to locate the temp directory:")(parent_dir.str());
 
 		file_path prefix = parent_dir / template_;
 
@@ -345,6 +351,7 @@ namespace xirang{ namespace vfs{
         
         return vfs.remove(path);
     }
+
     fs_error recursive_create_dir(IVfs& vfs, sub_file_path path)
     {
 		if (path.empty())

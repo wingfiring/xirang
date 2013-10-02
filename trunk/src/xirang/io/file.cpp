@@ -51,12 +51,12 @@ namespace xirang{ namespace io{
 			{
 				case of_open:
 					if (!exists_())
-						AIO_THROW(archive_open_file_failed)(m_path.str());
+						AIO_THROW(fs::not_found_exception)(m_path.str());
 
 					break;
 				case of_create:
 					if (exists_())
-						AIO_THROW(archive_create_file_failed)(m_path.str());
+						AIO_THROW(fs::exist_exception)(m_path.str());
 					create_();
 
 					break;
@@ -79,7 +79,7 @@ namespace xirang{ namespace io{
 			}
 			catch(...)
 			{
-				AIO_THROW(archive_open_file_failed)(m_path.str());
+				AIO_THROW(fs::open_failed_exception)(m_path.str());
 			}
 		}
         ~file_imp()
@@ -196,7 +196,7 @@ namespace xirang{ namespace io{
             FILE* fp = fopen(m_path.str().c_str(),"wb");
 #endif
 			if (fp == 0)
-				AIO_THROW(archive_create_file_failed)(m_path.str());
+				AIO_THROW(fs::create_exception)(m_path.str());
 
 			fclose(fp);
 		}
@@ -206,7 +206,7 @@ namespace xirang{ namespace io{
 			
 			auto st = fs::state(m_path);
 			if (st.state == fs::st_not_found)
-				AIO_THROW(archive_stat_file_failed)(m_path.str());
+				AIO_THROW(fs::not_found_exception)(m_path.str());
 			return st.size;
 		}
 

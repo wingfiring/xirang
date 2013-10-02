@@ -29,13 +29,36 @@ namespace xirang{ namespace vfs{
 		using io::writer;
 		using io::sequence;
 
-		auto src = from.owner_fs->create<reader, sequence>(from.path, io::of_open);
-		auto dest = to.owner_fs->create<writer>(to.path, io::of_create_or_open);
+		try{
+			auto src = from.owner_fs->create<reader, sequence>(from.path, io::of_open);
+			auto dest = to.owner_fs->create<writer>(to.path, io::of_create_or_open);
 
-		long_size_t copied_size = copy_data(src.get<reader>(), dest.get<writer>());
-		if (copied_size != src.get<sequence>().size())
+			long_size_t copied_size = copy_data(src.get<reader>(), dest.get<writer>());
+			if (copied_size != src.get<sequence>().size())
+				return fs::er_system_error;
+			return fs::er_ok;
+		}
+		catch(fs::not_found_exception&){
+			return fs::er_not_found;
+		}
+		catch(fs::system_error_exception&){
 			return fs::er_system_error;
-		return fs::er_ok;
+		}
+		catch(fs::open_failed_exception&){
+			return fs::er_open_failed;
+		}
+		catch(fs::permission_denied_exception&){
+			return fs::er_permission_denied;
+		}
+		catch(fs::create_exception& e){
+			return fs::er_create;
+		}
+		catch(xirang::exception&){
+		}
+		catch(...){
+		}
+
+		return fs::er_invalid;
 	}
 }}
 

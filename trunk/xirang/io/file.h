@@ -27,9 +27,6 @@ namespace xirang{ namespace io{
 		file_imp * m_imp;;
 	};
 
-	AIO_EXCEPTION_TYPE(archive_create_file_failed);
-	AIO_EXCEPTION_TYPE(archive_open_file_failed);
-	AIO_EXCEPTION_TYPE(archive_stat_file_failed);
 	AIO_EXCEPTION_TYPE(archive_append_failed);
 
 	struct file_writer // <writer, random >

@@ -63,7 +63,6 @@ namespace xirang{ namespace vfs{
 			return fs::er_ok;
 		}
 
-
 		// file operations
 		io::buffer_io create(sub_file_path path, int flag)
 		{
@@ -74,8 +73,13 @@ namespace xirang{ namespace vfs{
             auto pos = locate(m_root_node, path);
             if((flag & io::of_open_create_mask) == io::of_create && pos.not_found.empty()) AIO_THROW(fs::exist_exception);
 			if((flag & io::of_open_create_mask) == io::of_open && !pos.not_found.empty()) AIO_THROW(fs::not_found_exception);
-			if (pos.node->type != fs::st_regular || pos.not_found.parent().empty())
+			if (!pos.not_found.parent().empty())
 				AIO_THROW(fs::not_found_exception);
+			if (pos.node->type != fs::st_dir && !pos.not_found.empty())
+				AIO_THROW(fs::not_found_exception);
+
+			if (pos.node->type != fs::st_regular && pos.not_found.empty())
+				AIO_THROW(fs::not_regular_exception);
 
 			if (!pos.not_found.empty())
 			{

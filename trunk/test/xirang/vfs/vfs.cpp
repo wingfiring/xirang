@@ -119,9 +119,8 @@ void VfsTester::test_readonly(xirang::vfs::IVfs& vfs)
     BOOST_CHECK(vfs.createDir(file_path("dir3")) != fs::er_ok);
 	BOOST_CHECK(vfs.createDir(file_path("dir3/dir31")) != fs::er_ok);
 
-    BOOST_CHECK_THROW((vfs.create<io::reader, io::writer, io::random>(file_path("dir1/file1"), xirang::io::of_create_or_open)), fs::not_found_exception);
+    BOOST_CHECK_THROW((vfs.create<io::reader, io::writer, io::random>(file_path("dir1/file1"), xirang::io::of_create_or_open)), fs::permission_denied_exception);
 	vfs.sync();
-    
 
     BOOST_CHECK(vfs.state(file_path("dir1/file1")).state == fs::st_regular);
 	BOOST_CHECK(vfs.copy(file_path("dir1/file1"), file_path("dest")) != fs::er_ok);

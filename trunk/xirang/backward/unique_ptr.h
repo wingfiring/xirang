@@ -132,6 +132,21 @@ namespace xirang
 			return *this;
 		}
 
+		template<typename Up, typename Ep, typename = typename
+			std::enable_if
+			<std::is_convertible<typename unique_ptr<Up, Ep>::pointer,
+			pointer>::value
+				&& ((std::is_reference<Dp>::value
+							&& std::is_same<Ep, Dp>::value)
+						|| (!std::is_reference<Dp>::value
+							&& std::is_convertible<Ep, Dp>::value))>
+				::type>
+		unique_ptr& operator=(unique_ptr<Up, Ep> && rhs){
+			reset(rhs.release());
+			get_deleter() = rhs.get_deleter();
+			return *this;
+		}
+
 		// Observers.
 		typename std::add_lvalue_reference<element_type>::type 
 		operator*() const
@@ -179,6 +194,7 @@ namespace xirang
 		{
 			using std::swap;
 			swap(ptr, u_.ptr);
+			swap(dp, u_.dp);
 		}
 		// Disable copy from lvalue.
 	private:

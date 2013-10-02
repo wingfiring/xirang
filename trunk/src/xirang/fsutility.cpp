@@ -333,8 +333,12 @@ namespace xirang {namespace fs{
         AIO_PRE_CONDITION(flag == 0 ||  flag  == io::of_remove_on_close);
         flag |= io::of_create;
 
-        if (state(parent_dir).state != st_dir)
-            AIO_THROW(fs::open_failed_exception)("failed to locate the temp directory:")(parent_dir.str());
+		auto ret = state(parent_dir).state;
+		if (ret == fs::st_not_found)
+            AIO_THROW(fs::not_found_exception)("failed to locate the temp directory:")(parent_dir.str());
+
+        if (ret != fs::st_dir)
+            AIO_THROW(fs::not_dir_exception)("failed to locate the temp directory:")(parent_dir.str());
 
         const int max_try = 100;
         for(int i = 0; i < max_try ; ++i)
@@ -362,8 +366,12 @@ namespace xirang {namespace fs{
     
     file_path temp_dir(const file_path& template_, const file_path& parent_dir)
     {
-        if (state(parent_dir).state != st_dir)
-            AIO_THROW(fs::open_failed_exception)("failed to locate the temp directory:")(parent_dir.str());
+		auto ret = state(parent_dir).state;
+		if (ret == fs::st_not_found)
+            AIO_THROW(fs::not_found_exception)("failed to locate the temp directory:")(parent_dir.str());
+
+        if (ret != fs::st_dir)
+            AIO_THROW(fs::not_dir_exception)("failed to locate the temp directory:")(parent_dir.str());
 
         const int max_try = 100;
         for(int i = 0; i < max_try ; ++i)

@@ -92,7 +92,7 @@ namespace xirang{
 		if (pos.second != path.str().end())
 			return false;
 
-		return *pos.first == dim;
+		return (path.is_root() && is_absolute()) || *pos.first == dim;
 		
 	}
 	bool sub_file_path::contains(sub_file_path path) const{
@@ -198,7 +198,6 @@ namespace xirang{
 	}
 
 	sub_file_path::iterator::reference sub_file_path::iterator::operator*() const{
-		AIO_PRE_CONDITION(!m_path.empty() && m_pos && "empty iterator");
 		AIO_PRE_CONDITION(m_pos != end_() &&"dereference end iterator");
 		auto pos = m_pos;
 		if (m_pos == begin_()){
@@ -570,7 +569,6 @@ namespace xirang{
 	}
 
 	sub_simple_path::iterator::reference sub_simple_path::iterator::operator*() const{
-		AIO_PRE_CONDITION(!m_path.empty() && m_pos && "empty iterator");
 		AIO_PRE_CONDITION(m_pos != end_() &&"dereference end iterator");
 		auto pos = m_pos;
 		if (m_pos == begin_()){

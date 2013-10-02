@@ -51,11 +51,11 @@ BOOST_AUTO_TEST_CASE(file_archive)
 
 	//Writer
 	{
-		BOOST_CHECK_THROW(file_writer(file_name, of_open), archive_open_file_failed);
+		BOOST_CHECK_THROW(file_writer(file_name, of_open), fs::not_found_exception);
 
 		file_writer wr(file_name, of_create_or_open);
 
-		BOOST_CHECK_THROW(file_writer(file_name, of_create), archive_create_file_failed);
+		BOOST_CHECK_THROW(file_writer(file_name, of_create), fs::exist_exception);
 
 		BOOST_REQUIRE(wr.writable());
 

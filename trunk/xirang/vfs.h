@@ -16,10 +16,10 @@ namespace xirang { namespace vfs{ namespace detail{
 		static const unsigned long long value = 1;
 	};
 	template<> struct interface_mask<io::forward>{
-		static const unsigned long long value = 1 << 1;
+		static const unsigned long long value = 3;
 	};
 	template<> struct interface_mask<io::random>{
-		static const unsigned long long value = 1 << 2;
+		static const unsigned long long value = 7;
 	};
 	template<> struct interface_mask<io::reader>{
 		static const unsigned long long value = 1 << 3;

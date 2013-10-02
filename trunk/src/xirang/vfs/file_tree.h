@@ -46,7 +46,8 @@ namespace xirang{ namespace vfs{ namespace private_{
 		file_node<T>* pos = &root;
 		
 		auto itr = path.begin();
-		for (auto end(path.end()); itr != end; ++itr ){
+		auto end(path.end());
+		for (; itr != end; ++itr ){
 			auto child = pos->children.find(*itr);
 			if (child != pos->children.end())
 				pos = child->second.get();
@@ -56,7 +57,7 @@ namespace xirang{ namespace vfs{ namespace private_{
 
 		typedef locate_result<T> return_type;
 		return return_type {
-			pos, sub_file_path(itr->str().begin(), path.str().end())
+			pos, itr == end ? sub_file_path() : sub_file_path(itr->str().begin(), path.str().end())
 		};
 	}
 
@@ -64,9 +65,13 @@ namespace xirang{ namespace vfs{ namespace private_{
 	template<typename T>
 	fs_error removeNode(file_node<T>* node)
 	{
-		AIO_PRE_CONDITION(node && node->parent && node->parent->children.count(node->name));
+		AIO_PRE_CONDITION(node);
+		if (!node->parent)
+			return fs::er_is_root;
+		AIO_PRE_CONDITION(node->parent->children.count(node->name));
         if (!node->children.empty())
             return fs::er_not_empty;
+
 
 		node->parent->children.erase(node->name);
 		return fs::er_ok;
