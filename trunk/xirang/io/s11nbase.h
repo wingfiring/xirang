@@ -39,6 +39,13 @@ namespace xirang{ namespace io{ namespace s11n{
 			return load(ar, t);
 		}
 
+	template<typename Ar, size_t N,
+		typename = typename std::enable_if<s11n::is_deserializer<Ar>::value, Ar>::type>
+		Ar operator&(Ar ar, skip_n<N> t){       //load
+			return load(ar, t);
+		}
+		
+
 	template<typename Ar, typename T,
 		typename = typename std::enable_if<s11n::is_serializer<Ar>::value, Ar>::type>
 		Ar operator&(Ar ar, const T& t){	//save

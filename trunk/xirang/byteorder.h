@@ -27,6 +27,12 @@ namespace xirang{
 				}
 			};
 
+		template<typename From, typename T, std::size_t N> 
+			struct convert_imp<From, From, T, N>{
+				static T apply(T t){
+					return t;
+				}
+			};
 
 		template<typename From, typename To, typename T> 
 			T convert(T t){

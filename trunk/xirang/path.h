@@ -324,6 +324,15 @@ namespace xirang{
 	}
 
 	simple_path operator/(const sub_simple_path& lhs, const sub_simple_path& rhs);
+
+	struct path_less
+	{
+		template<typename PathType>
+		bool operator()(const PathType& lhs, const PathType& rhs) const{
+			return lhs.parent() < rhs.parent()
+				|| (lhs.parent() == rhs.parent() && lhs < rhs);
+		}
+	};
 }
 
 #endif //end AIO_COMMON_PATH_H_

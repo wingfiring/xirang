@@ -26,7 +26,7 @@ namespace xirang{ namespace zip{
 		while (rest_in_size > 0) { 
 			auto rview = src.view_rd(ext_heap::handle(in_pos, in_pos + std::min(ViewSize, rest_in_size)));
 			auto rng = rview.get<io::read_view>().address();
-			crc = crc32(rng);
+			crc = crc32(rng, crc);
 			in_pos += rng.size();
 			rest_in_size -= rng.size();
 		}
@@ -380,5 +380,38 @@ namespace xirang{ namespace zip{
 
 		return deflater.do_deflate(src, dest, dict);
 	}
+	class inflate_reader_imp{
+	};
+
+	inflate_reader::inflate_reader(){}
+	inflate_reader::~inflate_reader(){}
+
+	inflate_reader::inflate_reader(inflate_reader&& rhs)
+		: m_imp(std::move(rhs.m_imp))
+	{}
+	inflate_reader& inflate_reader::operator=(inflate_reader rhs){
+		swap(rhs);
+		return *this;
+	}
+	void inflate_reader::swap(inflate_reader& rhs){
+		m_imp.swap(rhs.m_imp);
+	}
+
+	inflate_reader::inflate_reader(io::read_map& src, dict_type dict /*= dict_type() */,heap* h /* = 0 */){
+	}
+	bool inflate_reader::valid() const{
+		return m_imp;
+	}
+	inflate_reader::operator bool() const{
+		return valid();
+	}
+#if 0
+	range<byte*> inflate_reader::read(const range<byte*>& buf);
+	bool inflate_reader::readable() const;
+	long_size_t inflate_reader::offset() const;
+	long_size_t inflate_reader::size() const;
+	long_size_t inflate_reader::seek(long_size_t off);
+#endif
+
 }}
 

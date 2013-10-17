@@ -52,6 +52,60 @@ namespace xirang{ namespace zip{
 	extern zip_result deflate(io::reader& src, io::writer& dest, int level = zl_default, dict_type dict = dict_type(),heap* h = 0, int strategy_ = zs_default);
 	extern zip_result deflate(io::read_map& src, io::write_map& dest, int level = zl_default, dict_type dict = dict_type(),  heap* h = 0, int strategy_ = zs_default);
 
+	// imp reader, forward
+	class inflate_reader_imp;
+	class inflate_reader{
+		public:
+			inflate_reader();
+			~inflate_reader();
+			
+			inflate_reader(inflate_reader&& rhs);
+			inflate_reader& operator=(inflate_reader rhs);
+			void swap(inflate_reader& rhs);
+
+			explicit inflate_reader(io::read_map& src, dict_type dict = dict_type(),heap* h = 0); 
+			bool valid() const;
+			explicit operator bool() const;
+
+			range<byte*> read(const range<byte*>& buf);
+			bool readable() const;
+			long_size_t offset() const;
+			long_size_t size() const;
+			long_size_t seek(long_size_t off);
+
+			inflate_reader(const inflate_reader&) = delete;
+			inflate_reader& operator=(const inflate_reader&) = delete;
+		private:
+			unique_ptr<inflate_reader_imp> m_imp;
+	};
+
+	// imp writer, sequence
+	class deflate_writer{
+		public:
+			deflate_writer();
+			~deflate_writer();
+			deflate_writer(deflate_writer&& rhs);
+			deflate_writer& operator=(deflate_writer rhs);
+			void swap(deflate_writer& rhs);
+
+			explicit deflate_writer(io::write_map& dest, int level = zl_default, dict_type dict = dict_type(),heap* h = 0, int strategy_ = zs_default);
+			bool valid() const;
+			explicit operator bool() const;
+
+			range<const byte*> write(const range<const byte*>& buf);
+			bool writable() const;
+			long_size_t offset() const;
+			long_size_t size() const;
+			long_size_t seek(long_size_t off);
+
+			zip_result commit();
+			uint32_t crc32() const;
+
+			deflate_writer(const deflate_writer& rhs) = delete;
+			deflate_writer& operator=(const deflate_writer&) = delete;
+		private:
+	};
+
 }}
 
 #endif //end AIO_COMMON_ZIP_H_

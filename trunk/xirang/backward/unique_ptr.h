@@ -77,7 +77,7 @@ namespace xirang
 		deleter_type deleter;
 
 		static void destroy_(void* ptr){
-			AIO_PRE_CONDITION(false && "just a stub, must never be called.");
+			AIO_PRE_CONDITION(false && "just a stub, must not be called.");
             check_delete( (char*)ptr);
 		}
     };

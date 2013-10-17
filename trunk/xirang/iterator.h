@@ -316,7 +316,7 @@ namespace xirang { namespace itr_{
 							right->clear_();
 						}
 						break;
-					case 22:
+					case 0x22:
 						break;
 					default:
 						std::swap(rhs.m_imp[IteratorSizeLimit - 1], m_imp[IteratorSizeLimit - 1]);
