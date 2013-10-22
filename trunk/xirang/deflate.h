@@ -38,6 +38,9 @@ namespace xirang{ namespace zip{
 		long_size_t out_size;
 	};
 
+	AIO_EXCEPTION_TYPE(inflate_exception);
+	AIO_EXCEPTION_TYPE(deflate_exception);
+
 	/// return crc32 initilaized value
 	extern uint32_t crc32_init();
 
@@ -63,7 +66,7 @@ namespace xirang{ namespace zip{
 			inflate_reader& operator=(inflate_reader rhs);
 			void swap(inflate_reader& rhs);
 
-			explicit inflate_reader(io::read_map& src, dict_type dict = dict_type(),heap* h = 0); 
+			explicit inflate_reader(io::read_map& src, long_size_t uncompressed_size = long_size_t(-1),dict_type dict = dict_type(),heap* h = 0); 
 			bool valid() const;
 			explicit operator bool() const;
 
@@ -73,6 +76,8 @@ namespace xirang{ namespace zip{
 			long_size_t size() const;
 			long_size_t seek(long_size_t off);
 
+			long_size_t compressed_size() const;
+
 			inflate_reader(const inflate_reader&) = delete;
 			inflate_reader& operator=(const inflate_reader&) = delete;
 		private:
@@ -80,6 +85,7 @@ namespace xirang{ namespace zip{
 	};
 
 	// imp writer, sequence
+	class deflate_writer_imp;
 	class deflate_writer{
 		public:
 			deflate_writer();
@@ -88,7 +94,7 @@ namespace xirang{ namespace zip{
 			deflate_writer& operator=(deflate_writer rhs);
 			void swap(deflate_writer& rhs);
 
-			explicit deflate_writer(io::write_map& dest, int level = zl_default, dict_type dict = dict_type(),heap* h = 0, int strategy_ = zs_default);
+			explicit deflate_writer(iref<io::write_map, io::ioctrl> dest, int level = zl_default, dict_type dict = dict_type(),heap* h = 0, int strategy_ = zs_default);
 			bool valid() const;
 			explicit operator bool() const;
 
@@ -96,14 +102,16 @@ namespace xirang{ namespace zip{
 			bool writable() const;
 			long_size_t offset() const;
 			long_size_t size() const;
-			long_size_t seek(long_size_t off);
+			void sync();
 
-			zip_result commit();
-			uint32_t crc32() const;
+			long_size_t uncompressed_size() const;
+			void finish() ;
+			bool finished() const ;
 
 			deflate_writer(const deflate_writer& rhs) = delete;
 			deflate_writer& operator=(const deflate_writer&) = delete;
 		private:
+			unique_ptr<deflate_writer_imp> m_imp;
 	};
 
 }}

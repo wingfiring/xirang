@@ -34,9 +34,8 @@ namespace xirang { namespace io{
 
 	//TODO: clean block & non-block behavior
 
-
-
-	template<typename Interface, typename Ar> Ar& get_interface(Ar& ar){ return ar;}
+	template<typename Interface, typename Ar> 
+		typename std::enable_if<!is_iref<Ar>::value, Ar&>::type get_interface(Ar& ar){ return ar;}
 	template<typename Interface, typename ...Io> Interface& get_interface(const iref<Io...>& ar)
 	{ return ar.template get<Interface>();}
 	template<typename Interface, typename ...Io> Interface& get_interface(const iauto<Io...>& ar)
@@ -376,7 +375,7 @@ namespace xirang { namespace io{
 	template<typename Input, typename Output, typename InAr, typename OutAr>
 	long_size_t copy_data(InAr& rd, OutAr& wr, long_size_t max_size  = ~0 ){
 		iref<Input> in(rd);
-		iref<Output> out(rd);
+		iref<Output> out(wr);
 		return copy_data(get_interface<Input>(in), get_interface<Output>(out), max_size);
 	}
 

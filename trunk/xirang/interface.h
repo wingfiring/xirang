@@ -179,6 +179,13 @@ namespace xirang
 	template<typename T> struct is_iref{
 		static const bool value = std::is_base_of<target_holder<void>, typename std::remove_reference<T>::type>::value;
 	};
+	template<typename T> struct is_iauto{
+		static const bool value = false;
+	};
+	template<typename ...Args> struct is_iauto<iauto<Args...>>{
+		static const bool value = true;
+	};
+
 	template<typename... Args>
 		struct iref : public target_holder<void>, public interface_holder<Args>...
 	{
@@ -289,6 +296,7 @@ namespace xirang
 		CoClass& get_cobj(Interface* this_){ 
 			return *static_cast<CoClass*>(*((void**)this_ + 1));
 		}
+
 }
 #include <xirang/config/abi_suffix.h>
 

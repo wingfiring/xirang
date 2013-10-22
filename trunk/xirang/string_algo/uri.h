@@ -16,7 +16,8 @@ namespace xirang { namespace uri {
 	{
         InputIter iin = in.begin();
 
-		typedef typename std::iterator_traits<InputIter>::value_type  in_value_type;
+		typedef typename std::iterator_traits<InputIter>::value_type  in_value_type_;
+		typedef typename std::make_unsigned<in_value_type_>::type in_value_type;
 
 		for (; iin != in.end(); ++iin)
 		{
