@@ -524,7 +524,7 @@ namespace xirang{ namespace zip{
 		public:
 			deflate_writer_imp(iref<io::write_map, io::ioctrl> dest_, int level_, dict_type dict_, heap* h, int strategy_)
 				: dest(dest_), zstream()
-				, in_pos(), out_pos()
+				, in_pos()
 				  ,finished(false)
 			{
 				if (h){
@@ -575,35 +575,35 @@ namespace xirang{ namespace zip{
 					else
 						AIO_THROW(deflate_exception)("deflate with Z_FINISH failed");
 				}
-				out_pos -= zstream.avail_out;
-				dest.get<io::ioctrl>().truncate(out_pos);
+				dest.get<io::ioctrl>().truncate(zstream.total_out);
 				wview.reset();
 				finished = true;
 			}
 			void new_buffer_(){
-				wview = dest.get<io::write_map>().view_wr(ext_heap::handle(out_pos, K_CompressedViewSize));
+				wview = dest.get<io::write_map>().view_wr(ext_heap::handle(zstream.total_out, K_CompressedViewSize));
 				if (wview.get<io::write_view>().address().size() != K_CompressedViewSize)
 					AIO_THROW(deflate_exception)("Failed to request write view");
 
-				out_pos += K_CompressedViewSize;
 				auto addr  = wview.get<io::write_view>().address();
 				zstream.next_out = (Bytef*)addr.begin();
 				zstream.avail_out = uInt(addr.size());
 			}
 
 			~deflate_writer_imp(){
-				inflateEnd(&zstream);
+				deflateEnd(&zstream);
 			};
 
 			iref<io::write_map, io::ioctrl> dest;
 			z_stream zstream;
 			long_size_t in_pos;
-			long_size_t out_pos;
 			iauto<io::write_view> wview;
 			bool finished;
 	};
 	deflate_writer::deflate_writer(){}
-	deflate_writer::~deflate_writer(){}
+	deflate_writer::~deflate_writer(){
+		if (!finished())
+			finish();
+	}
 	deflate_writer::deflate_writer(deflate_writer&& rhs) : m_imp(std::move(rhs.m_imp)){}
 	deflate_writer& deflate_writer::operator=(deflate_writer rhs){
 		swap(rhs);
@@ -637,7 +637,7 @@ namespace xirang{ namespace zip{
 	}
 	long_size_t deflate_writer::size() const{
 		AIO_PRE_CONDITION(valid());
-		return m_imp->out_pos - m_imp->zstream.avail_out; 
+		return m_imp->zstream.total_out;
 	}
 	void deflate_writer::sync(){
 		AIO_PRE_CONDITION(valid());
