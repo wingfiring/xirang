@@ -1,6 +1,8 @@
 #include <xirang/io.h>
 namespace xirang{ namespace io{
 
+	const long_size_t K_ViewSize = 64 * 1024;
+
 	reader::~reader() {}
 	writer::~writer() {}
 	sequence::~sequence() {}
@@ -48,7 +50,7 @@ namespace xirang{ namespace io{
 		long_size_t nsize = 0;
 		while (rd.readable() && nsize < max_size)
 		{
-			auto view = wr.view_wr(ext_heap::handle(nsize, nsize + 1024 * 1024));
+			auto view = wr.view_wr(ext_heap::handle(nsize, nsize + K_ViewSize));
 			auto buf = view.get<write_view>().address();
 			if (buf.empty())
 				break;
@@ -63,7 +65,7 @@ namespace xirang{ namespace io{
 		long_size_t nsize = 0;
 		while (wr.writable() && nsize < max_size)
 		{
-			auto view = rd.view_rd(ext_heap::handle(nsize, nsize + 1024 * 1024));
+			auto view = rd.view_rd(ext_heap::handle(nsize, std::min(max_size, nsize + K_ViewSize)));
 			auto buf = view.get<read_view>().address();
 			if (buf.empty())
 				break;
@@ -78,15 +80,14 @@ namespace xirang{ namespace io{
 		long_size_t nsize = 0;
 		while (nsize < max_size)
 		{
-			auto rview = rd.view_rd(ext_heap::handle(nsize, nsize + 1024 * 1024));
-			auto wview = wr.view_wr(ext_heap::handle(nsize, nsize + 1024 * 1024));
+			auto rview = rd.view_rd(ext_heap::handle(nsize, std::min(max_size, nsize + K_ViewSize)));
+			auto wview = wr.view_wr(ext_heap::handle(nsize, std::min(max_size, nsize + K_ViewSize)));
 
 			auto rbuf = rview.get<read_view>().address();
 			auto wbuf = wview.get<write_view>().address();
-			if (rbuf.empty() || wbuf.empty()) break;
 
 			auto s = std::min(rbuf.size(), wbuf.size());
-			std::memcpy(wbuf.begin(), rbuf.begin(), s);
+			std::copy(rbuf.begin(), rbuf.begin() + s, wbuf.begin());
 			nsize += s;
 		}
 		return nsize;
