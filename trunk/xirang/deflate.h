@@ -94,7 +94,7 @@ namespace xirang{ namespace zip{
 			deflate_writer& operator=(deflate_writer rhs);
 			void swap(deflate_writer& rhs);
 
-			explicit deflate_writer(iref<io::write_map, io::ioctrl> dest, int level = zl_default, dict_type dict = dict_type(),heap* h = 0, int strategy_ = zs_default);
+			explicit deflate_writer(io::write_map& dest, int level = zl_default, dict_type dict = dict_type(),heap* h = 0, int strategy_ = zs_default);
 			bool valid() const;
 			explicit operator bool() const;
 

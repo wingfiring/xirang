@@ -176,6 +176,7 @@ namespace xirang{ namespace io{
 	}
 
 	buffer<byte> & buffer_out::data() { return m_data;}
+	const buffer<byte> & buffer_out::data() const { return m_data;}
 
 	/// buffer_io
 
@@ -260,6 +261,7 @@ namespace xirang{ namespace io{
 	}
 
 	buffer<byte> & buffer_io::data() { return m_data;}
+	const buffer<byte> & buffer_io::data() const { return m_data;}
 
 	/// mem_read_archive
 	mem_writer::mem_writer() : buffer_out(m_data){}

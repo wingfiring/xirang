@@ -63,6 +63,7 @@ namespace xirang{ namespace io{
 
 		buffer_wr_view view_wr(ext_heap::handle h);
 		buffer<byte> & data();
+		const buffer<byte> & data() const;
 	private:
 		size_t m_pos;
 		buffer<byte>& m_data;
@@ -90,6 +91,7 @@ namespace xirang{ namespace io{
 		buffer_wr_view view_wr(ext_heap::handle h);
 
 		buffer<byte> & data();
+		const buffer<byte> & data() const;
 		private:
 		size_t m_pos;
 		buffer<byte>& m_data;

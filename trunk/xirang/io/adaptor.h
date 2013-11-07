@@ -2,6 +2,7 @@
 #define AIO_COMMON_ARCHIVE_ADAPTOR_H
 
 #include <xirang/io.h>
+#include <xirang/io/memory.h>
 
 namespace xirang{ namespace io{
 	namespace io_private_{
@@ -654,6 +655,121 @@ namespace xirang{ namespace io{
 		private:
 		COMMON_IO_ADAPTOR_HELPER();
 	};
+
+	template<typename Derive> using stream_to_map_archive = proxy_archive<Derive>;
+
+	struct stream_to_write_view : write_view
+	{
+		range<byte*> address() const { 
+			return to_range(cache.data());
+		}
+		~stream_to_write_view(){
+			if (cache.size() != 0){
+				write_back(*this);
+			}
+		}
+		mutable mem_archive cache;
+		std::function<void(stream_to_write_view& )> write_back;
+	};
+
+	template<typename Derive> struct stream_to_write_map_p : write_map
+	{
+		virtual iauto<write_view> view_wr(ext_heap::handle h){
+			stream_to_write_view ret;
+			underlying_<io::random>().seek(h.begin());
+			copy_data(underlying_<reader>(), ret.cache, h.size());
+			ret.cache.truncate(h.size());
+			ret.cache.seek(0);
+			ret.write_back = [this, h](stream_to_write_view& view){
+				underlying_<io::random>().seek(h.begin());
+				copy_data(view.cache, underlying_<writer>());
+			};
+			return iauto<write_view>(std::move(ret));
+		}
+
+		virtual long_size_t size() const{
+			return underlying_<io::random>().size();
+		}
+		virtual void sync() {
+			return underlying_<writer>().sync();
+		}
+		private:
+		mem_archive cache;
+		COMMON_IO_ADAPTOR_HELPER();
+	};
+
+	struct stream_to_read_map_view : read_view
+	{
+		virtual range<const byte*> address() const { 
+			return to_range(cache.data());
+		}
+		mem_archive cache;
+	};
+	template<typename Derive> struct stream_to_read_map_p : read_map
+	{
+		virtual iauto<read_view> view_rd(ext_heap::handle h){
+
+			stream_to_read_map_view ret;
+			underlying_<io::random>().seek(h.begin());
+			copy_data(underlying_<reader>(), ret.cache, h.size());
+			ret.cache.seek(0);
+			return iauto<read_view>(std::move(ret));
+		}
+		virtual long_size_t size() const{
+			return underlying_<io::random>().size();
+		}
+		private:
+		COMMON_IO_ADAPTOR_HELPER();
+	};
+
+	template<typename Derive> using map_to_stream_archive = multiplex_archive<Derive>;
+
+	template<typename Derive> struct read_map_to_reader : reader
+	{
+		typedef typename reader::iterator iterator;
+
+		virtual range<iterator> read(const range<iterator>& buf) {
+			auto last = derive_().current + buf.size();
+			last = std::min(last, underlying_<read_map>().size());
+			ext_heap::handle h(derive_().current, last);
+			auto view = underlying_<read_map>().view_rd();
+			auto address = view.address();
+			auto pos = std::copy(address.begin(), address.end(), buf.begin());
+			derive_().current = last;
+			return range<iterator>(pos, buf.end());
+		}
+
+		virtual bool readable() const {
+			return derive_().current < underlying_<read_map>().size();
+		}
+
+		private:
+		COMMON_IO_ADAPTOR_HELPER();
+	};
+
+	template<typename Derive> struct write_map_to_writer : writer
+	{
+		virtual range<const_iterator> write(const range<const_iterator>& r){
+			auto last = derive_().current + r.size();
+			ext_heap::handle h(derive_().current, last);
+			auto view = underlying_<write_map>().view_wr(h);
+			auto address = view.address();
+			std::copy(r.begin(), r.end(), address.begin());
+			derive_().current = last;
+			return range<iterator>(r.end(), r.end());
+		}
+
+		virtual bool writable() const {
+			return true;
+		}
+
+		virtual void sync(){
+			underlying_<write_map>().sync();
+		}
+		private:
+		COMMON_IO_ADAPTOR_HELPER();
+	};
+
 #undef COMMON_IO_ADAPTOR_HELPER
 }}
 #endif //end AIO_COMMON_ARCHIVE_ADAPTOR_H
