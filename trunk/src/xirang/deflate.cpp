@@ -57,12 +57,19 @@ namespace xirang{ namespace zip{
 
 	class inflate_reader_imp{
 		public:
-			inflate_reader_imp(io::read_map& src_, long_size_t uncompressed_size_, dict_type dict_, heap* h)
-				: src(src_), dict(dict_)
-				, zstream()
-				, in_pos(), out_pos()
+			inflate_reader_imp(io::reader& src_, long_size_t uncompressed_size_, dict_type dict_, heap* h)
+				: stream_src(&src_), dict(dict_)
 				, uncompressed_size(uncompressed_size_)
 			{
+				init_(dict_, h);
+			}
+			inflate_reader_imp(io::read_map& src_, long_size_t uncompressed_size_, dict_type dict_, heap* h)
+				: map_src(&src_), dict(dict_)
+				, uncompressed_size(uncompressed_size_)
+			{
+				init_(dict_, h);
+			}
+			void init_(dict_type dict_, heap* h){
 				if (h){
 					zstream.zalloc = zip_malloc;
 					zstream.zfree = zip_free;
@@ -77,21 +84,12 @@ namespace xirang{ namespace zip{
 
 			range<byte*> read(const range<byte*>& buf)
 			{
-				typedef ext_heap::handle handle;
-
 				zstream.avail_out = uInt(buf.size());
 				zstream.next_out = (Bytef*)buf.begin();
 
 				for(;zstream.avail_out != 0;){
-					long_size_t rest_in_size = src.size() - in_pos;
-					if (zstream.avail_in == 0 && rest_in_size > 0){
-						handle hin(in_pos,  in_pos + std::min(K_UncompressedViewSize, rest_in_size));
-						rview = src.view_rd(hin);
-						auto bin = rview.get<io::read_view>().address();
-						zstream.avail_in = uInt(bin.size());
-						zstream.next_in = (Bytef*)bin.begin();
-
-						in_pos += bin.size();
+					if (zstream.avail_in == 0){
+						new_input_();
 					}
 
 					auto res = ::inflate(&zstream, Z_NO_FLUSH);
@@ -112,24 +110,41 @@ namespace xirang{ namespace zip{
 						case Z_MEM_ERROR:
 							AIO_THROW(inflate_exception)("Z_MEM_ERROR");
 						case Z_STREAM_END:
-							out_pos = buf.size() - zstream.avail_out;
-							uncompressed_size = out_pos;
+							uncompressed_size = zstream.total_out;
 							return range<byte*>((buf.size() - zstream.avail_out) + buf.begin(), buf.end());
 						default:
 							AIO_THROW(inflate_exception)("zlib internal error");
 					}
 				}
-				auto extract_size = buf.size() - zstream.avail_out;
-				out_pos = extract_size;
-				return range<byte*>(extract_size + buf.begin(), buf.end());
+				return range<byte*>(buf.end() - zstream.avail_out, buf.end());
+			}
+			void new_input_(){
+				if (map_src){
+					long_size_t rest_in_size = map_src->size() - zstream.total_in;
+					if (rest_in_size > 0){
+						typedef ext_heap::handle handle;
+						handle hin(zstream.total_in,  zstream.total_in + std::min(K_UncompressedViewSize, rest_in_size));
+						rview = map_src->view_rd(hin);
+						auto bin = rview.get<io::read_view>().address();
+						zstream.avail_in = uInt(bin.size());
+						zstream.next_in = (Bytef*)bin.begin();
+					}
+				}
+				else if(stream_src->readable()){
+					buf.resize(K_UncompressedViewSize);
+					auto res = stream_src->read(to_range(buf));
+					buf.resize(buf.size() - res.size());
+					zstream.avail_in = uInt(buf.size());
+					zstream.next_in = (Bytef*)buf.begin();
+				}
 			}
 
-			io::read_map& src;
+			io::read_map* map_src = 0;
+			io::reader* stream_src = 0;
+			buffer<byte> buf;
 			dict_type dict;
-			z_stream zstream;
-			long_size_t in_pos;
-			long_size_t out_pos;
-			long_size_t uncompressed_size;
+			z_stream zstream = z_stream();
+			long_size_t uncompressed_size = long_size_t(-1);
 			iauto<io::read_view> rview;
 
 	};
@@ -148,6 +163,10 @@ namespace xirang{ namespace zip{
 		m_imp.swap(rhs.m_imp);
 	}
 
+	inflate_reader::inflate_reader(io::reader& src, long_size_t uncompressed_size,dict_type dict /*= dict_type() */,heap* h /* = 0 */)
+		: m_imp(new inflate_reader_imp(src, uncompressed_size, dict, h))
+	{
+	}
 	inflate_reader::inflate_reader(io::read_map& src, long_size_t uncompressed_size,dict_type dict /*= dict_type() */,heap* h /* = 0 */)
 		: m_imp(new inflate_reader_imp(src, uncompressed_size, dict, h))
 	{
@@ -164,11 +183,11 @@ namespace xirang{ namespace zip{
 	}
 	bool inflate_reader::readable() const{
 		AIO_PRE_CONDITION(valid());
-		return m_imp->out_pos < m_imp->uncompressed_size;
+		return offset() < m_imp->uncompressed_size;
 	}
 	long_size_t inflate_reader::offset() const{
 		AIO_PRE_CONDITION(valid());
-		return m_imp->out_pos;
+		return m_imp->zstream.total_out;
 	}
 	long_size_t inflate_reader::size() const{
 		AIO_PRE_CONDITION(valid());
@@ -187,18 +206,24 @@ namespace xirang{ namespace zip{
 	}
 	long_size_t inflate_reader::compressed_size() const{
 		AIO_PRE_CONDITION(valid() && !readable());
-		return m_imp->in_pos;
+		return m_imp->zstream.total_in;
 	}
 
 
 	class deflate_writer_imp
 	{
 		public:
-			deflate_writer_imp(io::write_map& dest_, int level_, dict_type dict_, heap* h, int strategy_)
-				: dest(dest_), zstream()
-				, in_pos()
-				  ,finished(false)
+			deflate_writer_imp(io::writer& dest_, int level_, dict_type dict_, heap* h, int strategy_)
+				: stream_dest(&dest_)
 			{
+				init_(level_, dict_, h, strategy_);
+			}
+			deflate_writer_imp(io::write_map& dest_, int level_, dict_type dict_, heap* h, int strategy_)
+				: map_dest(&dest_)
+			{
+				init_(level_, dict_, h, strategy_);
+			}
+			void init_(int level_, dict_type dict_, heap* h, int strategy_){
 				if (h){
 					zstream.zalloc = zip_malloc;
 					zstream.zfree = zip_free;
@@ -216,7 +241,6 @@ namespace xirang{ namespace zip{
 				AIO_PRE_CONDITION(zstream.avail_in == 0);
 				zstream.next_in = (Bytef*)buf.begin();
 				zstream.avail_in = uInt(buf.size());
-				in_pos += uInt(buf.size());
 
 				for(;zstream.avail_in != 0;){
 					if (zstream.avail_out ==0 )
@@ -241,7 +265,13 @@ namespace xirang{ namespace zip{
 					int ret = deflate(&zstream, Z_FINISH);
 
 					if (ret == Z_STREAM_END)
+					{
+						if (stream_dest){
+							stream_dest->write(make_range(buf.begin(), reinterpret_cast<byte*>(zstream.next_out)));
+							buffer<byte>().swap(buf);
+						}
 						break;
+					}
 					else if (ret == Z_OK || ret == Z_BUF_ERROR)
 						continue;
 					else
@@ -251,24 +281,40 @@ namespace xirang{ namespace zip{
 				finished = true;
 			}
 			void new_buffer_(){
-				wview = dest.view_wr(ext_heap::handle(zstream.total_out, K_CompressedViewSize));
-				if (wview.get<io::write_view>().address().size() != K_CompressedViewSize)
-					AIO_THROW(deflate_exception)("Failed to request write view");
+				if (map_dest){
+					wview = map_dest->view_wr(ext_heap::handle(zstream.total_out, zstream.total_out + K_CompressedViewSize));
+					if (wview.get<io::write_view>().address().size() != K_CompressedViewSize)
+						AIO_THROW(deflate_exception)("Failed to request write view");
 
-				auto addr  = wview.get<io::write_view>().address();
-				zstream.next_out = (Bytef*)addr.begin();
-				zstream.avail_out = uInt(addr.size());
+					auto addr  = wview.get<io::write_view>().address();
+					zstream.next_out = (Bytef*)addr.begin();
+					zstream.avail_out = uInt(addr.size());
+				}
+				else{
+					stream_dest->write(to_range(buf));
+					buf.resize(K_CompressedViewSize);
+					zstream.next_out = (Bytef*)buf.begin();
+					zstream.avail_out = uInt(buf.size());
+				}
+			}
+			void sync(){
+				if (map_dest)	
+					map_dest->sync();
+				else{
+					stream_dest->sync();
+				}
 			}
 
 			~deflate_writer_imp(){
 				deflateEnd(&zstream);
 			};
 
-			io::write_map& dest;
-			z_stream zstream;
-			long_size_t in_pos;
+			io::write_map* map_dest = 0;
+			io::writer* stream_dest = 0;
+			buffer<byte> buf;
+			z_stream zstream = z_stream();
 			iauto<io::write_view> wview;
-			bool finished;
+			bool finished = false;
 	};
 	deflate_writer::deflate_writer(){}
 	deflate_writer::~deflate_writer(){
@@ -284,6 +330,10 @@ namespace xirang{ namespace zip{
 		m_imp.swap(rhs.m_imp);
 	}
 
+	deflate_writer::deflate_writer(io::writer& dest,
+			int level/* = zl_default */, dict_type dict /* = dict_type() */,heap* h /* = 0 */, int strategy_ /* = zs_default */)
+		: m_imp(new deflate_writer_imp(dest, level, dict, h, strategy_))
+	{}
 	deflate_writer::deflate_writer(io::write_map& dest,
 			int level/* = zl_default */, dict_type dict /* = dict_type() */,heap* h /* = 0 */, int strategy_ /* = zs_default */)
 		: m_imp(new deflate_writer_imp(dest, level, dict, h, strategy_))
@@ -312,11 +362,11 @@ namespace xirang{ namespace zip{
 	}
 	void deflate_writer::sync(){
 		AIO_PRE_CONDITION(valid());
-		m_imp->dest.sync();
+		m_imp->sync();
 	}
 	long_size_t deflate_writer::uncompressed_size() const{
 		AIO_PRE_CONDITION(valid());
-		return m_imp->in_pos;
+		return m_imp->zstream.total_in;
 	}
 
 	bool deflate_writer::finished() const{
@@ -329,20 +379,10 @@ namespace xirang{ namespace zip{
 	}
 
 	zip_result inflate(io::reader& src, io::writer& dest, dict_type dict,heap* h ){
-		io::mem_archive msrc, mdest;
-		iref<io::read_map> isrc(msrc);
-		iref<io::write_map> idest(mdest);
-
-		auto real_size = io::copy_data<io::reader, io::write_map>(src, msrc);
-		msrc.truncate(real_size);
-		msrc.seek(0);
-
-		auto ret = inflate(isrc.get<io::read_map>(), idest.get<io::write_map>(), dict, h);
-		mdest.truncate(ret.out_size);
-		mdest.seek(0);
-		io::copy_data<io::read_map, io::writer>(mdest, dest);
-		return ret;
-
+		inflate_reader reader(src, long_size_t(-1), dict, h);
+		iref<io::reader> from(reader);
+		auto size = io::copy_data(from.get<io::reader>(), dest);
+		return zip_result{ze_ok, reader.compressed_size(), size};
 	}
 	zip_result inflate(io::read_map& src, io::write_map& dest, dict_type dict,  heap* h){
 		inflate_reader reader(src, long_size_t(-1), dict, h);
@@ -352,20 +392,12 @@ namespace xirang{ namespace zip{
 	}
 
 	zip_result deflate(io::reader& src, io::writer& dest, int level, dict_type dict, heap* h, int strategy_){
-		io::mem_archive msrc, mdest;
-		iref<io::read_map> isrc(msrc);
-		iref<io::write_map> idest(mdest);
+		deflate_writer writer(dest, level, dict, h, strategy_);
+		iref<io::writer> to(writer);
 
-		auto real_size = io::copy_data<io::reader, io::write_map>(src, msrc);
-		msrc.truncate(real_size);
-		msrc.seek(0);
-
-		auto ret = deflate(isrc.get<io::read_map>(), idest.get<io::write_map>(), level, dict, h, strategy_);
-		mdest.truncate(ret.out_size);
-		mdest.seek(0);
-		io::copy_data<io::read_map, io::writer>(mdest, dest);
-		return ret;
-
+		io::copy_data(src, to.get<io::writer>());
+		writer.finish();
+		return zip_result{ze_ok, writer.uncompressed_size(), writer.size()};
 	}
 	zip_result deflate(io::read_map& src, io::write_map& dest, int level, dict_type dict,  heap* h, int strategy_){
 		deflate_writer writer(dest, level, dict, h, strategy_);

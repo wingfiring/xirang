@@ -66,6 +66,7 @@ namespace xirang{ namespace zip{
 			inflate_reader& operator=(inflate_reader rhs);
 			void swap(inflate_reader& rhs);
 
+			explicit inflate_reader(io::reader& src, long_size_t uncompressed_size = long_size_t(-1),dict_type dict = dict_type(),heap* h = 0); 
 			explicit inflate_reader(io::read_map& src, long_size_t uncompressed_size = long_size_t(-1),dict_type dict = dict_type(),heap* h = 0); 
 			bool valid() const;
 			explicit operator bool() const;
@@ -94,6 +95,7 @@ namespace xirang{ namespace zip{
 			deflate_writer& operator=(deflate_writer rhs);
 			void swap(deflate_writer& rhs);
 
+			explicit deflate_writer(io::writer& dest, int level = zl_default, dict_type dict = dict_type(),heap* h = 0, int strategy_ = zs_default);
 			explicit deflate_writer(io::write_map& dest, int level = zl_default, dict_type dict = dict_type(),heap* h = 0, int strategy_ = zs_default);
 			bool valid() const;
 			explicit operator bool() const;
