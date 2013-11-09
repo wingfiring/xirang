@@ -51,8 +51,6 @@ namespace xirang{ namespace zip{
 			heap* hp = (heap*)h;
 			hp->free(p, -1, 0);
 		}
-
-
 	}
 
 	class inflate_reader_imp{
@@ -278,6 +276,8 @@ namespace xirang{ namespace zip{
 						AIO_THROW(deflate_exception)("deflate with Z_FINISH failed");
 				}
 				wview.reset();
+				if (map_dest)
+					map_dest->truncate(zstream.total_out);
 				finished = true;
 			}
 			void new_buffer_(){
@@ -387,8 +387,8 @@ namespace xirang{ namespace zip{
 	zip_result inflate(io::read_map& src, io::write_map& dest, dict_type dict,  heap* h){
 		inflate_reader reader(src, long_size_t(-1), dict, h);
 		iref<io::reader> from(reader);
-		auto size = io::copy_data(from.get<io::reader>(), dest);
-		return zip_result{ze_ok, src.size(), size};
+		io::copy_data(from.get<io::reader>(), dest);
+		return zip_result{ze_ok, src.size(), dest.size()};
 	}
 
 	zip_result deflate(io::reader& src, io::writer& dest, int level, dict_type dict, heap* h, int strategy_){

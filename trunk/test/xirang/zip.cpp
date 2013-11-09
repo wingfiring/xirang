@@ -40,7 +40,6 @@ BOOST_AUTO_TEST_CASE(deflate_case)
 	BOOST_CHECK(res2.err == zip::ze_ok);
 	BOOST_CHECK(res2.in_size == mar.size());
 	BOOST_CHECK(res2.out_size == res.out_size);
-	zipped2.truncate(res2.out_size);
 
 	BOOST_CHECK(zipped.data() == zipped2.data());
 
@@ -63,7 +62,6 @@ BOOST_AUTO_TEST_CASE(deflate_case)
 	BOOST_CHECK(res4.err == zip::ze_ok);
 	BOOST_CHECK(res4.in_size == zipped2.size());
 	BOOST_CHECK(res4.out_size == mar.size());
-	outar2.truncate(res4.out_size);
 	BOOST_CHECK(res4.out_size == outar2.size());
 	BOOST_CHECK(mar.data() == outar2.data());
 

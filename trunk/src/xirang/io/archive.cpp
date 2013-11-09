@@ -57,6 +57,7 @@ namespace xirang{ namespace io{
 			auto res = rd.read(buf);
 			nsize += buf.size() - res.size();
 		}
+		wr.truncate(nsize);
 		return nsize;
 	}
 	long_size_t copy_data(read_map& rd, writer& wr, long_size_t max_size  /* = ~0 */){

@@ -31,7 +31,6 @@ BOOST_AUTO_TEST_CASE(deflate_io_case){
 	deflater.finish();
 	BOOST_CHECK(deflater.finished());
 	BOOST_CHECK(dest1.size() >= deflater.size());
-	dest1.truncate(deflater.size());
 	BOOST_CHECK(dest1.size() == deflater.size());
 	BOOST_CHECK(deflater.uncompressed_size() == text.size());
 
