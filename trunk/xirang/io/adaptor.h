@@ -246,7 +246,10 @@ namespace xirang{ namespace io{
 			return underlying_<write_map>().size();
 		}
 		virtual void sync() {
-			return underlying_<write_map>().sync();
+			underlying_<write_map>().sync();
+		}
+		virtual long_size_t truncate(long_size_t s){
+			return underlying_<write_map>().truncate(s);
 		}
 		private:
 		COMMON_IO_ADAPTOR_HELPER();
@@ -526,6 +529,9 @@ namespace xirang{ namespace io{
 		virtual void sync() {
 			return underlying_<write_map>().sync();
 		}
+		virtual long_size_t truncate(long_size_t s){
+			return size();
+		}
 		private:
 		COMMON_IO_ADAPTOR_HELPER();
 	};
@@ -650,7 +656,10 @@ namespace xirang{ namespace io{
 				: real_size - derive_().first;
 		}
 		virtual void sync() {
-			return underlying_<write_map>().sync();
+			underlying_<write_map>().sync();
+		}
+		virtual long_size_t truncate(long_size_t s){
+			return underlying_<write_map>().truncate(derive_().first + s);
 		}
 		private:
 		COMMON_IO_ADAPTOR_HELPER();
@@ -692,6 +701,9 @@ namespace xirang{ namespace io{
 		}
 		virtual void sync() {
 			return underlying_<writer>().sync();
+		}
+		virtual long_size_t truncate(long_size_t s){
+			return underlying_<ioctrl>().truncate(s);
 		}
 		private:
 		mem_archive cache;

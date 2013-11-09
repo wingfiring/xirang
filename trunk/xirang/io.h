@@ -326,6 +326,8 @@ namespace xirang { namespace io{
 		/// flush buffer, implementation defines
 		virtual void sync() = 0;
 
+		virtual long_size_t truncate(long_size_t s) = 0;
+
 		virtual ~write_map();
 	};
 	template<typename CoClass> struct write_map_co : public write_map
@@ -338,6 +340,9 @@ namespace xirang { namespace io{
 		}
 		virtual void sync(){
 			get_cobj<CoClass>(this).sync();
+		}
+		virtual long_size_t truncate(long_size_t s){
+			return get_cobj<CoClass>(this).truncate(s);
 		}
 	};
 	template<typename CoClass>
