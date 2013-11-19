@@ -35,7 +35,7 @@ namespace xirang{ namespace zip{
 		}
 		return crc;
 	}
-	uint32_t crc32(range<const byte*>& src, uint32_t crc /* = crc32_init() */){
+	uint32_t crc32(range<const byte*> src, uint32_t crc /* = crc32_init() */){
 		return ::crc32(crc, (const Bytef*)src.begin(), (uInt)src.size());
 	}
 
@@ -126,6 +126,7 @@ namespace xirang{ namespace zip{
 						auto bin = rview.get<io::read_view>().address();
 						zstream.avail_in = uInt(bin.size());
 						zstream.next_in = (Bytef*)bin.begin();
+						crc = crc32(bin, crc);
 					}
 				}
 				else if(stream_src->readable()){
@@ -144,6 +145,7 @@ namespace xirang{ namespace zip{
 			z_stream zstream = z_stream();
 			long_size_t uncompressed_size = long_size_t(-1);
 			iauto<io::read_view> rview;
+			uint32_t crc = crc32_init();
 
 	};
 
@@ -206,6 +208,10 @@ namespace xirang{ namespace zip{
 		AIO_PRE_CONDITION(valid() && !readable());
 		return m_imp->zstream.total_in;
 	}
+	uint32_t inflate_reader::crc32() const{
+		AIO_PRE_CONDITION(valid());
+		return m_imp->crc;
+	}
 
 
 	class deflate_writer_imp
@@ -265,8 +271,15 @@ namespace xirang{ namespace zip{
 					if (ret == Z_STREAM_END)
 					{
 						if (stream_dest){
-							stream_dest->write(make_range(buf.begin(), reinterpret_cast<byte*>(zstream.next_out)));
+							auto rng = make_range(buf.begin(), reinterpret_cast<byte*>(zstream.next_out));
+							crc = crc32(rng, crc);
+							stream_dest->write(rng);
 							buffer<byte>().swap(buf);
+						}
+						else{
+							auto rng = make_range(wview.get<io::write_view>().address().begin(), reinterpret_cast<byte*>(zstream.next_out));
+							crc = crc32(rng, crc);
+							wview.reset();
 						}
 						break;
 					}
@@ -282,6 +295,8 @@ namespace xirang{ namespace zip{
 			}
 			void new_buffer_(){
 				if (map_dest){
+					if (wview)
+						crc = crc32(wview.get<io::write_view>().address(), crc);
 					wview = map_dest->view_wr(ext_heap::handle(zstream.total_out, zstream.total_out + K_CompressedViewSize));
 					if (wview.get<io::write_view>().address().size() != K_CompressedViewSize)
 						AIO_THROW(deflate_exception)("Failed to request write view");
@@ -291,6 +306,7 @@ namespace xirang{ namespace zip{
 					zstream.avail_out = uInt(addr.size());
 				}
 				else{
+					crc = crc32(to_range(buf), crc);
 					stream_dest->write(to_range(buf));
 					buf.resize(K_CompressedViewSize);
 					zstream.next_out = (Bytef*)buf.begin();
@@ -315,6 +331,7 @@ namespace xirang{ namespace zip{
 			z_stream zstream = z_stream();
 			iauto<io::write_view> wview;
 			bool finished = false;
+			uint32_t crc = crc32_init();
 	};
 	deflate_writer::deflate_writer(){}
 	deflate_writer::~deflate_writer(){
@@ -367,6 +384,10 @@ namespace xirang{ namespace zip{
 	long_size_t deflate_writer::uncompressed_size() const{
 		AIO_PRE_CONDITION(valid());
 		return m_imp->zstream.total_in;
+	}
+	uint32_t deflate_writer::crc32() const{
+		AIO_PRE_CONDITION(valid());
+		return m_imp->crc;
 	}
 
 	bool deflate_writer::finished() const{

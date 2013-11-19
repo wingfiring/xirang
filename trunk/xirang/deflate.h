@@ -47,7 +47,7 @@ namespace xirang{ namespace zip{
 	//caculate new crc from input
 	extern uint32_t crc32(io::reader& src, uint32_t crc = crc32_init());
 	extern uint32_t crc32(io::read_map& src, uint32_t crc = crc32_init());
-	extern uint32_t crc32(range<const byte*>& src, uint32_t crc = crc32_init());
+	extern uint32_t crc32(range<const byte*> src, uint32_t crc = crc32_init());
 
 	extern zip_result inflate(io::reader& src, io::writer& dest, dict_type dict = dict_type(),heap* h = 0);
 	extern zip_result inflate(io::read_map& src, io::write_map& dest, dict_type dict = dict_type(),  heap* h = 0);
@@ -78,12 +78,15 @@ namespace xirang{ namespace zip{
 			long_size_t seek(long_size_t off);
 
 			long_size_t compressed_size() const;
+			uint32_t crc32() const;
 
 			inflate_reader(const inflate_reader&) = delete;
 			inflate_reader& operator=(const inflate_reader&) = delete;
 		private:
 			unique_ptr<inflate_reader_imp> m_imp;
 	};
+	//TODO:
+	class inflate_writer;
 
 	// imp writer, sequence
 	class deflate_writer_imp;
@@ -107,6 +110,7 @@ namespace xirang{ namespace zip{
 			void sync();
 
 			long_size_t uncompressed_size() const;
+			uint32_t crc32() const;
 			void finish() ;
 			bool finished() const ;
 
@@ -115,6 +119,9 @@ namespace xirang{ namespace zip{
 		private:
 			unique_ptr<deflate_writer_imp> m_imp;
 	};
+
+	//TODO:
+	class deflate_reader;
 
 }}
 

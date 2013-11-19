@@ -736,7 +736,7 @@ namespace xirang{ namespace io{
 
 	template<typename Derive> using map_to_stream_archive = multiplex_archive<Derive>;
 
-	template<typename Derive> struct read_map_to_reader : reader
+	template<typename Derive> struct read_map_to_reader_p : reader
 	{
 		typedef typename reader::iterator iterator;
 
@@ -744,8 +744,8 @@ namespace xirang{ namespace io{
 			auto last = derive_().current + buf.size();
 			last = std::min(last, underlying_<read_map>().size());
 			ext_heap::handle h(derive_().current, last);
-			auto view = underlying_<read_map>().view_rd();
-			auto address = view.address();
+			auto view = underlying_<read_map>().view_rd(h);
+			auto address = view.template get<io::read_view>().address();
 			auto pos = std::copy(address.begin(), address.end(), buf.begin());
 			derive_().current = last;
 			return range<iterator>(pos, buf.end());
@@ -759,7 +759,7 @@ namespace xirang{ namespace io{
 		COMMON_IO_ADAPTOR_HELPER();
 	};
 
-	template<typename Derive> struct write_map_to_writer : writer
+	template<typename Derive> struct write_map_to_writer_p : writer
 	{
 		virtual range<const_iterator> write(const range<const_iterator>& r){
 			auto last = derive_().current + r.size();

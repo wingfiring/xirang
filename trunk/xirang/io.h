@@ -28,7 +28,7 @@ namespace xirang { namespace io{
 
 	template<size_t N> struct skip_n { };
 	template<typename ... T> struct skip_scalar : skip_n<private_::total_size_of<T...>::value> { };
-	template<typename T> struct skip_t { 
+	template<typename T> struct skip_t : skip_n<sizeof(T)>{ 
 		typedef T type;
 	};
 
