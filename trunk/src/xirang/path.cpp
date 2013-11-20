@@ -338,6 +338,10 @@ namespace xirang{
 			if (empty()) m_str = rhs.str();
 			return *this;
 		}
+		if (m_str.empty()){
+			m_str = rhs.str();
+			return *this;
+		}
 
 		if (is_root())
 		{

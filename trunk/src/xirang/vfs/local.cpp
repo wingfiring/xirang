@@ -109,7 +109,7 @@ namespace xirang{ namespace vfs{
 		using namespace io;
 
 		void** ret = 0;
-		if (mask & detail::get_mask<io::writer, io::write_view>::value ){ //write open
+		if (mask & detail::get_mask<io::writer, io::write_map>::value ){ //write open
 			unique_ptr<io::file> ar(new io::file(writeOpen(path, flag)));
 			iref<reader, writer, io::random, ioctrl, read_map, write_map> ifile(*ar);
 			ret = copy_interface<reader, writer, io::random, ioctrl, read_map, write_map >::apply(mask, base, ifile, (void*)ar.get()); 

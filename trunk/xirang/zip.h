@@ -101,7 +101,7 @@ namespace xirang{ namespace zip{
 			const file_header* append(io::reader& ar, const file_header& h, file_type type = ft_raw);
 			const file_header* append(io::read_map& ar, const file_header& h, file_type type = ft_raw);
 
-			bool sync();
+			void sync();
 
 			reader_writer(const reader_writer&) = delete;
 			reader_writer& operator=(const reader_writer&) = delete;

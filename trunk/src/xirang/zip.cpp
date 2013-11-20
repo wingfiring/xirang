@@ -10,6 +10,7 @@
 namespace xirang{ namespace zip{
 	namespace {
 		const uint16_t K_fix_part_of_local_header = 30;
+		const uint16_t K_fix_part_of_central_header = 46;
 		const uint32_t K_sig_local_eader = 0x04034b50;
 		const uint32_t K_sig_end_central_dir_signature = 0x06054b50;
 		const uint32_t K_sig_central_file_header = 0x02014b50;
@@ -19,6 +20,7 @@ namespace xirang{ namespace zip{
 		const uint32_t K_sizeof_zip64_end_cd = 56;
 		const long_size_t K_sizeof_zip64_locator = 20;
 		const uint16_t K_sizeof_zip64_extra_field = 32;
+		const uint16_t K_sizeof_cd_end = 22;
 
 		const long_size_t K_max_zip_head_size = 64 * 1024;
 		const long_size_t K_cd_end_size = K_max_zip_head_size + K_sizeof_zip64_locator;	// 64K + 20
@@ -50,7 +52,7 @@ namespace xirang{ namespace zip{
 
 			// reverse find the signature
 			typedef std::reverse_iterator<const byte*> iterator;
-			iterator rbeg(address.begin()), rend(address.end());
+			iterator rbeg(address.end()), rend(address.begin());
 
 			const byte* sig_beg = reinterpret_cast<const byte*>(&K_sig_end_central_dir_signature);
 			const byte* sig_end = sig_beg + sizeof(K_sig_end_central_dir_signature);
@@ -127,7 +129,7 @@ namespace xirang{ namespace zip{
 				cdin & name_len
 					& extra_len
 					& comments_len
-					& io::skip_n<2 + 4>()	//2: disk number start
+					& io::skip_n<2 + 2>()	//2: disk number start
 										//4: internal file attributes
 					& h.external_attrs;
 				h.relative_offset_ = io::load<uint32_t>(cdin);
@@ -139,6 +141,7 @@ namespace xirang{ namespace zip{
 				var_off += extra_len;
 
 				h.comments = const_range_string(reinterpret_cast<const char*>(var_off), comments_len);
+				cdrd.seek(cdrd.offset() + name_len + extra_len + comments_len);
 
 				if (h.compressed_size == uint32_t(-1) 
 						|| h.uncompressed_size == uint32_t(-1)
@@ -256,7 +259,7 @@ namespace xirang{ namespace zip{
 
 	/// zip reader_writer
 	reader_writer::reader_writer(){}
-	reader_writer::~reader_writer(){}
+	reader_writer::~reader_writer(){ sync();}
 	reader_writer::reader_writer(iref<io::read_map, io::write_map, io::ioctrl> ar)
 		: m_imp(new zip_package_writer_imp(ar))
 	{
@@ -306,6 +309,8 @@ namespace xirang{ namespace zip{
 		file_header h = h_;
 		AIO_PRE_CONDITION(m_imp);
 		AIO_PRE_CONDITION(h.method == cm_deflate || h.method == cm_store);
+		AIO_PRE_CONDITION(h.name.str().size() < uint16_t(-1) );
+		AIO_PRE_CONDITION(h.comments.size() < uint16_t(-1) );
 		if (m_imp->items.count(h.name) > 0) return 0;
 
 		auto header_size = K_fix_part_of_local_header + h.name.str().size() + K_sizeof_zip64_extra_field;
@@ -394,6 +399,73 @@ namespace xirang{ namespace zip{
 	}
 	const file_header* reader_writer::append(io::read_map& ar, const file_header& h, file_type type /* = ft_raw */){
 		return append_(ar, h, type, m_imp.get());
+	}
+	void reader_writer::sync(){
+		AIO_PRE_CONDITION(valid());
+
+		if (!m_imp->dirty)
+			return;
+
+		bool zip64_enabled = false;
+		long_size_t cd_size = 0;
+		for (auto & i : m_imp->items){
+			file_header& h = i.second;
+			cd_size += K_fix_part_of_central_header 
+				+ h.name.str().size() 
+				+ h.comments.size();
+			auto need_zip64 = h.compressed_size >= uint32_t(-1)
+					|| h.uncompressed_size >= uint32_t(-1)
+					|| h.relative_offset_ >= uint32_t(-1);
+			zip64_enabled = zip64_enabled || need_zip64;
+			if (need_zip64)
+				cd_size += h.extra.size();
+		}
+		if (zip64_enabled)
+			cd_size += K_sizeof_zip64_end_cd + K_sizeof_zip64_locator;
+		cd_size += K_sizeof_cd_end;
+		auto view = m_imp->archive.get<io::write_map>().view_wr(ext_heap::handle(m_imp->end_of_last, m_imp->end_of_last + cd_size));
+		auto address = view.get<io::write_view>().address();
+		io::fixed_buffer_io bout(address);
+		auto saver = io::exchange::as_sink(bout);
+		for (auto & i : m_imp->items){
+			file_header& h = i.second;
+			auto need_zip64 = h.compressed_size >= uint32_t(-1)
+					|| h.uncompressed_size >= uint32_t(-1)
+					|| h.relative_offset_ >= uint32_t(-1);
+
+			saver & K_sig_central_file_header
+				& h.creator_version
+				& h.reader_version
+				& h.flags
+				& h.method
+				& h.modified_time
+				& h.modified_date
+				& h.crc32;
+			if (need_zip64)
+				saver & uint32_t(-1) & uint32_t(-1);
+			else
+				saver & uint32_t(h.compressed_size) & uint32_t(h.uncompressed_size);
+
+			saver & uint16_t(h.name.str().size())
+				& uint16_t(h.extra.size())
+				& uint16_t(h.comments.size())
+				& uint16_t(0)	//disk number start
+				& uint16_t(0)	//internal file attributes
+				& h.external_attrs;
+			if (need_zip64)
+				saver & uint32_t(-1);
+			else
+				saver & uint32_t(h.relative_offset_);
+			bout.write(make_range(reinterpret_cast<const byte*>(h.name.str().begin())
+						, reinterpret_cast<const byte*>(h.name.str().end())));
+			bout.write(to_range(h.extra));
+			bout.write(make_range(reinterpret_cast<const byte*>(h.comments.begin())
+						, reinterpret_cast<const byte*>(h.comments.end())));
+		}
+
+		m_imp->archive.get<io::write_map>().sync();
+		m_imp->dirty = false;
+
 	}
 
 	iauto<io::read_map> open_raw(const file_header& fh){
