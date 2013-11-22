@@ -55,7 +55,10 @@ namespace xirang{
 	}
 	sub_file_path sub_file_path::filename() const{
 		auto pos = rfind(m_str, dim);
-		if (pos != m_str.end()) ++pos;
+		if (pos == m_str.end()) 
+			pos = m_str.begin();
+		else
+			++pos;
 		return sub_file_path(pos, m_str.end());
 	}
 
@@ -470,7 +473,10 @@ namespace xirang{
 	}
 	sub_simple_path sub_simple_path::filename() const{
 		auto pos = rfind(m_str, dim);
-		if (pos != m_str.end()) ++pos;
+		if (pos == m_str.end()) 
+			pos = m_str.begin();
+		else
+			++pos;
 		return sub_simple_path(pos, m_str.end());
 	}
 
@@ -683,6 +689,12 @@ namespace xirang{
 	simple_path& simple_path::operator/=(const sub_simple_path& rhs){
 		if (rhs.is_root())
 			return *this;
+
+		if (m_str.empty()){
+			m_str = rhs.str();
+			return *this;
+		}
+			
 
 		if (is_root())
 		{

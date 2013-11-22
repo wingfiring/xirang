@@ -243,6 +243,7 @@ namespace xirang{ namespace zip{
 			range<const byte*> write(const range<const byte*>& buf){
 				AIO_PRE_CONDITION(!finished);
 				AIO_PRE_CONDITION(zstream.avail_in == 0);
+				crc = crc32(buf, crc);
 				zstream.next_in = (Bytef*)buf.begin();
 				zstream.avail_in = uInt(buf.size());
 
@@ -272,14 +273,8 @@ namespace xirang{ namespace zip{
 					{
 						if (stream_dest){
 							auto rng = make_range(buf.begin(), reinterpret_cast<byte*>(zstream.next_out));
-							crc = crc32(rng, crc);
 							stream_dest->write(rng);
 							buffer<byte>().swap(buf);
-						}
-						else{
-							auto rng = make_range(wview.get<io::write_view>().address().begin(), reinterpret_cast<byte*>(zstream.next_out));
-							crc = crc32(rng, crc);
-							wview.reset();
 						}
 						break;
 					}
@@ -295,8 +290,6 @@ namespace xirang{ namespace zip{
 			}
 			void new_buffer_(){
 				if (map_dest){
-					if (wview)
-						crc = crc32(wview.get<io::write_view>().address(), crc);
 					wview = map_dest->view_wr(ext_heap::handle(zstream.total_out, zstream.total_out + K_CompressedViewSize));
 					if (wview.get<io::write_view>().address().size() != K_CompressedViewSize)
 						AIO_THROW(deflate_exception)("Failed to request write view");

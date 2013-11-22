@@ -74,8 +74,8 @@ namespace xirang{ namespace io{
 		{
 			*ditr = *sitr;
 		}
+		m_pos = ditr - m_data.begin();
 		return range<const byte*>(sitr, r.end());
-
 	}
 
 	bool fixed_buffer_io::writable() const { 

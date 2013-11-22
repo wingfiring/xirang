@@ -229,7 +229,7 @@ namespace xirang{ namespace zip{
 	class zip_package_writer_imp : public zip_package_imp
 	{
 		public:
-			zip_package_writer_imp(iref<io::read_map, io::write_map, io::ioctrl> ar)
+			zip_package_writer_imp(iref<io::read_map, io::write_map> ar)
 				: zip_package_imp(ar.get<io::read_map>())
 				  , archive(ar)
 		{
@@ -252,7 +252,7 @@ namespace xirang{ namespace zip{
 			}
 		}
 
-			iref<io::read_map, io::write_map, io::ioctrl> archive;
+			iref<io::read_map, io::write_map> archive;
 			long_size_t end_of_last = 0;
 			bool dirty = false;
 	};
@@ -260,7 +260,7 @@ namespace xirang{ namespace zip{
 	/// zip reader_writer
 	reader_writer::reader_writer(){}
 	reader_writer::~reader_writer(){ sync();}
-	reader_writer::reader_writer(iref<io::read_map, io::write_map, io::ioctrl> ar)
+	reader_writer::reader_writer(const iref<io::read_map, io::write_map>& ar)
 		: m_imp(new zip_package_writer_imp(ar))
 	{
 	}
@@ -355,8 +355,8 @@ namespace xirang{ namespace zip{
 					, m_imp->end_of_last + header_size));
 		io::fixed_buffer_io bout(hview.get<io::write_view>().address());
 		auto saver = io::exchange::as_sink(bout);
-		saver & K_sig_local_eader
-			& h.reader_version
+		saver & K_sig_local_eader;
+		saver & h.reader_version
 			& h.flags
 			& h.method
 			& h.modified_time
@@ -420,10 +420,16 @@ namespace xirang{ namespace zip{
 			if (need_zip64)
 				cd_size += h.extra.size();
 		}
+		if (m_imp->items.size() >= uint16_t(-1) 
+				|| cd_size >= uint32_t(-1)
+				|| m_imp->end_of_last >= uint32_t(-1))
+			zip64_enabled = true;
+		uint16_t num_entries = m_imp->items.size() >= uint16_t(-1) ? uint16_t(-1) :  uint16_t(m_imp->items.size());
+
+		auto cd_and_end_size = cd_size +  K_sizeof_cd_end;
 		if (zip64_enabled)
-			cd_size += K_sizeof_zip64_end_cd + K_sizeof_zip64_locator;
-		cd_size += K_sizeof_cd_end;
-		auto view = m_imp->archive.get<io::write_map>().view_wr(ext_heap::handle(m_imp->end_of_last, m_imp->end_of_last + cd_size));
+			cd_and_end_size += K_sizeof_zip64_end_cd + K_sizeof_zip64_locator;
+		auto view = m_imp->archive.get<io::write_map>().view_wr(ext_heap::handle(m_imp->end_of_last, m_imp->end_of_last + cd_and_end_size));
 		auto address = view.get<io::write_view>().address();
 		io::fixed_buffer_io bout(address);
 		auto saver = io::exchange::as_sink(bout);
@@ -439,6 +445,7 @@ namespace xirang{ namespace zip{
 				& h.flags
 				& h.method
 				& h.modified_time
+
 				& h.modified_date
 				& h.crc32;
 			if (need_zip64)
@@ -447,7 +454,7 @@ namespace xirang{ namespace zip{
 				saver & uint32_t(h.compressed_size) & uint32_t(h.uncompressed_size);
 
 			saver & uint16_t(h.name.str().size())
-				& uint16_t(h.extra.size())
+				& uint16_t(need_zip64 ? h.extra.size() : 0)
 				& uint16_t(h.comments.size())
 				& uint16_t(0)	//disk number start
 				& uint16_t(0)	//internal file attributes
@@ -458,10 +465,40 @@ namespace xirang{ namespace zip{
 				saver & uint32_t(h.relative_offset_);
 			bout.write(make_range(reinterpret_cast<const byte*>(h.name.str().begin())
 						, reinterpret_cast<const byte*>(h.name.str().end())));
-			bout.write(to_range(h.extra));
+			if (need_zip64)
+				bout.write(to_range(h.extra));
 			bout.write(make_range(reinterpret_cast<const byte*>(h.comments.begin())
 						, reinterpret_cast<const byte*>(h.comments.end())));
 		}
+		if (zip64_enabled){
+			saver & K_sig_zip64_end_cd
+				& uint64_t(cd_size)
+				& uint16_t(20) //version made by
+				& uint16_t(20) //version needed to extract
+				& uint32_t(0) //number of this disk
+				& uint32_t(0) //number of the disk with the start of the central directory
+				& uint64_t(m_imp->items.size()) //total number of entries in the central directory on this disk
+				& uint64_t(m_imp->items.size()) //total number of entries in the central directory
+				& uint64_t(cd_size) //size of the central directory
+				& uint64_t(m_imp->end_of_last); //offset of start of central directory with respect to the starting disk number
+
+			saver & K_sig_zip64_end_of_cd_locator
+				& uint32_t(0)	//number of the disk with the start of the zip64 end of central directory
+				& uint64_t(cd_size + m_imp->end_of_last)	//relative offset of the zip64 end of central directory record
+				& uint32_t(1);		//total number of disks
+
+		}
+
+
+		saver & K_sig_end_central_dir_signature
+			& uint16_t(0)	//number of this disk
+			& uint16_t(0)	//number of the disk with the start of the central directory
+			& num_entries 	//total number of entries in the central directory on this disk
+			& num_entries 	//total number of entries in the central directory
+			& (cd_size >= uint32_t(-1)? uint32_t(-1) : uint32_t(cd_size))	//size of the central directory
+			& (m_imp->end_of_last >= uint32_t(-1)? uint32_t(-1) : uint32_t(m_imp->end_of_last))	//offset of start of central directory with respect to the starting disk number
+			& uint16_t(0);	//.ZIP file comment length
+
 
 		m_imp->archive.get<io::write_map>().sync();
 		m_imp->dirty = false;

@@ -83,7 +83,7 @@ namespace xirang{ namespace zip{
 
 			reader_writer();
 			~reader_writer();
-			explicit reader_writer(iref<io::read_map, io::write_map, io::ioctrl> ar);
+			explicit reader_writer(const iref<io::read_map, io::write_map>& ar);
 			reader_writer(reader_writer&& rhs);
 			reader_writer& operator=(reader_writer&& rhs);
 			void swap(reader_writer& rhs);
