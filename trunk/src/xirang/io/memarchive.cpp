@@ -297,5 +297,12 @@ namespace xirang{ namespace io{
 		return m_pos = off;
 	} 
 	long_size_t null::truncate(long_size_t ){ return unknow_size;}
+
+	/// empty
+	range<byte*> empty::read(const range<byte*>& buf){ return buf; }
+	bool empty::readable() const{ return false; }
+	long_size_t empty::offset() const{ return 0;}
+	long_size_t empty::size() const { return 0;}
+	long_size_t empty::seek(long_size_t offset) { return 0;}
 }}
 

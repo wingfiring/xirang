@@ -274,7 +274,7 @@ namespace xirang
 		}
 
 		template<typename... OArgs> iauto(iauto<OArgs...>&& rhs) 
-			: iref<Args...>(rhs), target_ptr(std::move(rhs.target_ptr), rhs.get_deletor())
+			: iref<Args...>(rhs), target_ptr(std::move(rhs.target_ptr))
 		{
 		}
 		template<typename U, typename = typename std::enable_if<std::is_rvalue_reference<U&&>::value>::type >

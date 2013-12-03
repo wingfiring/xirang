@@ -320,14 +320,19 @@ namespace xirang{ namespace zip{
 			>(m_imp->archive, m_imp->end_of_last + header_size);
 		m_imp->dirty = true;
 		if (h.method == cm_deflate){
-			deflate_writer d_writer(dest_map);
-			iref<io::writer> dest(d_writer);
-			io::copy_data(ar, dest.get<io::writer>());
-			d_writer.finish();
+			if (type == ft_raw){
+				deflate_writer d_writer(dest_map);
+				iref<io::writer> dest(d_writer);
+				io::copy_data(ar, dest.get<io::writer>());
+				d_writer.finish();
 
-			h.uncompressed_size = d_writer.uncompressed_size();
-			h.compressed_size = d_writer.size();
-			h.crc32 = d_writer.crc32();
+				h.uncompressed_size = d_writer.uncompressed_size();
+				h.compressed_size = d_writer.size();
+				h.crc32 = d_writer.crc32();
+			}
+			else {// type == ft_defalted
+				io::copy_data(ar, dest_map);
+			}
 		}
 		else {	// == cm_store
 			auto size = io::copy_data(ar, dest_map);

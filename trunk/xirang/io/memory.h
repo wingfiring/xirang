@@ -166,6 +166,15 @@ namespace xirang{ namespace io{
 		long_size_t m_pos;
 	};
 
+	struct empty{
+		range<byte*> read(const range<byte*>& buf);
+		bool readable() const;
+
+		long_size_t offset() const;
+		long_size_t size() const;
+		long_size_t seek(long_size_t offset);
+	};
+
 }}
 
 #endif //end AIO_COMMON_ARCHIVE_MEM_ARCHIVE_H

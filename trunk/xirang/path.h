@@ -329,8 +329,10 @@ namespace xirang{
 	{
 		template<typename PathType>
 		bool operator()(const PathType& lhs, const PathType& rhs) const{
-			return lhs.parent() < rhs.parent()
-				|| (lhs.parent() == rhs.parent() && lhs < rhs);
+			auto lp = lhs.parent();
+			auto rp = rhs.parent();
+			return lp < rp
+				|| (lp == rp && lhs < rhs);
 		}
 	};
 }
