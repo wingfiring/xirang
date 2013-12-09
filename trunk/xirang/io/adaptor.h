@@ -734,6 +734,25 @@ namespace xirang{ namespace io{
 		COMMON_IO_ADAPTOR_HELPER();
 	};
 
+	template<typename Derive> struct read_map_to_random_p : random {
+		virtual long_size_t offset() const {
+			return derive_().current;
+		}   
+		virtual long_size_t size() const {
+			return underlying_<read_map>().size();
+		}   
+		virtual long_size_t seek(long_size_t current) {
+			auto s = size();
+			if (current < s)
+				return (derive_().current = current);
+			else
+				return (derive_().current = s); 
+		}                                                                                                                                          
+		private:
+		COMMON_IO_ADAPTOR_HELPER();
+
+	};  
+
 	template<typename Derive> using map_to_stream_archive = multiplex_archive<Derive>;
 
 	template<typename Derive> struct read_map_to_reader_p : reader
@@ -781,6 +800,20 @@ namespace xirang{ namespace io{
 		private:
 		COMMON_IO_ADAPTOR_HELPER();
 	};
+	template<typename Derive> struct write_map_to_random_p : random {
+		virtual long_size_t offset() const {
+			return derive_().current;
+		}
+		virtual long_size_t size() const {
+			return underlying_<write_map>().size();
+		}
+		virtual long_size_t seek(long_size_t current) {
+			return (derive_().current = current);
+		}
+		private:
+		COMMON_IO_ADAPTOR_HELPER();
+	};
+
 
 #undef COMMON_IO_ADAPTOR_HELPER
 }}

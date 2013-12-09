@@ -259,7 +259,10 @@ namespace xirang{ namespace zip{
 
 	/// zip reader_writer
 	reader_writer::reader_writer(){}
-	reader_writer::~reader_writer(){ sync();}
+	reader_writer::~reader_writer(){ 
+		if (valid())
+			sync();
+	}
 	reader_writer::reader_writer(const iref<io::read_map, io::write_map>& ar)
 		: m_imp(new zip_package_writer_imp(ar))
 	{

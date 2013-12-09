@@ -106,7 +106,6 @@ namespace xirang{
 	class file_path : totally_ordered<file_path>
 	{
 		public:
-			static const char dim;
 			typedef sub_file_path::iterator iterator;
 			typedef sub_file_path::const_iterator const_iterator;
 
@@ -328,11 +327,25 @@ namespace xirang{
 	struct path_less
 	{
 		template<typename PathType>
+		bool less_str(const PathType& lhs, const PathType& rhs) const{
+			auto itr1(lhs.str().begin()), end1(lhs.str().end());
+			auto itr2(rhs.str().begin()), end2(rhs.str().end());
+			for (; itr1 != end1 && itr2 != end2; ++itr1, ++itr2){
+				auto ch1 = *itr1;
+				if (ch1 == sub_file_path::dim) ch1 = 0;
+				auto ch2 = *itr2;
+				if (ch2 == sub_file_path::dim) ch2 = 0;
+				if (ch1 < ch2) return true;
+				if (ch2 < ch1) return false;
+			}
+			return itr1 == end1 && itr2 != end2;
+		}
+		template<typename PathType>
 		bool operator()(const PathType& lhs, const PathType& rhs) const{
 			auto lp = lhs.parent();
 			auto rp = rhs.parent();
-			return lp < rp
-				|| (lp == rp && lhs < rhs);
+			return less_str(lp, rp)
+				|| (lp == rp && less_str(lhs, rhs));
 		}
 	};
 }

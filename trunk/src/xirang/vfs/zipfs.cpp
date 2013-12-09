@@ -2,8 +2,46 @@
 #include <xirang/zip.h>
 #include <xirang/vfs/vfs_common.h>
 #include <xirang/io/memory.h>
+#include <xirang/io/adaptor.h>
 
 #include <map>
+
+namespace xirang{ namespace io{
+	typedef decltype(decorate<map_to_stream_archive
+			, proxy_read_map_p
+			, read_map_to_reader_p
+			, read_map_to_random_p
+			>(iauto<read_map>(), 0)) archive_type_;
+
+	struct mix_random_co : public random
+	{ 
+		virtual long_size_t offset() const{
+			return get_cobj<archive_type_>(this).offset();
+		}
+		virtual long_size_t size() const{
+			random& r = get_cobj<archive_type_>(this);
+			return r.size();
+		}
+		virtual long_size_t seek(long_size_t off){
+			return get_cobj<archive_type_>(this).seek(off);
+		}
+
+	};
+	mix_random_co get_interface_map(random*, archive_type_*);
+
+	struct mix_read_map_co : public read_map
+	{
+		virtual iauto<read_view> view_rd(ext_heap::handle h){
+			return get_cobj<archive_type_>(this).view_rd(h);
+		}
+		virtual long_size_t size() const{
+			read_map& r = get_cobj<archive_type_>(this);
+			return r.size();
+		}
+	};
+	mix_read_map_co get_interface_map(read_map*, archive_type_*);
+
+}}
 
 namespace xirang{ namespace vfs{
 	struct EntryInfo{
@@ -28,9 +66,9 @@ namespace xirang{ namespace vfs{
 				  , m_cache(cache)
 				  , m_host(host)
 				  , m_war(ar)
-			{
-				init_load_();
-			}
+		{
+			init_load_();
+		}
 			explicit ZipFsImp(iauto<io::read_map, io::write_map> ar, IVfs* cache, const string& resource, ZipFs* host)
 				: m_resource(resource)
 				  , m_read_map(&ar.get<io::read_map>())
@@ -38,26 +76,26 @@ namespace xirang{ namespace vfs{
 				  , m_host(host)
 				  , m_war(ar)
 				  , m_archive(std::move(ar))
-			{
-				init_load_();
-			}
+		{
+			init_load_();
+		}
 			explicit ZipFsImp(const iref<io::read_map>& ar, IVfs* cache, const string& resource, ZipFs* host)
 				: m_resource(resource)
 				  , m_read_map(&ar.get<io::read_map>())
 				  , m_cache(cache)
 				  , m_host(host)
-			{
-				init_load_();
-			}
+		{
+			init_load_();
+		}
 			explicit ZipFsImp(iauto<io::read_map> ar, IVfs* cache, const string& resource, ZipFs* host)
 				: m_resource(resource)
 				  , m_read_map(&ar.get<io::read_map>())
 				  , m_cache(cache)
 				  , m_host(host)
 				  , m_archive(std::move(ar))
-			{
-				init_load_();
-			}
+		{
+			init_load_();
+		}
 
 			fs_error remove(sub_file_path path){
 				AIO_PRE_CONDITION(!path.is_absolute());
@@ -109,7 +147,7 @@ namespace xirang{ namespace vfs{
 				AIO_PRE_CONDITION(!path.is_absolute());
 				if (is_readonly_() ||path.empty())
 					return fs::er_permission_denied;
-				
+
 				auto pos = m_items.find(path);
 				if (pos == m_items.end())
 					return fs::er_not_found;
@@ -190,14 +228,13 @@ namespace xirang{ namespace vfs{
 
 					const VfsNode& operator*() const
 					{
-						m_node.path = m_itr->first;
+						m_node.path = m_itr->first.filename();
 						return m_node;
 					}
 
 					const VfsNode* operator->() const
 					{
-						m_node.path = m_itr->first;
-						return &m_node;
+						return &**this;
 					}
 
 					FileIterator& operator++()	{ ++m_itr; return *this;}
@@ -222,8 +259,8 @@ namespace xirang{ namespace vfs{
 			VfsNodeRange children(sub_file_path path) const{
 				auto ret = children_(path);
 				return VfsNodeRange(
-                    VfsNodeRange::iterator(FileIterator(ret.begin(), m_host)),
-					VfsNodeRange::iterator(FileIterator(ret.end(), m_host))
+						VfsNodeRange::iterator(FileIterator(ret.begin(), m_host)),
+						VfsNodeRange::iterator(FileIterator(ret.end(), m_host))
 						);
 				return VfsNodeRange();
 			}
@@ -243,23 +280,25 @@ namespace xirang{ namespace vfs{
 				}
 				return fst;
 			}
+
+
 			void** do_create(unsigned long long mask,
 					void** base, unique_ptr<void>& owner, sub_file_path path, int flag){
 				AIO_PRE_CONDITION(!path.is_absolute());
-				if (is_readonly_() ||path.empty())
+				bool need_write = (mask & detail::get_mask<io::writer, io::write_map>::value ) != 0;
+				if ((is_readonly_()  && need_write) ||path.empty())
 					AIO_THROW(fs::permission_denied_exception);
 
 				auto parent = path.parent();
-				if (!parent.empty() && m_items.count(path) == 0)
+				if (!parent.empty() && m_items.count(parent) == 0)
 					AIO_THROW(fs::not_found_exception);
 
 				auto pos = m_items.find(path);
 
 				auto f = (flag & io::of_open_create_mask);
 				if (pos == m_items.end()){
-					if(f == io::of_open) AIO_THROW(fs::not_found_exception);
-					if (pos->second.type != fs::st_regular)
-						AIO_THROW(fs::not_regular_exception);
+					if(f == io::of_open) 
+						AIO_THROW(fs::not_found_exception);
 
 					EntryInfo info;
 					info.header.name = path;
@@ -269,18 +308,32 @@ namespace xirang{ namespace vfs{
 					if (!fout)
 						AIO_THROW(fs::system_error_exception);
 
-					m_items.insert(std::make_pair(file_path(path), info));
+					pos = m_items.insert(std::make_pair(file_path(path), info)).first;
 				}
 				else{
 					if(f == io::of_create) AIO_THROW(fs::exist_exception);
-					if(pos->second.cache_name.empty() && extract_file_(pos->second) != fs::er_ok)
+					if(m_cache && pos->second.cache_name.empty() && extract_file_(pos->second) != fs::er_ok)
 						AIO_THROW(fs::system_error_exception);
 				}
 
 				if (mask & detail::get_mask<io::writer, io::write_map>::value )
 					pos->second.is_dirty = true;
 
-				return m_cache->do_create(mask, base, owner, pos->second.cache_name, (flag | io::of_create_or_open));
+				if (m_cache)
+					return m_cache->do_create(mask, base, owner, pos->second.cache_name, (flag | io::of_create_or_open));
+				else {
+					auto adaptor = io::decorate<io::map_to_stream_archive
+						, io::proxy_read_map_p
+						, io::read_map_to_reader_p
+						, io::read_map_to_random_p
+						>(zip::open_raw(pos->second.header), 0);
+
+					iauto<io::reader, io::read_map, io::random > res (std::move(adaptor));
+
+					void** ret = copy_interface<io::reader, io::random, io::read_map>::apply(mask, base, res, res.target_ptr.get()); 
+					unique_ptr<void>(std::move(res.target_ptr)).swap(owner);
+					return ret;
+				}
 			}
 
 			void setRoot(RootFs* r){
@@ -290,7 +343,7 @@ namespace xirang{ namespace vfs{
 
 			IVfs* host_() const { return m_host;}
 			bool is_readonly_() const{
-				return !m_rwriter.valid();
+				return !m_war;
 			}
 			void init_load_(){
 
@@ -310,25 +363,34 @@ namespace xirang{ namespace vfs{
 							continue;
 					}
 
-					m_items.insert(std::make_pair(i.name, info));
+					auto res = m_items.insert(std::make_pair(i.name, info));
+					AIO_INVARIANT(res.second);
+					unuse(res);
 				}
 			}
 			void create_parent_(const file_path& path){
-				auto parent = path.parent();
+				file_path parent = path.parent();
 				if(!parent.empty()){
-					auto pos = m_items.find(path);
+					auto pos = m_items.find(parent);
 					if (pos == m_items.end()){
 						create_parent_(parent);
-						m_items.insert(std::make_pair(path, make_entryinfo(path)));
+						m_items.insert(std::make_pair(parent, make_entryinfo(parent)));
 					}
 				}
 			}
 			range<item_iterator> children_(sub_file_path path) const{
+				if (path.empty()){
+					auto pos1 = m_items.lower_bound(file_path());
+					auto pos2 = m_items.lower_bound(file_path(literal("/"), pp_none));
+					return make_range(pos1, pos2);
+				}
+				else{
 					string pfirst = path.str() << literal("/");
 					string plast = path.str() << literal("//");
 					auto pos1 = m_items.lower_bound(file_path(pfirst, pp_none));
 					auto pos2 = m_items.lower_bound(file_path(plast, pp_none));
 					return make_range(pos1, pos2);
+				}
 			}
 		private:
 			string m_resource;
@@ -337,7 +399,6 @@ namespace xirang{ namespace vfs{
 			IVfs* m_cache;
 			ZipFs* m_host;
 			RootFs* m_root;
-			zip::reader_writer m_rwriter;
 			iref<io::read_map, io::write_map> m_war;
 			iauto<io::read_map> m_archive;
 	};
