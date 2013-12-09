@@ -4,7 +4,7 @@
 #include <xirang/io/adaptor.h>
 #include <xirang/deflate.h>
 
-#include <map>
+#include <vector>
 #include <ctime>
 
 namespace xirang{ namespace zip{
@@ -35,9 +35,14 @@ namespace xirang{ namespace zip{
 		}
 	}
 
+	struct header_less{
+		bool operator()(const file_header& lhs, const file_header& rhs) const{
+			return path_less()(lhs.name, rhs.name);
+		}
+	};
 	class zip_package_imp{
 	public:
-		std::map<file_path, file_header, path_less> items;
+		std::vector<file_header> items;
 
 		io::read_map* package;
 
@@ -161,7 +166,39 @@ namespace xirang{ namespace zip{
 							exin.seek(exin.offset() + dsize);
 					}
 				}
-				items.insert(std::make_pair(h.name, h));
+				items.push_back(h);
+			}
+			std::sort(items.begin(), items.end(), header_less());
+		}
+		bool exist_(const file_path& path) const{
+			file_header h;
+			h.name = path;
+			return std::binary_search(items.begin(), items.end(), h, header_less());
+		}
+
+		const file_header* get_file_(const file_path& path) const{
+			AIO_PRE_CONDITION(exist_(path));
+			file_header h;
+			h.name = path;
+			return &*std::lower_bound(items.begin(), items.end(), h, header_less());
+		}
+		range<std::vector<file_header>::const_iterator> children_(const file_path& path) const{
+			if (path.empty()){
+				auto pos1 = std::lower_bound(items.begin(), items.end(), file_header(), header_less());
+				file_header h1;
+				h1.name = file_path(literal("/"), pp_none);
+				auto pos2 = std::lower_bound(items.begin(), items.end(), h1, header_less());
+				return make_range(pos1, pos2);
+			}
+			else{
+				string pfirst = path.str() << literal("/");
+				string plast = path.str() << literal("//");
+				file_header h1, h2;
+				h1.name = file_path(pfirst, pp_none);
+				h2.name = file_path(plast, pp_none);
+				auto pos1 = std::lower_bound(items.begin(), items.end(), h1, header_less());
+				auto pos2 = std::lower_bound(items.begin(), items.end(), h2, header_less());
+				return make_range(pos1, pos2);
 			}
 		}
 	private:
@@ -193,13 +230,12 @@ namespace xirang{ namespace zip{
 
 	bool reader::exists(const file_path& name) const{
 		AIO_PRE_CONDITION(valid());
-		return m_imp->items.count(name) != 0;
+		return m_imp->exist_(name);
 	}
 	const file_header* reader::get_file(const file_path& name) const{
 		AIO_PRE_CONDITION(valid());
 		AIO_PRE_CONDITION(exists(name));
-		auto pos = m_imp->items.find(name);
-		return pos == m_imp->items.end() ? 0 : &pos->second;
+		return m_imp->get_file_(name);
 	}
 
 	template<typename F, typename L>
@@ -212,18 +248,14 @@ namespace xirang{ namespace zip{
 				return p.second;
 			}
 	};
-	typedef select_iterator<std::map<file_path, file_header, path_less>::iterator,
-			select_second_<file_path, file_header> > wraped_iterator;
 	range<reader::iterator> reader::items() const{
 		AIO_PRE_CONDITION(valid());
-		auto first = wraped_iterator(m_imp->items.begin());
-		auto last = wraped_iterator(m_imp->items.end());
-		return range<iterator>(first, last);
+		return range<iterator>(m_imp->items.begin(), m_imp->items.end());
 	}
 	range<reader::iterator> reader::items(const file_path& dir) const{
 		AIO_PRE_CONDITION(valid());
-		auto res = m_imp->items.equal_range(dir);
-		return range<iterator>(wraped_iterator(res.first), wraped_iterator(res.second));
+		auto res = m_imp->children_(dir);
+		return range<iterator>(res.begin(), res.end());
 	}
 
 	class zip_package_writer_imp : public zip_package_imp
@@ -235,9 +267,9 @@ namespace xirang{ namespace zip{
 		{
 			file_header* fh = 0;
 			for (auto &i : items){
-				if (end_of_last < i.second.relative_offset_){
-					fh = &i.second;
-					end_of_last = i.second.relative_offset_;
+				if (end_of_last < i.relative_offset_){
+					fh = &i;
+					end_of_last = i.relative_offset_;
 				}
 			}
 			if (fh){
@@ -250,10 +282,19 @@ namespace xirang{ namespace zip{
 				uint16_t extra_len = io::load<uint16_t>(sin);
 				end_of_last += K_fix_part_of_local_header + name_len + extra_len + fh->compressed_size;
 			}
+			sorted_idx = items.size();
 		}
+			void resort_(){
+				if (sorted_idx != items.size()){
+					std::sort(items.begin() + sorted_idx, items.end(), header_less());
+					std::inplace_merge(items.begin(), items.begin() + sorted_idx, items.end(), header_less());
+					sorted_idx = items.size();
+				}
+			}
 
 			iref<io::read_map, io::write_map> archive;
 			long_size_t end_of_last = 0;
+			std::size_t sorted_idx;
 			bool dirty = false;
 	};
 
@@ -287,25 +328,26 @@ namespace xirang{ namespace zip{
 
 	bool reader_writer::exists(const file_path& name) const{
 		AIO_PRE_CONDITION(valid());
-		return m_imp->items.count(name) != 0;
+		m_imp->resort_();
+		return m_imp->exist_(name);
 	}
 	const file_header* reader_writer::get_file(const file_path& name) const{
 		AIO_PRE_CONDITION(valid());
 		AIO_PRE_CONDITION(exists(name));
-		auto pos = m_imp->items.find(name);
-		return pos == m_imp->items.end() ? 0 : &pos->second;
+		m_imp->resort_();
+		return m_imp->get_file_(name);
 	}
 
 	range<reader_writer::iterator> reader_writer::items() const{
 		AIO_PRE_CONDITION(valid());
-		auto first = wraped_iterator(m_imp->items.begin());
-		auto last = wraped_iterator(m_imp->items.end());
-		return range<iterator>(first, last);
+		m_imp->resort_();
+		return range<iterator>(m_imp->items.begin(), m_imp->items.end());
 	}
 	range<reader_writer::iterator> reader_writer::items(const file_path& dir) const{
 		AIO_PRE_CONDITION(valid());
-		auto res = m_imp->items.equal_range(dir);
-		return range<iterator>(wraped_iterator(res.first), wraped_iterator(res.second));
+		m_imp->resort_();
+		auto res = m_imp->children_(dir);
+		return range<iterator>(res.begin(), res.end());
 	}
 	template<typename IoType>
 	const file_header* append_(IoType& ar, const file_header& h_, file_type type, zip_package_writer_imp * m_imp){
@@ -314,7 +356,7 @@ namespace xirang{ namespace zip{
 		AIO_PRE_CONDITION(h.method == cm_deflate || h.method == cm_store);
 		AIO_PRE_CONDITION(h.name.str().size() < uint16_t(-1) );
 		AIO_PRE_CONDITION(h.comments.size() < uint16_t(-1) );
-		if (m_imp->items.count(h.name) > 0) return 0;
+		if (m_imp->exist_(h.name)) return 0;
 
 		auto header_size = K_fix_part_of_local_header + h.name.str().size() + K_sizeof_zip64_extra_field;
 		auto dest_map = io::decorate<io::tail_archive
@@ -380,10 +422,10 @@ namespace xirang{ namespace zip{
 		bout.write(to_range(h.extra));
 
 		h.local_header_size_ = header_size;
-		auto pos = m_imp->items.insert(std::make_pair(h.name, h));
+		m_imp->items.push_back(h);
 		m_imp->end_of_last += header_size + h.compressed_size;
 
-		return &pos.first->second;
+		return &m_imp->items.back();
 	}
 	const file_header* reader_writer::append(io::read_map& ar, const file_path& name, compress_method method /* = cm_deflate */){
 		file_header h;
@@ -417,7 +459,7 @@ namespace xirang{ namespace zip{
 		bool zip64_enabled = false;
 		long_size_t cd_size = 0;
 		for (auto & i : m_imp->items){
-			file_header& h = i.second;
+			file_header& h = i;
 			cd_size += K_fix_part_of_central_header 
 				+ h.name.str().size() 
 				+ h.comments.size();
@@ -442,7 +484,7 @@ namespace xirang{ namespace zip{
 		io::fixed_buffer_io bout(address);
 		auto saver = io::exchange::as_sink(bout);
 		for (auto & i : m_imp->items){
-			file_header& h = i.second;
+			file_header& h = i;
 			auto need_zip64 = h.compressed_size >= uint32_t(-1)
 					|| h.uncompressed_size >= uint32_t(-1)
 					|| h.relative_offset_ >= uint32_t(-1);
