@@ -131,7 +131,7 @@ namespace xirang{ namespace vfs{
 			if (!pos.not_found.empty())
 				return fs::er_not_found;
 			if (pos.node->type != fs::st_regular)
-				return fs::er_system_error;
+				return fs::er_not_regular;
 
 			pos.node->data.resize(s);
 			return fs::er_ok;

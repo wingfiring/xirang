@@ -38,6 +38,9 @@ namespace xirang
 		static const bool value = true;
 	};
 
+	template < typename CharT >
+	class basic_string_builder;
+
 	//this class intends to hold literal string
 	template< typename CharT >
 	class basic_range_string : totally_ordered<basic_range_string<CharT>>
@@ -465,6 +468,18 @@ namespace xirang
 	typedef hash_str<char> hash_string;
 	typedef hash_str<wchar_t> hash_wstring;
 
+	template<typename T> struct is_string{
+		static const bool value = false;
+	};
+	template<typename T> struct is_string<basic_range_string<T> >{
+		static const bool value = true;
+	};
+	template<typename T> struct is_string<basic_string<T> >{
+		static const bool value = true;
+	};
+	template<typename T> struct is_string<basic_string_builder<T> >{
+		static const bool value = true;
+	};
 
 	template<typename T, typename U>
 	struct concator{
@@ -508,13 +523,13 @@ namespace xirang
 			: left(&lhs), right(&rhs)
 		{}
 
-		template<typename Str1, typename Str2>
+		template<typename Str1, typename Str2, typename>
 		friend concator<Str1, Str2 > operator<< (const Str1& lhs, const Str2&  rhs);
 
-		template<typename CT, typename CU, typename Str>
+		template<typename CT, typename CU, typename Str, typename>
 		friend concator<concator<CT, CU>, Str> operator<< (concator<CT, CU>&& lhs, const Str& rhs);
 		
-		template<typename Str, typename CT, typename CU>
+		template<typename Str, typename CT, typename CU, typename>
 		friend concator<Str, concator<CT,CU> > operator<< (const Str& lhs, concator<CT, CU>&& rhs);
 		
 		template<typename CT1, typename CU1, typename CT2, typename CU2>
@@ -522,15 +537,15 @@ namespace xirang
 
 		concator& operator=(const concator& ) = delete;
 	};
-	template<typename Str1, typename Str2>
+	template<typename Str1, typename Str2, typename = typename std::enable_if<is_string<Str1>::value && is_string<Str1>::value, void>::type>
 	concator<Str1, Str2 > operator<< (const Str1& lhs, const Str2&  rhs){
 		return concator<Str1, Str2>(lhs, rhs);
 	}
-	template<typename CT, typename CU, typename Str>
+	template<typename CT, typename CU, typename Str, typename = typename std::enable_if<is_string<Str>::value, void>::type>
 	concator<concator<CT, CU>, Str> operator<< (concator<CT, CU>&& lhs, const Str& rhs){
 		return concator<concator<CT,CU>, Str>(lhs, rhs);
 	}
-	template<typename Str, typename CT, typename CU>
+	template<typename Str, typename CT, typename CU, typename = typename std::enable_if<is_string<Str>::value, void>::type>
 	concator<Str, concator<CT,CU> > operator<< (const Str& lhs, concator<CT, CU>&& rhs){
 		return concator<Str, concator<CT, CU> >(lhs, rhs);
 	}
