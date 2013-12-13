@@ -16,7 +16,7 @@ namespace xirang{
 
 	};
 
-	class sub_file_path : totally_ordered<sub_file_path>
+	class sub_file_path
 	{
 		public:
 			static const char dim;
@@ -64,6 +64,7 @@ namespace xirang{
 	inline bool operator==(const sub_file_path& lhs, const sub_file_path& rhs){
 		return lhs.str() == rhs.str();
 	}
+	struct sub_file_path_compare_ : totally_ordered<sub_file_path>{};
 
 	// a/b ==> a : b
 	// /a/b ==> / : a : b
@@ -103,7 +104,7 @@ namespace xirang{
 			mutable sub_file_path m_cache;
 	};
 
-	class file_path : totally_ordered<file_path>
+	class file_path
 	{
 		public:
 			typedef sub_file_path::iterator iterator;
@@ -181,11 +182,12 @@ namespace xirang{
 	inline bool operator==(const file_path& lhs, sub_file_path rhs){
 		return lhs.str() == rhs.str();
 	}
+	class file_path_compare_ : totally_ordered<file_path>{};
 
 	file_path operator/(const sub_file_path& lhs, const sub_file_path& rhs);
 
 
-	class sub_simple_path : totally_ordered<sub_simple_path>
+	class sub_simple_path
 	{
 		public:
 			static const char dim;
@@ -223,6 +225,7 @@ namespace xirang{
 	inline bool operator==(const sub_simple_path& lhs, const sub_simple_path& rhs){
 		return lhs.str() == rhs.str();
 	}
+	class sub_simple_path_compare_ : totally_ordered<sub_simple_path>{};
 
 	class sub_simple_path::iterator{
 		public:
@@ -258,7 +261,7 @@ namespace xirang{
 			mutable sub_simple_path m_cache;
 	};
 
-	class simple_path : totally_ordered<simple_path>
+	class simple_path 
 	{
 		public:
 			typedef sub_simple_path::iterator iterator;
@@ -321,6 +324,8 @@ namespace xirang{
 	inline bool operator==(const simple_path& lhs, sub_simple_path rhs){
 		return lhs.str() == rhs.str();
 	}
+
+	class simple_path_compare_ : totally_ordered<simple_path>{};
 
 	simple_path operator/(const sub_simple_path& lhs, const sub_simple_path& rhs);
 

@@ -70,7 +70,7 @@ namespace xirang{ namespace io{ namespace exchange{
 			if (!io::block_read(get_interface<io::reader>(rd.get()), make_range(first, last)).empty() )
 				AIO_THROW(io::read_exception);
 
-			v = ex2local_f(exchange_cast<T>(t));
+			v = exchange_cast<T>(ex2local_f(t));
 
 			return rd;
 		}

@@ -17,6 +17,7 @@
 
 #include <xirang/context_except.h>
 #include <xirang/operators.h>
+#include <xirang/io/s11nbase.h>
 #include <ostream>
 
 namespace xirang {
@@ -30,7 +31,7 @@ namespace {
 class sha1;
 AIO_EXCEPTION_TYPE(sha1_runtime_exception);
 
-struct sha1_digest : totally_ordered<sha1_digest>{
+struct sha1_digest{
 
 	sha1_digest(){
 		for (auto& i : v)
@@ -44,7 +45,7 @@ struct sha1_digest : totally_ordered<sha1_digest>{
 		for (int i = 0; i != 5; ++i){
 			if (v[i] != rhs.v[i])	return false;
 		}
-		
+
 		return true;
 	}
 	 bool operator<(const sha1_digest& rhs) const{
@@ -57,6 +58,8 @@ struct sha1_digest : totally_ordered<sha1_digest>{
 
 	uint32_t v[5];
 };
+
+struct sha1_digest_compare_ : totally_ordered<sha1_digest>{};
 
 struct hash_sha1{
 	size_t operator()(const sha1_digest& d) const{
@@ -250,7 +253,7 @@ inline const sha1_digest& sha1::get_digest()
         }
     }
 
-    // append length of message (before pre-processing) 
+    // append length of message (before pre-processing)
     // as a 64-bit big-endian integer
     process_byte_impl( static_cast<uint8_t>((bit_count_high>>24) & 0xFF) );
     process_byte_impl( static_cast<uint8_t>((bit_count_high>>16) & 0xFF) );
@@ -265,7 +268,24 @@ inline const sha1_digest& sha1::get_digest()
 	finished = true;
 	return h_;
 }
+	template<typename Ar, typename =
+		typename std::enable_if<io::s11n::is_deserializer<Ar>::value>::type>
+	Ar load (Ar ar, sha1_digest& dig)
+	{
+		for (auto& i : dig.v)
+			ar & i;
+		return ar;
+	}
+	template<typename Ar, typename =
+		typename std::enable_if< io::s11n::is_serializer<Ar>::value>::type>
+	Ar save(Ar ar, const sha1_digest& dig)
+	{
+		for (auto i : dig.v)
+			ar & i;
+		return ar;
+	}
 
-} // namespace boost::uuids::detail
+} // namespace xirang
 
 #endif
+

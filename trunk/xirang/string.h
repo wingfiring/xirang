@@ -1240,7 +1240,6 @@ namespace xirang
 		typedef basic_range_string<const CharT> range_type;
 		return static_cast<range_type>(lhs) == static_cast<range_type>(rhs);
 	}
-
 	template<typename CharT>
 	void swap(basic_string_builder<CharT>& lhs, basic_string_builder<CharT>& rhs)
 	{

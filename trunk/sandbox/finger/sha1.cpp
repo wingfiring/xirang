@@ -4,6 +4,9 @@
 #include <iostream>
 #include <iomanip>
 
+#include <xirang/io/s11n.h>
+#include <xirang/io/memory.h>
+
 int main(int argc, char** argv){
 	for (int i = 1; i < argc; ++i){
 		auto path = xirang::file_path(xirang::string((const char*)argv[i]), xirang::pp_utf8check);
@@ -18,11 +21,17 @@ int main(int argc, char** argv){
 		std::cout << dig;
 		std::cout << "  " << argv[i] << std::endl;
 
-		auto dig2 = from_string(to_string(dig));
-		std::cout << dig;
+		auto dig2 = xirang::sha1_digest(dig.to_string());
+		std::cout << dig2;
 		std::cout << "  " << argv[i] << std::endl;
 
+		xirang::io::mem_archive mar;
+		auto serializer = xirang::io::local::as_sink(mar);
+		serializer & dig;
 
+		xirang::io::mem_archive mar2;
+		auto serializer2 = xirang::io::exchange::as_sink(mar2);
+		serializer2 & dig2;
 	}
 
 	return 0;
