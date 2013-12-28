@@ -1,5 +1,6 @@
 #include <xirang/type/array.h>
 #include <xirang/type/typebinder.h>
+#include <xirang/type/nativetypeversion.h>
 
 #include <xirang/buffer.h>
 #include <stdint.h>
@@ -18,16 +19,16 @@ namespace xirang { namespace type{
 		ext_heap* eheap;
 	};
 
-	Array::Array() 
+	Array::Array()
 		: m_imp(0)
 	{}
-	Array::Array(heap& al, ext_heap& eh, Type t) 
+	Array::Array(heap& al, ext_heap& eh, Type t)
 		:m_imp(new ArrayImp(al,eh, t))
 	{
 	}
 
 	Array::Array(const Array& other)
-		: m_imp(0) 
+		: m_imp(0)
 	{
 		if (!other.valid())
 			return;
@@ -82,7 +83,7 @@ namespace xirang { namespace type{
 		std::swap(m_imp, other.m_imp);
 	}
 
-	bool Array::valid() const 
+	bool Array::valid() const
 	{
 		return m_imp != 0;
 	}
@@ -121,32 +122,32 @@ namespace xirang { namespace type{
 		return const_iterator(type(), empty() ? 0 : m_imp->data.data());
 	}
 
-	Array::iterator Array::begin() 
+	Array::iterator Array::begin()
 	{
 		AIO_PRE_CONDITION(valid());
 		return iterator(type(), empty() ? 0 : m_imp->data.data());
 	}
 
-	Array::const_iterator Array::end() const 
+	Array::const_iterator Array::end() const
 	{
 		AIO_PRE_CONDITION(valid());
 		return const_iterator(type(), empty() ? 0 : m_imp->data.data() + m_imp->data.size());
 	}
 
-	Array::iterator Array::end() 
+	Array::iterator Array::end()
 	{
 		AIO_PRE_CONDITION(valid());
 		return iterator(type(), empty() ? 0 : m_imp->data.data() + m_imp->data.size());
 	}
 
-	ConstCommonObject Array::front() const 
+	ConstCommonObject Array::front() const
 	{
 		AIO_PRE_CONDITION(valid());
 		AIO_PRE_CONDITION(!empty());
 		return *begin();
 	}
 
-	CommonObject Array::front() 
+	CommonObject Array::front()
 	{
 		AIO_PRE_CONDITION(valid());
 		AIO_PRE_CONDITION(!empty());
@@ -160,7 +161,7 @@ namespace xirang { namespace type{
 		return *--end() ;
 	}
 
-	CommonObject Array::back() 
+	CommonObject Array::back()
 	{
 		AIO_PRE_CONDITION(valid());
 		AIO_PRE_CONDITION(!empty());
@@ -176,7 +177,7 @@ namespace xirang { namespace type{
 		return *(begin() + idx);
 	}
 
-	CommonObject Array::operator[](std::size_t idx) 
+	CommonObject Array::operator[](std::size_t idx)
 	{
 		AIO_PRE_CONDITION(valid());
 		AIO_PRE_CONDITION(!empty());
@@ -219,7 +220,7 @@ namespace xirang { namespace type{
 		if (!type().isPod())
 			type().methods().construct(CommonObject(type(), m_imp->data.data() + idx), get_heap(), get_ext_heap());
 		type().methods().assign(obj, CommonObject(type(), m_imp->data.data() + idx) );
-        
+
         AIO_POST_CONDITION(size() == s + 1);
 	}
 
@@ -324,7 +325,7 @@ namespace xirang { namespace type{
         return min_size < size()
             ? 1
             : min_size < rhs.size()
-            ? -1 
+            ? -1
             : 0;
     }
 
@@ -334,6 +335,24 @@ namespace xirang { namespace type{
 
 		Type value_type = obj.type().arg(0).type();
 		new (obj.data()) Array(hp, ehp, value_type);
+	}
+	void serializer<Array>::apply(io::writer& wr, ConstCommonObject obj){
+		AIO_PRE_CONDITION(obj.valid());
+		const Array& arr = bind<Array>(obj);
+		Type t = arr.type();
+		auto s = io::exchange::as_sink(wr);
+		s & arr.size();
+		for (auto i : arr)
+			t.methods().serialize(wr, i);
+	}
+	void deserializer<Array>::apply(io::reader& rd, CommonObject obj, heap& inner, ext_heap& outer){
+		AIO_PRE_CONDITION(obj.valid());
+		auto& arr = bind<Array>(obj);
+		auto s = io::exchange::as_source(rd);
+		arr.resize(io::load<size_t>(s));
+		Type t = arr.type();
+		for (auto i : arr)
+			t.methods().deserialize(rd, i, inner, outer);
 	}
 
 	size_t hasher<Array>::apply(ConstCommonObject obj) {

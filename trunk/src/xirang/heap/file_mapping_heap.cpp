@@ -44,7 +44,7 @@ namespace xirang
 		std::size_t tail = s & 0xf;
 		if (tail == 0)
 			return s;
-		return s - tail + 0x10; 
+		return s - tail + 0x10;
 	}
 
 	struct file_mapping_heap_imp
@@ -81,7 +81,7 @@ namespace xirang
 
 		// try to allocate the free space from inner memory
 		// if failed, then allocate from outer
-		handle allocate(std::size_t size, std::size_t alignment, handle hint) 
+		handle allocate(std::size_t size, std::size_t alignment, handle hint)
 		{
 
 			handle h = allocate_free_space_(inner_free_(), size, alignment, hint);
@@ -155,7 +155,7 @@ namespace xirang
 		{
 			byte*p = (byte*)ap;
             view_map_type::right_const_iterator itr = view_map.right.lower_bound(p);
-			if (itr != view_map.right.end() 
+			if (itr != view_map.right.end()
 					&& itr->first == p)
 				return itr->second.begin();
 
@@ -170,11 +170,11 @@ namespace xirang
 
 		byte* pin(handle h)
 		{
-#ifndef NDEBUG			
+#ifndef NDEBUG
 			return pin_(h, true);
 #else
 			return pin_(h, false);
-#endif				
+#endif
 		}
 
 		byte* track_pin(handle h)
@@ -242,7 +242,7 @@ namespace xirang
 		private:
 		// Find free in given space
 		// First Find First Fit algorithm
-		handle allocate_free_space_(std::set<handle>& space, std::size_t size, std::size_t /*alignment*/, handle) 
+		handle allocate_free_space_(std::set<handle>& space, std::size_t size, std::size_t /*alignment*/, handle)
 		{
 			for (std::set<handle>::iterator itr = space.begin(); itr != space.end(); ++itr)
 			{
@@ -264,7 +264,7 @@ namespace xirang
 		}
 
 		// locate the view which contains the pos h
-		view_map_type::left_iterator locate_in_view_map_(long_offset_t h) 
+		view_map_type::left_iterator locate_in_view_map_(long_offset_t h)
 		{
 			handle hm (h, std::numeric_limits<long_offset_t>::max());
 			view_map_type::left_iterator pos = view_map.left.lower_bound(hm);
@@ -358,7 +358,7 @@ namespace xirang
 
 			byte *p = p_view.begin() + (h.begin() - ha.begin());
 
-			// move the view space from outer to inner 
+			// move the view space from outer to inner
 			//
 			std::set<handle >::iterator lower = outer_free_().lower_bound(handle(ha.begin(), ha.begin()));
 			std::set<handle >::iterator upper = outer_free_().lower_bound(handle(ha.end(), ha.end()));
@@ -392,7 +392,7 @@ namespace xirang
 		int unpin_(byte* p, bool track)
 		{
 			view_map_type::right_iterator  itr = view_map.right.lower_bound(p);
-			if (itr == view_map.right.end() 
+			if (itr == view_map.right.end()
 					|| itr->first != p)
 			{
 
@@ -483,7 +483,7 @@ namespace xirang
 			io::ioinfo& arinfo = ioinfo_();
 			if (arinfo.size() == 0)
 				return;
-			
+
 			std::size_t tail_size = sizeof(long_offset_t) + sizeof(uint32_t);
 			if (arinfo.size() < tail_size)
 				AIO_THROW(ext_heap_format_exception);
@@ -502,7 +502,8 @@ namespace xirang
 			while(items--)
 			{
 				long_offset_t b, e;
-				io::local::as_source(ird.get<io::reader>()) & b & e;
+				auto source = io::local::as_source(ird.get<io::reader>());
+				source & b & e;
 				handle h(b, e);
 				free_space[1].insert(h);
 				info.outer_free_size += h.size() ;
@@ -538,13 +539,14 @@ namespace xirang
 
 			io::mem_archive war;
 			iref<io::writer> ar(war);
-			
+
 			std::set<handle >::iterator use_end = rbeg.base();
+			auto sink = io::local::as_sink(ar.get<io::writer>());
 			for (std::set<handle >::iterator itr = free_space[1].begin(); itr != use_end; ++itr)
 			{
-				io::local::as_sink(ar.get<io::writer>()) & itr->begin() & itr->end();
+				sink & itr->begin() & itr->end();
 			}
-			io::local::as_sink(ar.get<io::writer>()) & sig_ext_heap & end_pos;
+			sink & sig_ext_heap & end_pos;
 
 			free_space[1].clear();
 
@@ -554,7 +556,7 @@ namespace xirang
 		}
 
 #if 0
-		virtual void  dump() const { 
+		virtual void  dump() const {
 			std::cerr << "\ninner:\n";
 
 			for (auto itr = free_space[0].begin(); itr != free_space[0].end(); ++itr)
@@ -634,7 +636,7 @@ namespace xirang
 	/// \return the underling ext_heap, can be null.
 	heap* file_mapping_heap::underling() { return m_imp->m_heap;}
 
-	bool file_mapping_heap::equal_to(const heap& rhs) const 
+	bool file_mapping_heap::equal_to(const heap& rhs) const
 	{
 		return this == &rhs;
 	}
@@ -648,7 +650,7 @@ namespace xirang
 
 
 	/// allocate a block in external heap
-	ext_heap::handle file_mapping_heap::allocate(std::size_t size, std::size_t alignment, handle hint) 
+	ext_heap::handle file_mapping_heap::allocate(std::size_t size, std::size_t alignment, handle hint)
 	{
 #ifndef MSVC_COMPILER_
 		//TODO for mac std::lock_guard<std::mutex> lock(m_imp->mutex);
@@ -661,7 +663,7 @@ namespace xirang
 	}
 
 	/// release an external block
-	void file_mapping_heap::deallocate(handle p) 
+	void file_mapping_heap::deallocate(handle p)
 	{
 #ifndef MSVC_COMPILER_
 		//todo for mac std::lock_guard<std::mutex> lock(m_imp->mutex);
@@ -672,7 +674,7 @@ namespace xirang
 	}
 
 	/// map a block into memory, ref count internally.
-	void* file_mapping_heap::track_pin(handle h) 
+	void* file_mapping_heap::track_pin(handle h)
 	{
 #ifndef MSVC_COMPILER_
 		//TODO for mac std::lock_guard<std::mutex> lock(m_imp->mutex);
@@ -683,7 +685,7 @@ namespace xirang
 	}
 
 	/// map a block into memory, ref count the view only.
-	void* file_mapping_heap::pin(handle h) 
+	void* file_mapping_heap::pin(handle h)
 	{
 #ifndef MSVC_COMPILER_
 		//TODO for mac std::lock_guard<std::mutex> lock(m_imp->mutex);
@@ -716,7 +718,7 @@ namespace xirang
 		return m_imp->view_pin_count(h);
 	}
 
-	/// unmap a block. 
+	/// unmap a block.
 	int file_mapping_heap::track_unpin(void* h)
 	{
 #ifndef MSVC_COMPILER_
@@ -728,7 +730,7 @@ namespace xirang
 		return m_imp->track_unpin(reinterpret_cast<byte*>(h));
 	}
 
-	/// unmap a block. 
+	/// unmap a block.
 	int file_mapping_heap::unpin(void* h)
 	{
 #ifndef MSVC_COMPILER_
@@ -774,7 +776,7 @@ namespace xirang
 		return n;
 	}
 
-	/// sync the memory to external, if h is invalid, sync all. 
+	/// sync the memory to external, if h is invalid, sync all.
 	void file_mapping_heap::sync(handle h)
 	{
 #ifndef MSVC_COMPILER_

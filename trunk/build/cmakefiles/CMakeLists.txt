@@ -26,7 +26,20 @@ SET(CMAKE_CXX_FLAGS_DEBUG	"$ENV{CXXFLAGS} -O0 -g -ggdb")
 SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 ")
 FIND_PACKAGE(Boost COMPONENTS unit_test_framework filesystem system)
 
+function (define_tools exe)
+AUX_SOURCE_DIRECTORY(${AIO_ROOT}/tools/${exe} DIR_SRCS)
+ADD_EXECUTABLE(${exe} ${DIR_SRCS})
+TARGET_LINK_LIBRARIES(
+	${exe}
+ 	xirang
+	${ZLIB}
+	${Boost_LIBRARIES}
+	)
+endfunction()
+
 
 ADD_SUBDIRECTORY(xirang)
 ADD_SUBDIRECTORY(xirang_test)
+
+ADD_SUBDIRECTORY(tools)
 

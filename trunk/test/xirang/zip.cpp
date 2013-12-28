@@ -20,9 +20,10 @@ BOOST_AUTO_TEST_CASE(deflate_case)
 	iref<reader, writer, read_map> imar(mar);
 	writer& wr = imar.get<writer>();
 
+	auto sink = local::as_sink(wr);
 	for (int i = 0; i < 100; ++i){
 		unsigned int var = distribution(engin);
-		save(local::as_sink(wr), var);
+		save(sink, var);
 	}
 
 	mem_archive zipped;

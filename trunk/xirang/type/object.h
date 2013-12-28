@@ -26,7 +26,7 @@ namespace xirang { namespace type{
 			Type type () const;
 
             /// get all data members
-            /// \pre valid()    
+            /// \pre valid()
 			ConstSubObjRange members() const;
 
             /// get the data member by given index
@@ -63,7 +63,7 @@ namespace xirang { namespace type{
 			CommonObject (Type t = Type(), void *p = 0);
 
             /// get all data members
-            /// \pre valid() 
+            /// \pre valid()
 			SubObjRange members() const;
 
             /// treat this object as a SubObject
@@ -82,11 +82,11 @@ namespace xirang { namespace type{
             /// \return null if !valid()
 			void* data() const;
 
-            /// assign the value from obj to this 
+            /// assign the value from obj to this
             /// \pre valid() && obj.valid() && type() == obj.type()
 			void assign(ConstCommonObject obj);
 	};
-	template<typename Handler, typename Obj, typename ... Args> 
+	template<typename Handler, typename Obj, typename ... Args>
 	inline void VisitObjectMember(Handler& h, Obj obj, Args... args)
 	{
 		if (obj.type().memberCount > 0){
@@ -107,7 +107,7 @@ namespace xirang { namespace type{
     {
         const string* name;
         ConstCommonObject value;
-    };    
+    };
     //. reference to data member of compound type
 	class ConstSubObject
 	{
@@ -116,12 +116,12 @@ namespace xirang { namespace type{
 
             /// ctor
             /// \param t type of the object which own this member directly
-            /// \pre (p == 0 && !t.valid() && idx == 0) || (p != 0 && t.valid() 
+            /// \pre (p == 0 && !t.valid() && idx == 0) || (p != 0 && t.valid()
 			///		&& (idx < t.memberCount() || idx == PhonyIndex))
             /// \pre p == 0 || idx == PhonyIndex || t.member(idx).type().valid()
 			ConstSubObject (Type t = Type(), const void *p = 0, std::size_t idx = 0);
 
-            /// true if type 
+            /// true if type
 			bool valid () const;
 
             /// return true if valid()
@@ -145,7 +145,7 @@ namespace xirang { namespace type{
 			const void* ownerData () const;
 
             /// return 0 if both index and address of blob are equal
-			int compare (const ConstSubObject &) const;       
+			int compare (const ConstSubObject &) const;
 
             /// get the index
             /// \pre valid()
@@ -166,7 +166,7 @@ namespace xirang { namespace type{
 	{
 		public:
             /// ctor
-            /// \pre (p == 0 && !t.valid() && idx == 0) || (p != 0 && t.valid() 
+            /// \pre (p == 0 && !t.valid() && idx == 0) || (p != 0 && t.valid()
 			///		&& (idx < t.memberCount() || idx == PhonyIndex))
             /// \pre p == 0 || idx == PhonyIndex || t.member(idx).type().valid()
 			SubObject (Type t = Type(), void *p = 0, std::size_t idx = 0);
@@ -192,7 +192,7 @@ namespace xirang { namespace type{
 			ConstSubObjIterator (const ConstSubObject & rhs);
 
 			const ConstSubObject& operator* () const;
-            
+
             /// const member accessor
             const ConstSubObject* operator->() const;
 			ConstSubObjIterator & operator++ ();
@@ -288,7 +288,7 @@ namespace xirang { namespace type{
         /// \pre obj.valid()
         /// \throw nothrow
         void operator()(CommonObject obj) const;
-        
+
         /// destroy the given object and remove it from namespace
         /// \pre obj.valid() && *ns.findObject(name).second == obj
         /// \throw nothrow
@@ -303,7 +303,7 @@ namespace xirang { namespace type{
     private:
         heap* m_alloc;
 	};
-    
+
 
     /// an auto ptr used to handle object blob during creation.
     /// it's used to write exception safety code
@@ -314,7 +314,7 @@ namespace xirang { namespace type{
         /// ctor
         /// \pre t.valid()
         UninitObjectPtr(Type t, heap& al);
-        
+
         /// free the allocated memory
         /// if enableDtor(), it'll destruct the object at the memory.
         ~UninitObjectPtr();
@@ -325,7 +325,7 @@ namespace xirang { namespace type{
         /// get the memory address
         void* get() const;
 
-        /// allocate a new memory block  
+        /// allocate a new memory block
         /// \pre !get() && !enableDtor()
         void reset();
 
@@ -339,10 +339,10 @@ namespace xirang { namespace type{
     private:
         UninitObjectPtr(const UninitObjectPtr&) /* = delete*/;
         UninitObjectPtr& operator=(const UninitObjectPtr&)/* = delete*/;
-        
+
         Type m_type;
         heap& m_al;
-        void* m_data; 
+        void* m_data;
         bool m_dtor_enabled;
     };
 
@@ -353,17 +353,17 @@ namespace xirang { namespace type{
     public:
         /// move construct
         ScopedObjectCreator(ScopedObjectCreator&& rhs);
-        
+
         /// move assignment
         ScopedObjectCreator& operator=(ScopedObjectCreator&& rhs);
-        
-        ///ctor 
+
+        ///ctor
         ScopedObjectCreator(Type t, const Xirang& xi);
 
         /// ctor
         /// \pre t.valid()
         ScopedObjectCreator(Type t, heap & al, ext_heap& eh);
-        
+
         /// free the allocated object
         ~ScopedObjectCreator();
 
@@ -392,7 +392,7 @@ namespace xirang { namespace type{
     private:
         ScopedObjectCreator(const ScopedObjectCreator&) /* = delete*/;
         ScopedObjectCreator& operator=(const ScopedObjectCreator&)/* = delete*/;
-        
+
         Type m_type;
         heap* m_al;
         ext_heap* m_ext_al;

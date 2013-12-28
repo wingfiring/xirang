@@ -2,6 +2,7 @@
 #define XIRANG_NAMESPACE_H
 
 #include <xirang/type/object.h>
+#include <xirang/path.h>
 
 namespace xirang{ namespace type{
 	//namespace
@@ -209,7 +210,7 @@ namespace xirang{ namespace type{
 		Namespace adoptBy(Namespace ns);
 
         /// move all children of top namespace from builder into ns, then reset the top namespace
-        /// this method doesn't affact getName() and getParent() 
+        /// this method doesn't affact getName() and getParent()
         /// \post get() return a clean namespace without any children including sub-namespace, type, alias orobject
         NamespaceBuilder& adoptChildrenBy(Namespace ns);
 
@@ -242,6 +243,14 @@ namespace xirang{ namespace type{
         NamespaceBuilder(const NamespaceBuilder&); //diable copy ctor
         NamespaceBuilder& operator=(const NamespaceBuilder&); //disable assignment
 	};
+
+	inline Type getType(Namespace ns, const string& fullName){
+		simple_path p(fullName);
+		auto parent = ns.locateNamespace(p.parent().str(), '.');
+		if (parent.valid())
+			return parent.findType(p.filename().str());
+		return Type();
+	}
 }}
 #endif				//end XIRANG_NAMESPACE_H
 

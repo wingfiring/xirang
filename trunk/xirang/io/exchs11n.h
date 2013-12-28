@@ -6,11 +6,31 @@
 
 namespace xirang{ namespace io{ namespace exchange{
 
-	template<typename Ar> struct serializer : public s11n::serializer_base<Ar>{
+	template<typename Ar> struct serializer : public s11n::serializer_base<Ar>, public io::writer{
 		explicit serializer(Ar& ar) : s11n::serializer_base<Ar>(ar){};
+
+		range<const byte*> write(const range<const byte*>& r){
+			return this->get().write(r);
+		}
+
+		bool writable() const{
+			return this->get().writable();
+		}
+
+		/// sync buffer, implementationi defines.
+		void sync(){
+			return this->get().sync();
+		}
 	};
-	template<typename Ar> struct deserializer : public s11n::deserializer_base<Ar>{
+	template<typename Ar> struct deserializer : public s11n::deserializer_base<Ar> , public io::reader{
 		explicit deserializer(Ar& ar) : s11n::deserializer_base<Ar>(ar){};
+		range<byte*> read(const range<byte*>& buf){
+			return this->get().read(buf);
+		}
+
+		bool readable() const {
+			return this->get().readable();
+		}
 	};
 	template<typename Ar> serializer<Ar> as_sink(Ar& ar){ return serializer<Ar>(ar);}
 	template<typename Ar> deserializer<Ar> as_source(Ar& ar){ return deserializer<Ar>(ar);}
@@ -20,6 +40,7 @@ namespace xirang{ namespace io{ namespace exchange{
 
 	template<> struct exchange_type_of<wchar_t>{ typedef std::int32_t type;};
 	template<> struct exchange_type_of<char>{ typedef std::int8_t type;};
+	template<> struct exchange_type_of<bool>{ typedef std::int8_t type;};
 
 	AIO_EXCEPTION_TYPE(bad_exchange_cast);
 
@@ -40,11 +61,16 @@ namespace xirang{ namespace io{ namespace exchange{
 	template<typename U, typename T> U exchange_cast(T t){
 		return exchange_cast_imp<T, U>::apply(t);
 	}
+	template<typename U, typename T> struct exchange_caster{
+		U operator()(T t) const{
+			return exchange_cast<U>(t);
+		}
+	};
 
-	template<typename Ar, typename T, 
-		typename = typename std::enable_if<std::is_scalar<T>::value && 
+	template<typename Ar, typename T,
+		typename = typename std::enable_if<std::is_scalar<T>::value &&
 			s11n::is_serializer<Ar>::value>::type>
-		Ar save(Ar wt, const T& v)
+		Ar& save(Ar& wt, const T& v)
 		{
 			typedef typename exchange_type_of<T>::type U;
 			U t = local2ex_f(exchange_cast<U>(v));
@@ -58,9 +84,9 @@ namespace xirang{ namespace io{ namespace exchange{
 		}
 
 	template<typename T, typename Ar,
-		typename = typename std::enable_if<std::is_scalar<T>::value && 
+		typename = typename std::enable_if<std::is_scalar<T>::value &&
 			s11n::is_deserializer<Ar>::value>::type>
-		Ar load(Ar rd, T& v)
+		Ar& load(Ar& rd, T& v)
 		{
 			typedef typename exchange_type_of<T>::type U;
 			U t;

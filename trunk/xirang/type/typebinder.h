@@ -3,6 +3,9 @@
 
 #include <xirang/type/itypebinder.h>
 #include <xirang/type/binder.h>
+#include <xirang/sha1/process_value.h>
+#include <xirang/io/sha1.h>
+#include <xirang/io/versiontype.h>
 
 namespace xirang { namespace type{
 	template<typename T> struct assigner{
@@ -27,7 +30,7 @@ namespace xirang { namespace type{
 		static int apply(ConstCommonObject lhs,ConstCommonObject rhs) {
 			const T& l = *reinterpret_cast<const T*>(lhs.data());
 			const T& r = *reinterpret_cast<const T*>(rhs.data());
-			return l < r 
+			return l < r
 				? -1 : r < l ? 1 : 0;
 		}
 	};
@@ -65,7 +68,7 @@ namespace xirang { namespace type{
 	{
 		static MethodsExtension* value()
 		{
-			static MethodsExtension methodsExt = 
+			static MethodsExtension methodsExt =
 			{
 				&comparison<T>::apply,
 				&hasher<T>::apply
@@ -74,7 +77,7 @@ namespace xirang { namespace type{
 		}
 	};
 
-	// specialize for buffer 
+	// specialize for buffer
 	template<typename T> struct hasher<buffer<T>> {
 		static size_t apply(ConstCommonObject obj){
 			auto& data = uncheckBind<buffer<T>>(obj);
@@ -96,15 +99,35 @@ namespace xirang { namespace type{
 		}
 	};
 
+	template<typename T> struct serializer{
+		static void apply(io::writer& wr, ConstCommonObject obj){
+			AIO_PRE_CONDITION(obj.valid());
+
+			auto s = io::exchange::as_sink(wr);
+			s & *static_cast<const T*>(obj.data());
+		}
+	};
+	template<typename T> struct deserializer{
+		static void apply(io::reader& rd, CommonObject obj, heap& inner, ext_heap& outer){
+			AIO_PRE_CONDITION(obj.valid());
+			auto s = io::exchange::as_source(rd);
+			s & *static_cast<T*>(obj.data());
+		}
+	};
+
 	template<typename T> constructor<T> get_constructor(T*) { return constructor<T>();}
 	template<typename T> destructor<T> get_destructor(T*) { return destructor<T>();}
 	template<typename T> assigner<T> get_assigner(T*) { return assigner<T>();}
 	template<typename T> layout<T> get_layout(T*) { return layout<T>();}
+	template<typename T> serializer<T> get_serializer(T*) { return serializer<T>();}
+	template<typename T> deserializer<T> get_deserializer(T*) { return deserializer<T>();}
 	template<typename T> extendMethods<T> get_extendMethods(T*) { return extendMethods<T>();}
 
 	template<typename T>
 		struct PrimitiveMethods : public TypeMethods
 	{
+		explicit PrimitiveMethods(const string& id) : m_internalid(id){}
+
 		virtual void construct(CommonObject obj, heap&  al , ext_heap& ext) const
 		{
 			get_constructor((T*)0).apply(obj, al, ext);
@@ -127,22 +150,46 @@ namespace xirang { namespace type{
 		{
 			get_layout((T*)0).next(item, payload, offset, align, pod);
 		}
+		virtual void serialize(io::writer& wr, ConstCommonObject obj){
+			get_serializer((T*)0).apply(wr, obj);
+		}
+		virtual void deserialize(io::reader& rd, CommonObject obj, heap& inner, ext_heap& outer){
+			get_deserializer((T*)0).apply(rd, obj, inner, outer);
+		}
 
-		virtual const TypeInfoHandle& typeinfo() const
-		{
-			return typeinfo_;
+		virtual version_type getTypeVersion(Type t) const{
+			AIO_PRE_CONDITION(t.valid());
+			AIO_PRE_CONDITION(&t.methods() == this );
+			sha1 sha;
+			calculateTypeSha(sha, t);
+
+			version_type ver;
+			ver.id = sha.get_digest();
+			return std::move(ver);
+		}
+
+		virtual void calculateTypeSha(sha1& sha, Type t) const{
+			AIO_PRE_CONDITION(t.valid());
+			AIO_PRE_CONDITION(&t.methods() == this );
+
+			auto s = io::exchange::as_sink(sha);
+			s & t.modelName() & t.model();
+			for (auto& i : t.args())
+				s & i.name() & i.typeName() & i.type();
+			for (auto& i : t.members())
+				s & i.name() & i.typeName() & i.type();
+			s & internalID() & t.payload() & t.align();
 		}
 
 		virtual const MethodsExtension* extension() const
 		{
 			return get_extendMethods((T*)0).value();
 		}
-
+		virtual const string& internalID() const{
+			return m_internalid;
+		}
 		private:
-
-		static const TypeInfo<T> typeinfo_;
+		string m_internalid;
 	};
-
-	template<typename T> const TypeInfo<T>	PrimitiveMethods<T>::typeinfo_;
 }}
 #endif //end XIRANG_TYPE_BINDER_H

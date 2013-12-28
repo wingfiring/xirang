@@ -2,6 +2,7 @@
 #define XIRANG_TYPE_H
 
 #include <xirang/type/xrfwd.h>
+#include <xirang/versiontype.h>
 
 namespace xirang{ namespace type{
 	class TypeItemImp;
@@ -79,7 +80,7 @@ namespace xirang{ namespace type{
 
             /// get real type of this argument
             /// \pre valid()
-			Type type ();
+			Type type () const;
 
             /// get type argument name
             /// \pre valid()
@@ -93,7 +94,6 @@ namespace xirang{ namespace type{
             /// return type().valid()
             /// \pre valid()
 			bool isBound() const;
-
 
             /// compare the internal address only.
             /// return 0 if this and other refer to same type argument.
@@ -196,7 +196,7 @@ namespace xirang{ namespace type{
 			TypeItem member (std::size_t idx) const;
 
             /// get the member info by given name
-            /// \pre valid() 
+            /// \pre valid()
             /// if not found, return.valid() is false
 			TypeItem member (const string& name) const;
 
@@ -220,15 +220,14 @@ namespace xirang{ namespace type{
             /// \pre valid()
             Type locateType(const string& path, char dim='.') const;
 
-			/// counter of referenced in other types, not implemented
-			std::size_t referenceCount () const;
-			//counter of instance, not implemented
-			std::size_t instanceCount () const;
-
             /// compare the internal address only, do not compare elements.
             /// return 0 if this and other refer to same type
 			int compare (const Type &) const;
 
+			// get version of this type.
+			const version_type& version() const;
+			// get the revision of this type
+			revision_type revision() const;
 		private:
 			friend struct hasher<Type>;
 			TypeImp * m_imp;
@@ -260,7 +259,7 @@ namespace xirang{ namespace type{
             /// dtor
 			~TypeBuilder();
 
-            /// name 
+            /// name
             /// \pre !name.empty() && name not contain '.' && name not start with '~'
 			TypeBuilder& name(const string& name);
 
@@ -314,11 +313,15 @@ namespace xirang{ namespace type{
             /// get type name
             const string& getName() const;
 
-            /// get paranet namespace 
+            /// get paranet namespace
             Namespace getParent() const;
 
             /// get build stage
             stage getStage() const;
+
+			revision_type revision() const;
+
+			TypeBuilder& revision(revision_type newRevision);
 		private:
 			TypeBuilder(const TypeBuilder&) /*= delete*/;
 			TypeBuilder& operator=(const TypeBuilder&) /*= delete*/;
@@ -329,5 +332,7 @@ namespace xirang{ namespace type{
 			friend class NamespaceBuilder;
 	};
 }}
+
 #endif				//end XIRANG_TYPE_H
+
 

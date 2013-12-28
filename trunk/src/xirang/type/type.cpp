@@ -76,7 +76,7 @@ namespace xirang{ namespace type{
 		return m_imp != 0;
 	}
 
-	Type TypeArg::type ()
+	Type TypeArg::type () const
 	{
 		AIO_PRE_CONDITION(valid());
 		return Type(m_imp->type);
@@ -164,7 +164,7 @@ namespace xirang{ namespace type{
         return Namespace(m_imp->parent);
     }
 
-	//if user didn't name a type, it has a internal name.
+	//if user didn't name a type, it has an internal name.
 	bool Type::isInterim () const
 	{
 		AIO_PRE_CONDITION (valid () );
@@ -206,7 +206,7 @@ namespace xirang{ namespace type{
 
 	const string& Type::modelName () const
 	{
-		AIO_PRE_CONDITION(valid() && hasModel());
+		AIO_PRE_CONDITION(valid());
 		return m_imp->modelName;
 	}
 
@@ -223,27 +223,13 @@ namespace xirang{ namespace type{
 		return m_imp->payload;
 	}
 
-	//instance count
-	std::size_t Type::referenceCount () const
-	{
-		AIO_PRE_CONDITION (valid () && isMemberResolved());
-		return m_imp->referenceCount;
-	}
-
-	//instance count
-	std::size_t Type::instanceCount () const
-	{
-		AIO_PRE_CONDITION (valid () && isMemberResolved());
-		return m_imp->instanceCount;
-	}
-
 	bool Type::isPod () const
 	{
 		AIO_PRE_CONDITION (valid () && isMemberResolved());
 		return m_imp->isPod;
 	}
 
-	TypeMethods & Type::methods () const 
+	TypeMethods & Type::methods () const
 	{
 		AIO_PRE_CONDITION (valid () && isMemberResolved ());
 		AIO_PRE_CONDITION (m_imp->methods != 0);
@@ -353,9 +339,20 @@ namespace xirang{ namespace type{
 
 		return res;
 	}
-	int Type::compare (const Type& rhs) const 
+	int Type::compare (const Type& rhs) const
 	{
         return comparePtr(m_imp, rhs.m_imp);
+	}
+	const version_type& Type::version() const{
+		AIO_PRE_CONDITION(valid());
+		if (!m_imp->version_cached)
+			m_imp->version = methods().getTypeVersion(*this);
+		return m_imp->version;
+	}
+
+	revision_type Type::revision() const{
+		AIO_PRE_CONDITION(valid());
+		return m_imp->revision;
 	}
 	size_t hasher<Type>::apply(ConstCommonObject obj){
 		auto& data = uncheckBind<Type>(obj);
@@ -396,7 +393,7 @@ namespace xirang{ namespace type{
 	{
         AIO_PRE_CONDITION(!arg.empty());
         AIO_PRE_CONDITION(m_stage <= st_arg);
-        
+
         TypeArgImp* target = 0;
 
         for (std::vector<TypeArgImp>::iterator itr = m_imp->typeArgs.begin();
@@ -407,7 +404,7 @@ namespace xirang{ namespace type{
                 target = &*itr;
             }
 		}
-        
+
         if (target) // replace
         {
             if (!target->type)
@@ -447,12 +444,12 @@ namespace xirang{ namespace type{
 		m_imp->methods->nextLayout(tim, m_imp->payload, m_offset, m_imp->alignment, m_imp->isPod);
 
 		if (t.valid())
-		{	
+		{
 			m.offset = m_imp->payload - t.payload();
 		}
 		else
 			m.offset = Type::no_size;
-			
+
 
         m_stage = st_member;
 		return *this;
@@ -505,7 +502,7 @@ namespace xirang{ namespace type{
 		if (m_imp)
 			check_delete(m_imp);
 		m_imp = tmp;
-        
+
         tmp->methods->beginLayout(m_imp->payload, m_offset, m_imp->alignment, m_imp->isPod);
 
         m_stage = st_renew;
@@ -569,6 +566,15 @@ namespace xirang{ namespace type{
     {
         return this->m_stage;
     }
+
+	revision_type TypeBuilder::revision() const{
+		return m_imp->revision;
+	}
+
+	TypeBuilder& TypeBuilder::revision(revision_type newRevision){
+		m_imp->revision = newRevision;
+		return *this;
+	}
 }}
 
 

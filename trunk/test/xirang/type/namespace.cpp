@@ -19,7 +19,7 @@ BOOST_AUTO_TEST_CASE(namespace_case)
     BOOST_CHECK(xi.root().fullName('/') == string("/"));
 
 	SetupXirang(xi);
-    
+
     Namespace user = NamespaceBuilder()
         .name("user")
         .adoptBy(xi.root());
@@ -47,14 +47,14 @@ BOOST_AUTO_TEST_CASE(namespace_case)
 
     Type type_int = sys.locateType("int", '.');
     BOOST_CHECK(type_int.valid() && "locate type via relative type name");
-    BOOST_CHECK(type_int == sys.locateType("sys.int", '.') && "locate via relative type path.");
-    BOOST_CHECK(type_int == user_include.locateType("sys.int", '.') && "locate via relative type path.");
-    BOOST_CHECK(type_int == user_include.locateType(".sys.int", '.') && "locate via absolute type path.");
+    BOOST_CHECK(type_int == sys.locateType("sys.type.int32", '.') && "locate via relative type path.");
+    BOOST_CHECK(type_int == user_include.locateType("sys.type.int32", '.') && "locate via relative type path.");
+    BOOST_CHECK(type_int == user_include.locateType(".sys.type.int32", '.') && "locate via absolute type path.");
 
     BOOST_CHECK(!xi.root().findRealType("int").valid());
-    BOOST_CHECK(sys.findRealType("int").valid());
+    BOOST_CHECK(sys.findNamespace("type").findRealType("int32").valid());
 
-    BOOST_CHECK(xi.root().findType("int").valid() && "find an alias in root");
+    BOOST_CHECK(xi.root().findType("int32").valid() && "find an alias in root");
 
     TypeAlias int_alias = xi.root().findAlias("int");
     BOOST_REQUIRE(int_alias.valid());
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(namespace_builder_case)
     BOOST_CHECK(user_include.valid());
 
     NamespaceBuilder testBuilder;
-    
+
     Type type_int = xi.root().locateType("int", '.');
     BOOST_REQUIRE(type_int.valid());
 

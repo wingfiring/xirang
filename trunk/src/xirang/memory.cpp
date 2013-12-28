@@ -10,7 +10,8 @@ namespace xirang
 	namespace
 	{
 		atomic::atomic_t<heap*> g_global_heap = { 0};
-		plain_heap default_global_heap(memory::multi_thread);
+		void* default_global_heap = 0;
+		static_assert(sizeof (default_global_heap) == sizeof(plain_heap), "plain_heap size is wrong");
 
         class dummy_extern_heap : public ext_heap
         {
@@ -100,7 +101,7 @@ namespace xirang
 
 		AIO_COMM_API void set_global_heap(heap& h) {sync_set(g_global_heap, &h);}
 
-		AIO_COMM_API heap& get_global_heap() { 
+		AIO_COMM_API heap& get_global_heap() {
 			heap * global_heap = sync_get(g_global_heap);
 			if (global_heap == 0){
 				init_global_heap_once();
@@ -110,13 +111,13 @@ namespace xirang
 			return *global_heap;
 		}
 
-        AIO_COMM_API ext_heap& get_global_ext_heap() { 
+        AIO_COMM_API ext_heap& get_global_ext_heap() {
             return default_dummy_extern_heap;
 		}
 
 		AIO_COMM_API void init_global_heap_once()
 		{
-			if (atomic::sync_cas<heap*>(g_global_heap, 0, &default_global_heap))
+			if (atomic::sync_cas<heap*>(g_global_heap, 0, (heap*)&default_global_heap))
             {
                 // it's safe to constrct default_global_heap multi times.
                 new (&default_global_heap) plain_heap(memory::multi_thread);
@@ -138,11 +139,11 @@ namespace xirang
 	long_offset_t offset_range::begin() const { return m_begin;}
 	long_offset_t offset_range::end() const { return m_end;}
 
-	bool offset_range::in(const offset_range& h) const { 
+	bool offset_range::in(const offset_range& h) const {
 		return m_begin >= h.begin()
 			&& m_end <= h.end();
 	}
-	bool offset_range::contains(const offset_range& h) const { 
+	bool offset_range::contains(const offset_range& h) const {
 		return h.in(*this);
 	}
 

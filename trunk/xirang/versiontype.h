@@ -10,6 +10,9 @@ namespace xirang{
 		uint16_t algorithm = uint16_t(hash_algorithm::ha_sha1);
 		sha1_digest id;
 		uint32_t conflict_id = 0;
+
+		version_type() = default;
+		explicit version_type(const_range_string s) : id(s){}
 	};
 
 	inline bool operator==(const version_type& lhs, const version_type& rhs){
@@ -26,33 +29,15 @@ namespace xirang{
 	}
 
 	struct hash_version_type{
-		static bool operator()(const version_type& ver){
-			return hash_sha1(ver.id);
+		bool operator()(const version_type& ver) const{
+			return hash_sha1()(ver.id);
 		}
 	};
 
 	struct version_type_compare_ : totally_ordered<version_type>{ };
 
-	template<typename Ar, typename = 
-		typename std::enable_if<io::s11n::is_deserializer<Ar>::value>::type>
-	Ar load(Ar ar, version_type& ver)
-	{
-		return ar & ver.protocol_version
-			& ver.algorithm
-			& ver.id
-			& ver.conflict_id;
-	}
-
-	template<typename Ar, typename =
-		typename std::enable_if< io::s11n::is_serializer<Ar>::value>::type>
-	Ar save(Ar ar, const sha1_digest& dig)
-	{
-		ar & ver.protocol_version
-			& ver.algorithm
-			& ver.id
-			& ver.conflict_id;
-		return ar;
-	}
+	typedef int32_t revision_type;
+	const revision_type no_revision = -1;
 
 }
 

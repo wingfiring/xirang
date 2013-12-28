@@ -3,6 +3,7 @@
 #include <xirang/type/object.h>
 #include <xirang/type/typebinder.h>
 #include <xirang/type/binder.h>
+#include <xirang/type/nativetypeversion.h>
 
 #include <vector>
 #include <iostream>
@@ -20,7 +21,7 @@ BOOST_AUTO_TEST_CASE(object_case)
 
     Namespace test = NamespaceBuilder().name("test").adoptBy(xi.root());
 
-    
+
     Type sub_pair = TypeBuilder().name("sub_pair")
         .addMember("first", "int", xi.root().findType("int"))
         .addMember("second", "string", xi.root().findType("string"))
@@ -34,7 +35,7 @@ BOOST_AUTO_TEST_CASE(object_case)
         .addMember("third", "double", xi.root().findType("double"))
         .endBuild()
         .adoptBy(test);
-    
+
 
     ScopedObjectCreator holder(triple, xi);
     CommonObject obj_triple_0 = holder.get();
@@ -95,7 +96,7 @@ BOOST_AUTO_TEST_CASE(object_case)
     BOOST_CHECK(test.findObject("obj_triple_0").value == obj_triple_0);
 
     BOOST_CHECK((obj_triple_0.members().begin()++)->asCommonObject().valid());
-    
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

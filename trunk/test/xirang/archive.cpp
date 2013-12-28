@@ -85,14 +85,16 @@ BOOST_AUTO_TEST_CASE(mem_archive_case)
 	io::reader& rd = iar.get<io::reader>();
 
 	int i = 3;
-	io::local::as_sink(wr) & i;
+	auto sink = io::local::as_sink(wr);
+	sink & i;
 
 	BOOST_CHECK(ar.size() == sizeof(int));
 
 	ar.seek(0);
 	BOOST_CHECK(ar.offset() == 0);
 	int j;
-	io::local::as_source(rd) & j;
+	auto source = io::local::as_source(rd);
+	source & j;
 	BOOST_CHECK(j == 3);
 
 	ar.truncate(sizeof(int)*2);

@@ -11,22 +11,21 @@ namespace xirang { namespace type{
 	AIO_EXCEPTION_TYPE(TypeMismatchException);
     /// Bind T* to const CommonObject pointer. if type mismatch, it returns null pointer.
     /// \pre obj && obj->valid()
-	template < typename T > T * bind (const CommonObject * obj) 
+	template < typename T > T * bind (const CommonObject * obj)
 	{
 		AIO_PRE_CONDITION(obj && obj->valid());
 
 		Type t = obj->type();
 		AIO_PRE_CONDITION(t.valid());
-        
-		const static TypeInfo<T> info;
-		return info.equal(t.methods().typeinfo())
+
+		return TypeVersionOf<T>::value == t.version()
 			? reinterpret_cast<T*>(obj->data())
 			: 0;
 	}
 
     /// Bind T& to const CommonObject refrence. if type mismatch, it throws TypeMismatchException .
     /// \pre obj->valid()
-	template < typename T > T & bind (const CommonObject & obj) 
+	template < typename T > T & bind (const CommonObject & obj)
 	{
 		AIO_PRE_CONDITION(obj.valid());
 
@@ -40,7 +39,7 @@ namespace xirang { namespace type{
 
     /// Bind T* to const CommonObject pointer. no type check.
     /// \pre obj && obj->valid()
-	template < typename T > T * uncheckBind (const CommonObject * obj) 
+	template < typename T > T * uncheckBind (const CommonObject * obj)
 	{
 		AIO_PRE_CONDITION(obj && obj->valid());
 
@@ -49,7 +48,7 @@ namespace xirang { namespace type{
 
     /// Bind T& to const CommonObject&. no type check.
     /// \pre obj->valid()
-	template < typename T > T & uncheckBind (const CommonObject & obj) 
+	template < typename T > T & uncheckBind (const CommonObject & obj)
 	{
 		AIO_PRE_CONDITION(obj.valid());
 
@@ -58,22 +57,21 @@ namespace xirang { namespace type{
 
     /// Bind T* to const SubObject pointer. if type mismatch, it returns null pointer.
     /// \pre obj && obj->valid()
-	template < typename T > T * bind (const SubObject * obj) 
+	template < typename T > T * bind (const SubObject * obj)
 	{
 		AIO_PRE_CONDITION(obj && obj->valid());
 
 		Type t = obj->type();
 		AIO_PRE_CONDITION(t.valid());
 
-		const static TypeInfo<T> info;
-		return info.equal(t.methods().typeinfo())
+		return TypeVersionOf<T>::value == t.version()
 			? reinterpret_cast<T*>(obj->data())
 			: 0;
 	}
 
     /// Bind T& to const SubObject refrence. if type mismatch, it throws TypeMismatchException .
     /// \pre obj->valid()
-	template < typename T > T & bind (const SubObject & obj) 
+	template < typename T > T & bind (const SubObject & obj)
 	{
 		AIO_PRE_CONDITION(obj.valid());
 
@@ -88,7 +86,7 @@ namespace xirang { namespace type{
 
     /// Bind T* to const SubObject pointer. no type check.
     /// \pre obj && obj->valid()
-	template < typename T > T * uncheckBind (const SubObject * obj) 
+	template < typename T > T * uncheckBind (const SubObject * obj)
 	{
 		AIO_PRE_CONDITION(obj && obj->valid());
 
@@ -97,7 +95,7 @@ namespace xirang { namespace type{
 
     /// Bind T& to const SubObject&. no type check.
     /// \pre obj->valid()
-	template < typename T > T & uncheckBind (const SubObject & obj) 
+	template < typename T > T & uncheckBind (const SubObject & obj)
 	{
 		AIO_PRE_CONDITION(obj.valid());
 
@@ -107,22 +105,21 @@ namespace xirang { namespace type{
 
     /// Bind const T* to const ConstCommonObject pointer. if type mismatch, it returns null pointer.
     /// \pre obj && obj->valid()
-	template < typename T > const T * bind (const ConstCommonObject * obj) 
+	template < typename T > const T * bind (const ConstCommonObject * obj)
 	{
 		AIO_PRE_CONDITION(obj && obj->valid());
 
 		Type t = obj->type();
 		AIO_PRE_CONDITION(t.valid());
 
-		const static TypeInfo<T> info;
-		return info.equal(t.methods().typeinfo())
-			? reinterpret_cast<const T*>(obj->data())
+		return TypeVersionOf<T>::value == t.version()
+			? reinterpret_cast< const T*>(obj->data())
 			: 0;
 	}
 
     /// Bind const T& to const ConstCommonObject refrence. if type mismatch, it throws TypeMismatchException .
     /// \pre obj->valid()
-	template < typename T > const T & bind (const ConstCommonObject & obj) 
+	template < typename T > const T & bind (const ConstCommonObject & obj)
 	{
 		AIO_PRE_CONDITION(obj.valid());
 
@@ -137,7 +134,7 @@ namespace xirang { namespace type{
 
     /// Bind const T* to const ConstCommonObject pointer. no type check.
     /// \pre obj && obj->valid()
-	template < typename T > const T * uncheckBind (const ConstCommonObject * obj) 
+	template < typename T > const T * uncheckBind (const ConstCommonObject * obj)
 	{
 		AIO_PRE_CONDITION(obj && obj->valid());
 
@@ -146,7 +143,7 @@ namespace xirang { namespace type{
 
     /// Bind const T& to const ConstCommonObject&. no type check.
     /// \pre obj->valid()
-	template < typename T > const T & uncheckBind (const ConstCommonObject & obj) 
+	template < typename T > const T & uncheckBind (const ConstCommonObject & obj)
 	{
 		AIO_PRE_CONDITION(obj.valid());
 
@@ -155,22 +152,21 @@ namespace xirang { namespace type{
 
     /// Bind const T* to const ConstSubObject pointer. if type mismatch, it returns null pointer.
     /// \pre obj && obj->valid()
-	template < typename T > const T * bind (const ConstSubObject * obj) 
+	template < typename T > const T * bind (const ConstSubObject * obj)
 	{
 		AIO_PRE_CONDITION(obj && obj->valid());
 
 		Type t = obj->type();
 		AIO_PRE_CONDITION(t.valid());
 
-		const static TypeInfo<T> info;
-		return info.equal(t.methods().typeinfo())
-			? reinterpret_cast<const T*>(obj->data())
+		return TypeVersionOf<T>::value == t.version()
+			? reinterpret_cast< const T*>(obj->data())
 			: 0;
 	}
 
     /// Bind const T& to const ConstSubObject refrence. if type mismatch, it throws TypeMismatchException .
     /// \pre obj->valid()
-	template < typename T > const T & bind (const ConstSubObject & obj) 
+	template < typename T > const T & bind (const ConstSubObject & obj)
 	{
 		AIO_PRE_CONDITION(obj.valid());
 
@@ -185,7 +181,7 @@ namespace xirang { namespace type{
 
     /// Bind const T* to const ConstSubObject pointer. no type check.
     /// \pre obj && obj->valid()
-	template < typename T > const T * uncheckBind (const ConstSubObject * obj) 
+	template < typename T > const T * uncheckBind (const ConstSubObject * obj)
 	{
 		AIO_PRE_CONDITION(obj && obj->valid());
 
@@ -194,7 +190,7 @@ namespace xirang { namespace type{
 
     /// Bind T& to const SubObject&. no type check.
     /// \pre obj->valid()
-	template < typename T > const T & uncheckBind (const ConstSubObject & obj) 
+	template < typename T > const T & uncheckBind (const ConstSubObject & obj)
 	{
 		AIO_PRE_CONDITION(obj.valid());
 
@@ -208,14 +204,14 @@ namespace xirang { namespace type{
 #endif
     /// Bind T* to const CommonObject pointer. if type mismatch, it returns null pointer.
     /// \pre obj && obj->valid()
-	template < typename T, typename ObjType > T * fastBind (const ObjType * obj) 
+	template < typename T, typename ObjType > T * fastBind (const ObjType * obj)
 	{
         return SELECTED_BIND_FUNCTION(obj);
 	}
 
     /// Bind T& to const CommonObject refrence. if type mismatch, it throws TypeMismatchException .
     /// \pre obj->valid()
-	template < typename T, typename ObjType >  T & fastBind (const ObjType & obj) 
+	template < typename T, typename ObjType >  T & fastBind (const ObjType & obj)
 	{
         return SELECTED_BIND_FUNCTION(obj);
 	}

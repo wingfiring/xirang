@@ -27,17 +27,17 @@ struct test_adaptor{
 
 BOOST_AUTO_TEST_CASE(dummy_case)
 {
-	test_adaptor<proxy_archive, reader>::apply<proxy_reader_p>(); 
-	test_adaptor<proxy_archive, writer>::apply<proxy_writer_p>(); 
-	test_adaptor<proxy_archive, ioctrl>::apply<proxy_ioctrl_p>(); 
-	test_adaptor<proxy_archive, ioinfo>::apply<proxy_ioinfo_p>(); 
-	test_adaptor<proxy_archive, sequence>::apply<proxy_sequence_p>(); 
-	test_adaptor<proxy_archive, forward>::apply<proxy_forward_p>(); 
-	test_adaptor<proxy_archive, io::random>::apply<proxy_random_p>(); 
-	test_adaptor<proxy_archive, read_map>::apply<proxy_read_map_p>(); 
-	test_adaptor<proxy_archive, write_map>::apply<proxy_write_map_p>(); 
+	test_adaptor<proxy_archive, reader>::apply<proxy_reader_p>();
+	test_adaptor<proxy_archive, writer>::apply<proxy_writer_p>();
+	test_adaptor<proxy_archive, ioctrl>::apply<proxy_ioctrl_p>();
+	test_adaptor<proxy_archive, ioinfo>::apply<proxy_ioinfo_p>();
+	test_adaptor<proxy_archive, sequence>::apply<proxy_sequence_p>();
+	test_adaptor<proxy_archive, forward>::apply<proxy_forward_p>();
+	test_adaptor<proxy_archive, io::random>::apply<proxy_random_p>();
+	test_adaptor<proxy_archive, read_map>::apply<proxy_read_map_p>();
+	test_adaptor<proxy_archive, write_map>::apply<proxy_write_map_p>();
 
-	test_adaptor<proxy_archive, reader, io::random>::apply<proxy_reader_p, proxy_forward_p>(); 
+	test_adaptor<proxy_archive, reader, io::random>::apply<proxy_reader_p, proxy_forward_p>();
 }
 BOOST_AUTO_TEST_CASE(multiplex_archive_case)
 {
@@ -79,8 +79,10 @@ BOOST_AUTO_TEST_CASE(multiplex_archive_case)
 		>(&mar, 0);
 
 	int var = 42;
-	save(local::as_sink(adaptor), var);
-	int var2 = load<int>(local::as_source(adaptor2));
+	auto sink = local::as_sink(adaptor);
+	save(sink, var);
+	auto source = local::as_source(adaptor2);
+	int var2 = load<int>(source);
 	BOOST_CHECK(var == var2);
 }
 
@@ -127,9 +129,11 @@ BOOST_AUTO_TEST_CASE(sub_archive_case)
 		>(iar2, 4, 10);
 
 	int var = 42;
-	save(local::as_sink(adaptor), var);
-	save(local::as_sink(adaptor), var);
-	int var2 = load<int>(local::as_source(adaptor2));
+	auto sink = local::as_sink(adaptor);
+	save(sink, var);
+	save(sink, var);
+	auto source = local::as_source(adaptor2);
+	int var2 = load<int>(source);
 	BOOST_CHECK(var == var2);
 }
 

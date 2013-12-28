@@ -1,5 +1,8 @@
 #include <xirang/type/typebinder.h>
 #include <xirang/type/type.h>
+#include <xirang/io/versiontype.h>
+#include <xirang/io/sha1.h>
+
 #include <cstring>
 
 #include <boost/functional/hash.hpp>
@@ -12,11 +15,17 @@ namespace xirang { namespace type{
 		{
 			return p1 < p2 ? p2 : p1;
 		}
-
-		TypeInfo<void> voidType;
 	}
+	version_type calculateObjVersion(ConstCommonObject obj){
+		AIO_PRE_CONDITION(obj.valid());
+		sha1 sha;
+		iref<io::writer> sink(sha);
+		obj.type().methods().serialize(sink.get<io::writer>(), obj);
 
-	TypeInfoHandle::~TypeInfoHandle() {}
+		version_type ver;
+		ver.id = sha.get_digest();
+		return std::move(ver);
+	}
 
 	TypeMethods& DefaultMethods()
 	{
@@ -53,7 +62,7 @@ namespace xirang { namespace type{
         typedef std::reverse_iterator<SubObjRange::iterator> iterator_type;
         for (SubObjRange::iterator itr (iterator_type(members.end())), end(iterator_type(members.begin()));
             itr != end; ++itr)
-        {   
+        {
             SubObject ti = *itr;
             Type t2 = ti.type();
             if (!t2.isPod())
@@ -77,10 +86,10 @@ namespace xirang { namespace type{
 			std::memcpy(dest.data(), src.data(), t.payload());
 			return;
 		}
-        
+
         ConstSubObjRange rng_src = src.members();
         SubObjRange rng_dest = dest.members();
-        
+
         ConstSubObjRange::iterator itr_src = rng_src.begin();
         SubObjRange::iterator itr_dest = rng_dest.begin();
         for (; itr_src != rng_src.end(); ++itr_src, ++itr_dest)
@@ -122,13 +131,54 @@ namespace xirang { namespace type{
 			}
 		}
 	}
-	const TypeInfoHandle& TypeMethods::typeinfo() const
-	{
-		return voidType;
+	void TypeMethods::serialize(io::writer& wr, ConstCommonObject obj){
+		AIO_PRE_CONDITION(obj.valid());
+		AIO_PRE_CONDITION(&obj.type().methods() == this );
+
+		for (auto &i : obj.members()){
+			i.type().methods().serialize(wr, i.asCommonObject());
+		}
 	}
+	void TypeMethods::deserialize(io::reader& rd, CommonObject obj, heap& inner, ext_heap& outer){
+		AIO_PRE_CONDITION(obj.valid());
+		AIO_PRE_CONDITION(&obj.type().methods() == this );
+
+		for (auto &i : obj.members()){
+			i.type().methods().deserialize(rd, i.asCommonObject(), inner, outer);
+		}
+	}
+
 	const MethodsExtension* TypeMethods::extension() const
 	{
 		return 0;
+	}
+
+	version_type TypeMethods::getTypeVersion(Type t) const{
+		AIO_PRE_CONDITION(t.valid());
+		AIO_PRE_CONDITION(&t.methods() == this );
+		sha1 sha;
+		calculateTypeSha(sha, t);
+
+		version_type ver;
+		ver.id = sha.get_digest();
+		return std::move(ver);
+	}
+	// TODO: unified type sha & serialization
+	void TypeMethods::calculateTypeSha(sha1& sha, Type t) const{
+		AIO_PRE_CONDITION(t.valid());
+		AIO_PRE_CONDITION(&t.methods() == this );
+
+		auto s = io::exchange::as_sink(sha);
+		AIO_PRE_CONDITION(t.valid());
+		s & t.modelName() & t.model();
+		for (auto& i : t.args())
+			s & i.name() & i.typeName() & i.type();
+		for (auto& i : t.members())
+			s & i.name() & i.typeName() & i.type();
+	}
+	static const string K_GenericType(".sys.type.generic$");
+	const string& TypeMethods::internalID() const{
+		return K_GenericType;
 	}
 
     size_t hasher<string>::apply(ConstCommonObject obj)

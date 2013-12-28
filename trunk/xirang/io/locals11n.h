@@ -14,10 +14,10 @@ namespace xirang{ namespace io{ namespace local{
 	template<typename Ar> serializer<Ar> as_sink(Ar& ar){ return serializer<Ar>(ar);}
 	template<typename Ar> deserializer<Ar> as_source(Ar& ar){ return deserializer<Ar>(ar);}
 
-	template<typename Ar, typename T, 
-		typename = typename std::enable_if<std::is_scalar<T>::value && 
+	template<typename Ar, typename T,
+		typename = typename std::enable_if<std::is_scalar<T>::value &&
 			s11n::is_serializer<Ar>::value>::type>
-		Ar save(Ar wt, const T& t)
+		Ar& save(Ar& wt, const T& t)
 		{
 			const byte* first = reinterpret_cast<const byte*>(&t);
 			const byte* last = reinterpret_cast<const byte*>(&t + 1);
@@ -28,9 +28,9 @@ namespace xirang{ namespace io{ namespace local{
 		}
 
 	template<typename T, typename Ar,
-		typename = typename std::enable_if<std::is_scalar<T>::value && 
+		typename = typename std::enable_if<std::is_scalar<T>::value &&
 			s11n::is_deserializer<Ar>::value>::type>
-		Ar load(Ar rd, T& t)
+		Ar& load(Ar& rd, T& t)
 		{
 			byte* first = reinterpret_cast<byte*>(&t);
 			byte* last = reinterpret_cast<byte*>(&t + 1);

@@ -36,7 +36,7 @@ namespace xirang{ namespace type{
 		public:
 			TypeImp()
 				: modelType(0)
-				, payload(Type::no_size), alignment(0), instanceCount(0), referenceCount(0)
+				, payload(Type::no_size), alignment(0)
 				, unresolvedArgs(0)
 				, isPod(true)
 				, parent(0), methods(0)
@@ -54,12 +54,13 @@ namespace xirang{ namespace type{
 
 			std::size_t payload;	// cached value
 			std::size_t alignment;	// cached value;
-			std::size_t instanceCount;
-			std::size_t referenceCount;
 			std::size_t unresolvedArgs;	//cached value
             bool isPod;
+			bool version_cached = false;
 			NamespaceImp *parent;
 			TypeMethods *methods;
+			revision_type revision = 0;
+			version_type version;
 
 			std::size_t members() const { return items.size(); }
 			bool isMemberResolved() const { return payload != Type::no_size; }
@@ -73,8 +74,6 @@ namespace xirang{ namespace type{
 
                 other.payload = payload;
                 other.alignment = alignment;
-                other.instanceCount = instanceCount ;
-                other.referenceCount = referenceCount;
                 other.unresolvedArgs = unresolvedArgs;
                 other.isPod = isPod;
                 other.methods = methods;
@@ -86,7 +85,7 @@ namespace xirang{ namespace type{
 		typedef std::vector < TypeItemImp >::iterator RealIterator;
 		TypeItemIteratorImp(const RealIterator& itr) : rpos(itr){}
 
-		const TypeItem& operator*() const { 
+		const TypeItem& operator*() const {
             cache = TypeItem(&*rpos);
             return cache;
         }
@@ -105,7 +104,7 @@ namespace xirang{ namespace type{
 		typedef std::vector < TypeArgImp >::iterator RealIterator;
 		TypeArgIteratorImp(const RealIterator& itr) : rpos(itr){}
 
-		const TypeArg& operator*() const { 
+		const TypeArg& operator*() const {
             cache = TypeArg(&*rpos);
             return cache;
         }

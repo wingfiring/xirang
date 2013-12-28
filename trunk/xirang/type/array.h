@@ -5,9 +5,8 @@
 #include <xirang/type/object.h>
 #include <xirang/type/typebinder.h>
 #include <xirang/type/xrbase.h>
-
-//AIO
 #include <xirang/io.h>
+#include <xirang/io/s11nbase.h>
 
 //STL
 #include <iterator>
@@ -38,7 +37,7 @@ namespace xirang { namespace type{
 
             /// construct the iterator with given type and offset
             /// \param t given type, t.valid() can be true or false
-            /// \param p given address. p should be null if !t.valid()            
+            /// \param p given address. p should be null if !t.valid()
 			const_iterator(Type t, const byte* p) {
                 if (p)
                     m_obj = CommonObject(t, const_cast<byte*>(p));
@@ -73,7 +72,7 @@ namespace xirang { namespace type{
 			}
 
             /// postfix increase iterator
-            /// \pre valid()            
+            /// \pre valid()
 			const_iterator operator++(int)
 			{
 				AIO_PRE_CONDITION(valid());
@@ -155,11 +154,11 @@ namespace xirang { namespace type{
 			}
 
             /// get data pointer of referenced object
-			const byte* data() const { 
+			const byte* data() const {
                 return reinterpret_cast<const byte*>(m_obj.data());
             }
 
-            /// get Type of referenced object, returned type can be invalid.            
+            /// get Type of referenced object, returned type can be invalid.
             Type type() const{
                 return m_obj.type();
             }
@@ -186,7 +185,7 @@ namespace xirang { namespace type{
 
             /// construct the iterator with given type and offset
             /// \param t given type, t.valid() can be true or false
-            /// \param p given address. p should be null if !t.valid() 
+            /// \param p given address. p should be null if !t.valid()
 			iterator(Type t, byte* p) : const_iterator(t, p){}
 
             /// dereference operator
@@ -299,7 +298,7 @@ namespace xirang { namespace type{
 
             /// get data pointer of referenced object
             /// \pre valid()
-			byte* data() const { 
+			byte* data() const {
                 AIO_PRE_CONDITION(valid());
                 return reinterpret_cast<byte*>(m_obj.data());
             }
@@ -321,7 +320,7 @@ namespace xirang { namespace type{
 
         /// dtor
 		~Array();
-		
+
         /// assign other to this
         /// \post *this == other
 		void assign(const Array& other);
@@ -417,7 +416,7 @@ namespace xirang { namespace type{
 		iterator erase(iterator pos);
 
         /// set the array with given size.
-        /// if size == size(), no action. 
+        /// if size == size(), no action.
         ///         > size(), append size - size() element at the end.
         ///         < size(), erase the elements which index great than or equal to size
         /// \pre valid()
@@ -447,57 +446,58 @@ namespace xirang { namespace type{
 	};
     DEFINE_COMPARE (Array);
 
+
     inline bool operator==(const Array::const_iterator& lhs, const Array::const_iterator& rhs)
-    { 
+    {
 		AIO_PRE_CONDITION(lhs.type() == rhs.type());
-		return lhs.data() == rhs.data(); 
+		return lhs.data() == rhs.data();
 	}
 
     inline bool operator!=(const Array::const_iterator& lhs, const Array::const_iterator& rhs)
-    { 
+    {
 		AIO_PRE_CONDITION(lhs.type() == rhs.type());
-		return lhs.data() != rhs.data(); 
+		return lhs.data() != rhs.data();
 	}
 
     inline bool operator<(const Array::const_iterator& lhs, const Array::const_iterator& rhs)
-    { 
+    {
 		AIO_PRE_CONDITION(lhs.type() == rhs.type());
-		return lhs.data() < rhs.data(); 
+		return lhs.data() < rhs.data();
 	}
 
     inline bool operator>(const Array::const_iterator& lhs, const Array::const_iterator& rhs)
-    { 
+    {
 		AIO_PRE_CONDITION(lhs.type() == rhs.type());
-		return lhs.data() > rhs.data(); 
+		return lhs.data() > rhs.data();
 	}
 
     inline bool operator<=(const Array::const_iterator& lhs, const Array::const_iterator& rhs)
-    { 
+    {
 		AIO_PRE_CONDITION(lhs.type() == rhs.type());
-		return lhs.data() <= rhs.data(); 
+		return lhs.data() <= rhs.data();
 	}
 
     inline bool operator>=(const Array::const_iterator& lhs, const Array::const_iterator& rhs)
-    { 
+    {
 		AIO_PRE_CONDITION(lhs.type() == rhs.type());
-		return lhs.data() >= rhs.data(); 
+		return lhs.data() >= rhs.data();
 	}
 
 	inline Array::const_iterator::difference_type operator-(const Array::const_iterator& lhs,
 	      const Array::const_iterator& rhs)
     {
 		AIO_PRE_CONDITION(lhs.type() == rhs.type());
-		return (lhs.data() - rhs.data()) / lhs.type().payload(); 
+		return (lhs.data() - rhs.data()) / lhs.type().payload();
 	}
 
     inline Array::const_iterator operator+(Array::const_iterator::difference_type n, const Array::const_iterator& i)
-    { 
-		return i + n; 
+    {
+		return i + n;
 	}
 
     inline Array::iterator operator+(Array::iterator::difference_type n, const Array::iterator& i)
-    { 
-		return i + n; 
+    {
+		return i + n;
 	}
 
 	template<> struct constructor<Array>{
@@ -511,6 +511,14 @@ namespace xirang { namespace type{
 	template<> struct comparison<Array> {
 		static int apply(ConstCommonObject lhs,ConstCommonObject rhs) ;
 	};
+
+	template<> struct serializer<Array> {
+		static void apply(io::writer& wr, ConstCommonObject obj);
+	};
+	template<> struct deserializer<Array> {
+		static void apply(io::reader& rd, CommonObject obj, heap& inner, ext_heap& outer);
+	};
+
 }} // namespace xirang::type
 
 #endif //end XIRANG_ARRAY_H

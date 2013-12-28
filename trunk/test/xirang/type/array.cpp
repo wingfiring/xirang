@@ -4,6 +4,7 @@
 #include <xirang/type/typebinder.h>
 #include <xirang/type/binder.h>
 #include <xirang/type/array.h>
+#include <xirang/type/nativetypeversion.h>
 
 #include <vector>
 #include <iostream>
@@ -51,7 +52,7 @@ BOOST_AUTO_TEST_CASE(array_case)
     BOOST_CHECK(bind<int>(arr1[0]) == meaning);
     ++bind<int>(arr1[0]);
     BOOST_CHECK(bind<int>(arr1[0]) == meaning + 1);
-    
+
     arr1.insert(arr1.begin(), obj_meaning);
     BOOST_CHECK(arr1.size() == 2);
     BOOST_CHECK(arr1.begin() + 2 == arr1.end());
@@ -75,7 +76,7 @@ BOOST_AUTO_TEST_CASE(array_case)
     BOOST_CHECK(bind<int>(arr1[0]) == 0);
     BOOST_CHECK(bind<int>(arr1[1]) == 0);
     BOOST_CHECK(bind<int>(arr1[29]) == 0);
-   
+
     arr1.resize(5);
     BOOST_CHECK(arr1.size() == 5);
     BOOST_CHECK(bind<int>(arr1[0]) == 0);
@@ -120,7 +121,7 @@ BOOST_AUTO_TEST_CASE(array_case)
     BOOST_CHECK(bind<string>(arr3[0]) == str);
     BOOST_CHECK(bind<string>(arr3[1]) == str);
     BOOST_CHECK(bind<string>(arr3[9]) == str);
-    
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

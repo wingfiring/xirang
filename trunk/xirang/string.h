@@ -22,7 +22,7 @@
 
 namespace xirang
 {
-	//force the signature independs on std::char_traits, 
+	//force the signature independs on std::char_traits,
 	//because thre real signature of std::char_traits maybe changed
 	template<typename CharT>
 	struct char_traits{
@@ -31,10 +31,10 @@ namespace xirang
 	template<typename T, typename U>
 	struct concator;
 
-	template<typename T> struct is_concator{ 
+	template<typename T> struct is_concator{
 		static const bool value = false;
 	};
-	template<typename T, typename U> struct is_concator<concator<T, U>>{ 
+	template<typename T, typename U> struct is_concator<concator<T, U>>{
 		static const bool value = true;
 	};
 
@@ -48,7 +48,7 @@ namespace xirang
 	public:
 		typedef typename char_traits<CharT>::type traits_type;	//std::basic_string comptible
 		typedef typename traits_type::char_type char_type;
-        
+
 		typedef CharT value_type;
 
 		typedef std::size_t size_type;
@@ -61,10 +61,10 @@ namespace xirang
 		typedef const char_type& const_reference;
 		typedef const char_type* const_pointer;
 		typedef const_pointer const_iterator;
-	
+
 		static const size_type npos = size_type(-1);
 
-		/// \ctor 
+		/// \ctor
 		/// \post empty()
 		basic_range_string() : m_beg(0), m_end(0){}
 
@@ -75,15 +75,15 @@ namespace xirang
 			AIO_PRE_CONDITION(first == last || first != 0);
 		}
 
-		// convert non-const to const 
+		// convert non-const to const
 		template<typename UCharT>
 			basic_range_string (const basic_range_string<UCharT>& rhs)
 			: m_beg(rhs.begin()), m_end(rhs.end())
 			{}
 
 
-		/// \ctor 
-		explicit basic_range_string(pointer str) 
+		/// \ctor
+		explicit basic_range_string(pointer str)
 			: m_beg(str), m_end(str + traits_type::length(str))
 		{
 			AIO_PRE_CONDITION(str != 0);
@@ -103,7 +103,7 @@ namespace xirang
 			: m_beg(r.begin()), m_end(r.end())
 		{ }
 		template<typename Range, typename Enable = typename std::enable_if<!is_concator<Range>::value, void>::type>
-		explicit basic_range_string(const Range& r) 
+		explicit basic_range_string(const Range& r)
 			: m_beg(0), m_end(0)
 		{
 			if (!r.empty()){
@@ -112,7 +112,7 @@ namespace xirang
 			}
 		}
 		template<typename Range, typename Enable = typename std::enable_if<!is_concator<Range>::value, void>::type>
-		explicit basic_range_string(Range& r) 
+		explicit basic_range_string(Range& r)
 			: m_beg(0), m_end(0){
 			if (!r.empty()){
 				m_beg = &*r.begin();
@@ -142,8 +142,8 @@ namespace xirang
 			std::swap(m_beg, rhs.m_beg);
 			std::swap(m_end, rhs.m_end);
 		}
-		
-		friend void swap(basic_range_string& lhs, basic_range_string& rhs) 
+
+		friend void swap(basic_range_string& lhs, basic_range_string& rhs)
 		{
 			lhs.swap(rhs);
 		}
@@ -165,7 +165,7 @@ namespace xirang
 		}
 
 		/// if equal, return 0. if lhs < rhs, return negtive, otherwise return > 0
-		static int compare(const_pointer lhs, size_type lhs_size, 
+		static int compare(const_pointer lhs, size_type lhs_size,
 			const_pointer rhs, size_type rhs_size)
 		{
             const_pointer lhs_end = lhs + lhs_size;
@@ -174,7 +174,7 @@ namespace xirang
             {
                 int test = *lhs - *rhs;
                 if (test != 0) return test;
-            }                
+            }
 
             if (lhs != lhs_end) //rhs == rhs_end
                 return 1;
@@ -249,9 +249,9 @@ namespace xirang
 		static data_type* new_data2(heap& hp, size_type n)
 		{
 			AIO_PRE_CONDITION(n > 0);
-			data_type* p =  
+			data_type* p =
 				reinterpret_cast<data_type* >(hp.malloc(
-					sizeof(data_type) +  sizeof(CharT) * n 
+					sizeof(data_type) +  sizeof(CharT) * n
 				, sizeof(std::size_t), 0));
 			p->heap_ptr = &hp;
 			p->counter.value = 1;
@@ -288,26 +288,26 @@ namespace xirang
 
 		basic_string() : m_data(0){}
 
-		basic_string(const basic_range_string<const CharT>& src) 
+		basic_string(const basic_range_string<const CharT>& src)
 			: m_data(0)
 		{
 			m_data = src.size() > 0 ? new_data(get_heap(), src.data(), src.size()) : 0;
 		}
-		basic_string(const basic_range_string<const CharT>& src, heap& h) 
+		basic_string(const basic_range_string<const CharT>& src, heap& h)
 			: m_data(0)
 		{
 			m_data = src.size() > 0 ? new_data(h, src.data(), src.size()) : 0;
 		}
-		
+
 		template<size_t N>
-		basic_string(const CharT (&src)[N]) 
+		basic_string(const CharT (&src)[N])
 			: m_data(0)
 		{
 			if (N > 0)
 				m_data = new_data(get_heap(), src, N - 1);
 		}
 
-		basic_string(const_pointer src) 
+		basic_string(const_pointer src)
 			: m_data(0)
 		{
 			AIO_PRE_CONDITION(src != 0);
@@ -316,20 +316,20 @@ namespace xirang
 		}
 
 		basic_string(const_pointer src
-					 , heap& h) 
+					 , heap& h)
 		: m_data(0)
 		{
 			AIO_PRE_CONDITION(src != 0);
 			size_type len = traits_type::length(src);
 			m_data = len > 0 ? new_data(h, src, len) : 0;
 		}
-		basic_string(basic_string&& rhs) 
+		basic_string(basic_string&& rhs)
 			: m_data(rhs.m_data)
 		{
 			rhs.m_data = 0;
 		}
 
-		basic_string(const basic_string& rhs) 
+		basic_string(const basic_string& rhs)
 			: m_data(rhs.m_data)
 		{
 			if (!empty())
@@ -339,7 +339,7 @@ namespace xirang
 		}
 
 		template<typename Range, typename Enable = typename std::enable_if<!is_concator<Range>::value, void>::type>
-		explicit basic_string(const Range& r) 
+		explicit basic_string(const Range& r)
 			: m_data(0)
 		{
 			size_type len = std::distance(r.begin(), r.end());
@@ -357,7 +357,7 @@ namespace xirang
 		}
 
 		template<typename Range, typename Enable = typename std::enable_if<!is_concator<Range>::value, void>::type>
-		explicit basic_string(const Range& r , heap& h) 
+		explicit basic_string(const Range& r , heap& h)
 		: m_data(0)
 		{
 			size_type len = std::distance(r.begin(), r.end());
@@ -373,14 +373,14 @@ namespace xirang
                 m_data->hash_self();
 			}
 		}
-		
+
 		basic_string& operator=(const basic_string& rhs)
 		{
 			if (this->m_data != rhs.m_data)
 				basic_string(rhs).swap(*this);
 			return *this;
 		}
-		basic_string& operator=(basic_string&& rhs) 
+		basic_string& operator=(basic_string&& rhs)
 		{
 			basic_string(std::move(rhs)).swap(*this);
 			return *this;
@@ -409,8 +409,8 @@ namespace xirang
 			return range_str();
 		}
 		basic_range_string<const CharT> range_str() const{
-			return empty() 
-				? basic_range_string<const CharT>() 
+			return empty()
+				? basic_range_string<const CharT>()
 				: basic_range_string<const CharT>(begin(), end());
 
 		}
@@ -447,7 +447,7 @@ namespace xirang
 			return m_data->data[index];
 		}
 
-		heap& get_heap() const { 
+		heap& get_heap() const {
 			return empty() ? memory::get_global_heap() : *m_data->heap_ptr;
 		}
 
@@ -519,7 +519,7 @@ namespace xirang
 			return s->copy_(buf, pos, s->right);
 		}
 
-		explicit concator(const T& lhs, const U& rhs) 
+		explicit concator(const T& lhs, const U& rhs)
 			: left(&lhs), right(&rhs)
 		{}
 
@@ -528,10 +528,10 @@ namespace xirang
 
 		template<typename CT, typename CU, typename Str, typename>
 		friend concator<concator<CT, CU>, Str> operator<< (concator<CT, CU>&& lhs, const Str& rhs);
-		
+
 		template<typename Str, typename CT, typename CU, typename>
 		friend concator<Str, concator<CT,CU> > operator<< (const Str& lhs, concator<CT, CU>&& rhs);
-		
+
 		template<typename CT1, typename CU1, typename CT2, typename CU2>
 		friend concator<concator<CT1, CT2>, concator<CT2,CU2> > operator<< (concator<CT1, CU1>&& lhs, concator<CT2, CU2>&& rhs);
 
@@ -598,10 +598,7 @@ namespace xirang
 	std::basic_ostream<CharT >& operator<<(
 		std::basic_ostream<CharT >& os, const basic_range_string<const CharT>& out)
 	{
-		for (typename basic_range_string<const CharT>::const_pointer p (out.data())
-			, end(out.data() + out.size()); p != end; ++ p)
-			os << *p;
-		return os;
+		return os << basic_string<CharT>(out);
 	}
 
 	///This class intends to be used to hold an immutable string
@@ -755,7 +752,7 @@ namespace xirang
 				m_data[m_size] = CharT();
 			}
 		}
-		
+
 		basic_string_builder(const basic_string<CharT>& rhs
 				, heap& h = memory::get_global_heap())
 			: m_heap(&h)
@@ -827,11 +824,11 @@ namespace xirang
 			basic_string_builder<CharT>(r, *m_heap).swap(*this);
 			return *this;
 		}
-	
+
 		//memory
 		size_type capacity() const	{ return m_capacity;}
 		size_type size() const	{ return m_size;}
-		void reserve(size_type n) 
+		void reserve(size_type n)
 		{
 			if (n > m_capacity)
 			{
@@ -901,7 +898,7 @@ namespace xirang
 				pointer np = malloc_(ncap);
 				pointer ni = std::copy(begin(), pos, np);
 				std::fill_n(ni, n, ch);
-                ni += n; 
+                ni += n;
 				std::copy(pos, end(), ni);
 				if (m_data)
 					free_(m_data, m_capacity);
@@ -988,7 +985,7 @@ namespace xirang
 		{
 			return insert(end(), r);
 		}
-        
+
 		basic_string_builder& append(const basic_string<CharT>& r)
 		{
 			return insert(end(), to_range(r));
@@ -1013,7 +1010,7 @@ namespace xirang
 			m_data[m_size] = CharT();
 			return *this;
 		}
-	
+
 		//erase
 		iterator erase(iterator p)
 		{
@@ -1108,7 +1105,7 @@ namespace xirang
 
 		//extract
 
-		operator basic_range_string<CharT> () 
+		operator basic_range_string<CharT> ()
 		{
 			return basic_range_string<CharT>(begin(), end());
 		}
@@ -1176,7 +1173,7 @@ namespace xirang
 		heap& get_heap() const { return *m_heap; }
 
 		/// if equal, return 0. if lhs < rhs, return negtive, otherwise return > 0
-		static int compare(const_pointer lhs, size_type lhs_size, 
+		static int compare(const_pointer lhs, size_type lhs_size,
 			const_pointer rhs, size_type rhs_size)
 		{
             const_pointer lhs_end = lhs + lhs_size;
@@ -1185,7 +1182,7 @@ namespace xirang
             {
                 size_t test = *lhs - *rhs;
                 if (test != 0) return test;
-            }                
+            }
 
             if (lhs != lhs_end) //rhs == rhs_end
                 return 1;
@@ -1194,7 +1191,7 @@ namespace xirang
             return 0;
 		}
 
-	private:		
+	private:
 		pointer malloc_(size_type ncap)
 		{
 			return reinterpret_cast<pointer>(m_heap->malloc(ncap * sizeof(CharT), sizeof(CharT), 0));
@@ -1225,7 +1222,7 @@ namespace xirang
 		size_type m_size;
 		pointer m_data;
 	};
-	
+
 	template<typename CharT>
 	bool operator< ( const basic_string_builder<CharT>& lhs, const basic_string_builder<CharT>& rhs)
 	{
@@ -1252,14 +1249,14 @@ namespace xirang
 	template<typename StringType>
 	range<buffer<byte>::iterator> string_to_range( StringType & cont)
 	{
-		return make_range(reinterpret_cast<buffer<byte>::iterator>(cont.begin()), 
+		return make_range(reinterpret_cast<buffer<byte>::iterator>(cont.begin()),
 				reinterpret_cast<buffer<byte>::iterator>(cont.end()));
 	}
 
 	template<typename StringType>
 	range<buffer<byte>::const_iterator> string_to_c_range( const StringType & cont)
 	{
-		return make_range(reinterpret_cast<buffer<byte>::const_iterator>(cont.begin()), 
+		return make_range(reinterpret_cast<buffer<byte>::const_iterator>(cont.begin()),
 				reinterpret_cast<buffer<byte>::const_iterator>(cont.end()));
 	}
 }

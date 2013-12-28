@@ -11,7 +11,7 @@ namespace xirang { namespace type{
   struct Serializer;
   struct DeSerializer;
 
-  
+
   //handle of a type member item owned by Type.
   class TypeItem;
   typedef BiRangeT<const_itr_traits<TypeItem> > TypeItemRange;
@@ -59,10 +59,9 @@ namespace xirang { namespace type{
   class ImpAccessor;
 
   inline int comparePtr(const void* p1, const void* p2) {
-      size_t d = reinterpret_cast<const char*>(p1) - reinterpret_cast<const char*>(p2);
-      if (d < 0)
+	  if (p1 < p2)
           return -1;
-      if (d > 0)
+	  if (p1 > p2)
           return 1;
       return 0;
   }
