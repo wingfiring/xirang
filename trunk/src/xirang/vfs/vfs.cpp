@@ -9,7 +9,7 @@
 namespace xirang{ namespace vfs{
 	IVfs::~IVfs(){}
 
-    any IVfs::getopt(int /*id*/, const any & /*optdata = any() */) const 
+    any IVfs::getopt(int /*id*/, const any & /*optdata = any() */) const
     {
         return any();
     }
@@ -17,6 +17,10 @@ namespace xirang{ namespace vfs{
     {
         return any();
     }
+	IRepository* IVfs::getRepository(const file_path& p, file_path* rest, file_path* repo_path){
+		return 0;
+	}
+	void IVfs::releaseRepository(const file_path& p){ }
 
     class RootFsImp
 	{
@@ -37,13 +41,13 @@ namespace xirang{ namespace vfs{
                     return m_value;
 				}
                 const MountInfo* operator->() const
-                {   
+                {
                     return &**this;
                 }
 				MountInfoIterator& operator++()	{ ++m_pos; return *this;}
-				MountInfoIterator operator++(int) { 
-					MountInfoIterator ret = *this; 
-					++*this; 
+				MountInfoIterator operator++(int) {
+					MountInfoIterator ret = *this;
+					++*this;
 					return ret;
 				}
 
@@ -88,7 +92,7 @@ namespace xirang{ namespace vfs{
 				vfs.setRoot(m_host);
 				return fs::er_ok;
 			}
-			
+
 			return fs::er_not_a_mount_point;
 		}
 
@@ -185,7 +189,7 @@ namespace xirang{ namespace vfs{
 					ret.node.path = relative_path;
 					return ret;
 				}
-			} 
+			}
 
 			if (pos != m_mount_map.left.end()){
 				if (pos->first == path || pos->first.contains(path))
@@ -348,7 +352,7 @@ namespace xirang{ namespace vfs{
                     return ret;
             }
         }
-        
+
         return vfs.remove(path);
     }
 

@@ -45,7 +45,7 @@ namespace xirang { namespace vfs{ namespace detail{
 	template<> struct interface_mask<io::write_map>{
 		static const unsigned long long value = 1 << 10;
 	};
-	
+
 	template<typename I, typename... Interfaces> struct get_mask{
 		static const unsigned long long value = interface_mask<I>::value | get_mask<Interfaces...>::value;
 	};
@@ -84,14 +84,14 @@ namespace xirang { namespace vfs{ namespace detail{
 		};
 
 		template<typename... Interfaces> struct copy_interface_helper;
-		
+
 		template<> struct copy_interface_helper<mpl::seq<>> {
 			template<typename IRef>
-			static void** copy(unsigned long long , void** ret, const IRef& , void* ){ 
+			static void** copy(unsigned long long , void** ret, const IRef& , void* ){
 				return ret;
 			}
 		};
-		template<typename T, typename... Interfaces> 
+		template<typename T, typename... Interfaces>
 			struct copy_interface_helper<mpl::seq<T, Interfaces...>> {
 			template<typename IRef>
 			static void** copy(unsigned long long mask, void** ret, const IRef& ref, void* this_){
@@ -104,7 +104,7 @@ namespace xirang { namespace vfs{ namespace detail{
 		};
 	}
 	template<typename... Interfaces> struct copy_interface{
-		template<typename CoClass> 
+		template<typename CoClass>
 			static void** apply(unsigned long long mask, void** ret, CoClass& ref, void* this_){
 				if((mask & detail::get_mask<Interfaces...>::value) != mask)
 					AIO_THROW(unsupport_interface);
@@ -152,38 +152,39 @@ namespace xirang { namespace vfs{ namespace detail{
 
 	typedef BiRangeT<const_itr_traits<MountInfo> > VfsRange;
 	typedef BiRangeT<const_itr_traits<VfsNode> > VfsNodeRange;
-	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
+	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type
 		create(IVfs& fs, sub_file_path path, int flag);
 
+	class IRepository;
     /// \notes 1. all vfs modifications will return er_ok or not null archive_ptr if succeeded.
     ///     2. the path or file name must be xirang style, separated by "/".
     ///     3. supported file name character set is depends on vfs implementation.
-    ///     4. the returned fs_error is implementation defined, if user just depends on IVfs, should not assume 
+    ///     4. the returned fs_error is implementation defined, if user just depends on IVfs, should not assume
     ///         which error code will be returned, except return er_ok case. but, for a known vfs imp, the error code should be determinated.
-    /// 
+    ///
 	class IVfs
 	{
 		public:
 		/// common operations of dir and file
-        /// \pre path must not end with '/'. 
+        /// \pre path must not end with '/'.
 		/// \pre !absolute(path)
-        /// \notes the result of removeing a opended file is depends on implementation capability.. 
+        /// \notes the result of removeing a opended file is depends on implementation capability..
 		virtual fs_error remove(sub_file_path path) = 0;
 
 		/// create dir
-        /// \pre path must not end with '/'. 
+        /// \pre path must not end with '/'.
 		/// \pre !absolute(path)
         /// \notes if the parent of path is not exist, failed.
         /// \notes the result depends on implementation capability.
 		virtual fs_error createDir(sub_file_path path) = 0;
 
-		template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
+		template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type
 			create(sub_file_path path, int flag){
 			return xirang::vfs::create<Interfaces...>(*this, path, flag);
 		}
 
         /// copy file via file path
-        /// \pre path must not end with '/'. 
+        /// \pre path must not end with '/'.
 		/// \pre !absolute(to)
         /// \pre !absolute(from) || mounted()
 		/// if from and to in same fs, it may have a more effective implementation
@@ -191,13 +192,13 @@ namespace xirang { namespace vfs{ namespace detail{
 		virtual fs_error copy(sub_file_path from, sub_file_path to) = 0;
 
         /// truncate a file with given size
-        /// \pre path must not end with '/'. 
+        /// \pre path must not end with '/'.
 		/// \pre !absolute(to)
 		virtual fs_error truncate(sub_file_path path, long_size_t s) = 0;
 
         /// flush buffered data to underly media. implementation defined.
 		virtual void sync() = 0;
-		
+
 		/// query
 		virtual const string& resource() const = 0;
 
@@ -208,19 +209,19 @@ namespace xirang { namespace vfs{ namespace detail{
 		/// \post mounted() && root() || !mounted() && !root()
 		virtual bool mounted() const = 0;
 
-		/// \return mounted() ? absolute() : empty() 
+		/// \return mounted() ? absolute() : empty()
 		virtual file_path mountPoint() const = 0;
 
-        /// \pre path must not end with '/'. 
+        /// \pre path must not end with '/'.
 		/// \pre !absolute(path)
         /// \return returned path in VfsNode is file name, not full path.
 		virtual VfsNodeRange children(sub_file_path path) const = 0;
 
-        /// \pre path must not end with '/'. 
+        /// \pre path must not end with '/'.
 		/// \pre !absolute(path)
         /// \return returned path in VfsNode is full path. it's different from children()
 		virtual VfsState state(sub_file_path path) const = 0;
-	
+
         /// get the option with given id and data
         /// if failed, return a empty any, otherwise depends on the input value.
         /// all options are implementation defined
@@ -236,22 +237,28 @@ namespace xirang { namespace vfs{ namespace detail{
 		/// create or open file
         /// \param compound flag of io::archive_mode
         /// \param flag one of io::open_flag
-        /// \pre path must not end with '/'. 
+        /// \pre path must not end with '/'.
 		/// \pre !absolute(path)
-        /// \notes the capability of returned archive_ptr must greater than or equal to given mode. 
+        /// \notes the capability of returned archive_ptr must greater than or equal to given mode.
         ///         but if user code just depends on IVfs, should not assume the addational capability not specified by given mode
         /// \notes if the parent of path is not exist, failed.
         /// \notes the result depends on implementation capability.
 		virtual void** do_create(unsigned long long mask,
 				void** ret, unique_ptr<void>& owner, sub_file_path path, int flag) = 0;
 
+		/// it may create the repository on demand, so this API is not const
+		/// TODO:the returned value need to be shared_ptr
+		virtual IRepository* getRepository(const file_path& p, file_path* rest, file_path* repo_path);
+
+		/// clean related IRepository instance. this call is only a notification.
+		virtual void releaseRepository(const file_path& p);
 	private:
 		// if r == null, means unmount, used by RootFs only
 		virtual void setRoot(RootFs* r) = 0;
 
 		friend class RootFsImp;
 	};
-	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
+	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type
 		create(IVfs& vfs, sub_file_path path, int flag){
 			typedef typename private_::sorted_iauto<Interfaces...>::type interface_type;
 			const auto mask = detail::get_mask<Interfaces...>::value;
@@ -284,7 +291,7 @@ namespace xirang { namespace vfs{ namespace detail{
 		virtual void sync(){
 			return get_cobj<CoClass>(this).sync();
 		}
-		
+
 		virtual const string& resource() const{
 			return get_cobj<CoClass>(this).resource();
 		}
@@ -308,7 +315,7 @@ namespace xirang { namespace vfs{ namespace detail{
 		virtual VfsState state(sub_file_path path) const{
 			return get_cobj<CoClass>(this).state(path);
 		}
-	
+
         virtual any getopt(int id, const any & optdata) const{
 			return get_cobj<CoClass>(this).getopt(id, optdata);
 		}
@@ -337,9 +344,9 @@ namespace xirang { namespace vfs{ namespace detail{
 	template<typename CoClass>
 	IVfsCo<CoClass> get_interface_map(IVfs*, CoClass*);
 
-	class RootFs 
+	class RootFs
 	{
-	public:	
+	public:
 		explicit RootFs(const string& res);
 		~RootFs();
 
@@ -363,7 +370,7 @@ namespace xirang { namespace vfs{ namespace detail{
 
         // return true if path contains mount pointer in direct/indirect subdir, excluding self.
 		bool containMountPoint(sub_file_path path) const;
-		
+
 
 		//Methods of IVfs
 		fs_error remove(sub_file_path path);
@@ -375,7 +382,7 @@ namespace xirang { namespace vfs{ namespace detail{
 		void** do_create(unsigned long long mask,
 				void** ret, unique_ptr<void>& owner, sub_file_path path, int flag);
 
-	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
+	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type
 		create(sub_file_path path, int flag){
 			typedef typename private_::sorted_iauto<Interfaces...>::type interface_type;
 			const auto mask = detail::get_mask<Interfaces...>::value;
@@ -390,7 +397,7 @@ namespace xirang { namespace vfs{ namespace detail{
 		RootFsImp* m_imp;
 	};
 
-	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
+	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type
     temp_file(IVfs& vfs, sub_file_path template_ , sub_file_path parent_dir
 			, int flag = io::of_remove_on_close, file_path* path = 0){
         AIO_PRE_CONDITION(flag == 0 ||  flag  == io::of_remove_on_close);
@@ -420,7 +427,7 @@ namespace xirang { namespace vfs{ namespace detail{
     fs_error recursive_remove(IVfs&vfs, sub_file_path path);
     fs_error recursive_create_dir(IVfs&vfs, sub_file_path path);
 
-	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type 
+	template<typename... Interfaces> typename private_::sorted_iauto<Interfaces...>::type
     recursive_create(IVfs&vfs, sub_file_path path, int flag){
         fs_error err = recursive_create_dir(vfs, path.parent());
         if (err != fs::er_ok)
