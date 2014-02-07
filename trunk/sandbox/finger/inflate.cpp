@@ -23,7 +23,7 @@ int main(int argc, char** argv){
 		iref<io::read_map> rd(reader);
 		iref<io::write_map> wr(writer);
 
-		auto result = zip::inflate(rd.get<io::read_map>(), wr.get<io::write_map>());
+		auto result = zip::inflate(rd.get<io::read_map>(), wr.get<io::write_map>(), zip::zm_zlib);
 
 		std::cout << result.err << "\n"
 			<< result.in_size << "\n"

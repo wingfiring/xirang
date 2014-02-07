@@ -5,7 +5,7 @@
 #include <iostream>
 
 void usage(){
-	std::cout << "inflate src dest \n";
+	std::cout << "inflate src dest [level]\n";
 	exit(1);
 }
 
@@ -13,6 +13,10 @@ using namespace xirang;
 
 int main(int argc, char** argv){
 	if (argc < 3) usage();
+	int level = zip::zl_default;
+	if (argc > 3)
+		level = atoi(argv[3]);
+
 	try{
 		file_path src(argv[1]);
 		file_path dest(argv[2]);
@@ -23,7 +27,7 @@ int main(int argc, char** argv){
 		iref<io::read_map> rd(reader);
 		iref<io::write_map> wr(writer);
 
-		auto result = zip::deflate(rd.get<io::read_map>(), wr.get<io::write_map>());
+		auto result = zip::deflate(rd.get<io::read_map>(), wr.get<io::write_map>(), zip::zm_zlib, level);
 
 		std::cout << result.err << "\n"
 			<< result.in_size << "\n"
