@@ -38,6 +38,13 @@ namespace xirang{ namespace zip{
 		long_size_t out_size;
 	};
 
+	enum zip_format{
+		zm_raw_deflate,
+		zm_gzip,
+		zm_zlib,
+		zm_inflate_gzip_or_zlib,
+	};
+
 	AIO_EXCEPTION_TYPE(inflate_exception);
 	AIO_EXCEPTION_TYPE(deflate_exception);
 
@@ -49,11 +56,11 @@ namespace xirang{ namespace zip{
 	extern uint32_t crc32(io::read_map& src, uint32_t crc = crc32_init());
 	extern uint32_t crc32(range<const byte*> src, uint32_t crc = crc32_init());
 
-	extern zip_result inflate(io::reader& src, io::writer& dest, dict_type dict = dict_type(),heap* h = 0);
-	extern zip_result inflate(io::read_map& src, io::write_map& dest, dict_type dict = dict_type(),  heap* h = 0);
+	extern zip_result inflate(io::reader& src, io::writer& dest, zip_format format = zm_raw_deflate, dict_type dict = dict_type(),heap* h = 0);
+	extern zip_result inflate(io::read_map& src, io::write_map& dest, zip_format format = zm_raw_deflate, dict_type dict = dict_type(),  heap* h = 0);
 
-	extern zip_result deflate(io::reader& src, io::writer& dest, int level = zl_default, dict_type dict = dict_type(),heap* h = 0, int strategy_ = zs_default);
-	extern zip_result deflate(io::read_map& src, io::write_map& dest, int level = zl_default, dict_type dict = dict_type(),  heap* h = 0, int strategy_ = zs_default);
+	extern zip_result deflate(io::reader& src, io::writer& dest, zip_format format = zm_raw_deflate, int level = zl_default, dict_type dict = dict_type(),heap* h = 0, int strategy_ = zs_default);
+	extern zip_result deflate(io::read_map& src, io::write_map& dest, zip_format format = zm_raw_deflate, int level = zl_default, dict_type dict = dict_type(),  heap* h = 0, int strategy_ = zs_default);
 
 	// imp reader, forward
 	class inflate_reader_imp;
@@ -61,13 +68,13 @@ namespace xirang{ namespace zip{
 		public:
 			inflate_reader();
 			~inflate_reader();
-			
+
 			inflate_reader(inflate_reader&& rhs);
 			inflate_reader& operator=(inflate_reader rhs);
 			void swap(inflate_reader& rhs);
 
-			explicit inflate_reader(io::reader& src, long_size_t uncompressed_size = long_size_t(-1),dict_type dict = dict_type(),heap* h = 0); 
-			explicit inflate_reader(io::read_map& src, long_size_t uncompressed_size = long_size_t(-1),dict_type dict = dict_type(),heap* h = 0); 
+			explicit inflate_reader(io::reader& src, zip_format format = zm_raw_deflate, long_size_t uncompressed_size = long_size_t(-1),dict_type dict = dict_type(),heap* h = 0);
+			explicit inflate_reader(io::read_map& src, zip_format format = zm_raw_deflate, long_size_t uncompressed_size = long_size_t(-1),dict_type dict = dict_type(),heap* h = 0);
 			bool valid() const;
 			explicit operator bool() const;
 
@@ -98,8 +105,12 @@ namespace xirang{ namespace zip{
 			deflate_writer& operator=(deflate_writer rhs);
 			void swap(deflate_writer& rhs);
 
-			explicit deflate_writer(io::writer& dest, int level = zl_default, dict_type dict = dict_type(),heap* h = 0, int strategy_ = zs_default);
-			explicit deflate_writer(io::write_map& dest, int level = zl_default, dict_type dict = dict_type(),heap* h = 0, int strategy_ = zs_default);
+			explicit deflate_writer(io::writer& dest, zip_format format = zm_raw_deflate,
+					int level = zl_default, dict_type dict = dict_type(),
+					heap* h = 0, int strategy_ = zs_default);
+			explicit deflate_writer(io::write_map& dest, zip_format format = zm_raw_deflate,
+					int level = zl_default, dict_type dict = dict_type(),
+					heap* h = 0, int strategy_ = zs_default);
 			bool valid() const;
 			explicit operator bool() const;
 

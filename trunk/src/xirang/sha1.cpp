@@ -72,6 +72,17 @@ namespace xirang{
 			 }
 		 }
 	 }
+	 bool is_valid_sha1_str(const_range_string dig){
+		 if (dig.size() != 40)
+			 return false;
+
+		 for (auto i : dig){
+			 if (!((i>='0' && i <= '9') || (i >= 'a' && i <= 'f')))
+				 return false;
+		 }
+		 return true;
+
+	 }
 
 
 	 sha1::sha1()

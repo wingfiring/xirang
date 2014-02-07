@@ -38,6 +38,8 @@ struct sha1_digest{
 	uint32_t v[5];
 };
 
+extern bool is_valid_sha1_str(const_range_string d);
+
 struct sha1_digest_compare_ : totally_ordered<sha1_digest>{};
 
 struct hash_sha1{

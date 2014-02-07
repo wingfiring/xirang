@@ -26,7 +26,7 @@ namespace xirang{ namespace zip{
 		long_size_t in_pos = 0;
 		long_size_t rest_in_size = src.size();
 
-		while (rest_in_size > 0) { 
+		while (rest_in_size > 0) {
 			auto rview = src.view_rd(ext_heap::handle(in_pos, in_pos + std::min(K_UncompressedViewSize, rest_in_size)));
 			auto rng = rview.get<io::read_view>().address();
 			crc = crc32(rng, crc);
@@ -43,7 +43,7 @@ namespace xirang{ namespace zip{
 
 		static void* zip_malloc(void* h, uInt items, uInt size){
 			heap* hp = (heap*)h;
-			try{ return hp->malloc(items * size, 1, 0); } 
+			try{ return hp->malloc(items * size, 1, 0); }
 			catch(...){ return 0; }
 		}
 
@@ -51,29 +51,44 @@ namespace xirang{ namespace zip{
 			heap* hp = (heap*)h;
 			hp->free(p, -1, 0);
 		}
+		int get_winbits(zip_format format, int winbits){
+			switch (format){
+				case zm_raw_deflate:
+					return -winbits;
+				case zm_zlib:
+					return winbits;
+				case zm_gzip:
+					return 16 + winbits;
+				case zm_inflate_gzip_or_zlib:
+					return 32 + winbits;
+				default:
+					AIO_PRE_CONDITION(false && "Unknown zip format");
+			};
+			return 0;
+		}
 	}
 
 	class inflate_reader_imp{
 		public:
-			inflate_reader_imp(io::reader& src_, long_size_t uncompressed_size_, dict_type dict_, heap* h)
+			inflate_reader_imp(io::reader& src_, zip_format format, long_size_t uncompressed_size_, dict_type dict_, heap* h)
 				: stream_src(&src_), dict(dict_)
 				, uncompressed_size(uncompressed_size_)
 			{
-				init_(dict_, h);
+				init_(dict_, h, format);
 			}
-			inflate_reader_imp(io::read_map& src_, long_size_t uncompressed_size_, dict_type dict_, heap* h)
+			inflate_reader_imp(io::read_map& src_, zip_format format, long_size_t uncompressed_size_, dict_type dict_, heap* h)
 				: map_src(&src_), dict(dict_)
 				, uncompressed_size(uncompressed_size_)
 			{
-				init_(dict_, h);
+				init_(dict_, h, format);
 			}
-			void init_(dict_type dict_, heap* h){
+			void init_(dict_type dict_, heap* h, zip_format format){
 				if (h){
 					zstream.zalloc = zip_malloc;
 					zstream.zfree = zip_free;
 					zstream.opaque = h;
 				}
-				if (inflateInit2(&zstream, -MAX_WBITS) != Z_OK)
+				if (inflateInit2(&zstream, get_winbits(format, MAX_WBITS)) != Z_OK)
 					AIO_THROW(inflate_exception)("inflateInit2 failed");
 			}
 			~inflate_reader_imp(){
@@ -95,10 +110,10 @@ namespace xirang{ namespace zip{
 					{
 						case Z_NEED_DICT:
 							{
-								if (dict.empty()) 
+								if (dict.empty())
 									AIO_THROW(inflate_exception)("Need dictionary");
 								auto dic_err = inflateSetDictionary(&zstream, (Bytef*)dict.begin(), dict.size());
-								if (dic_err != Z_OK) 
+								if (dic_err != Z_OK)
 									AIO_THROW(inflate_exception)("Bad dictionary");
 							}
 						case Z_OK:
@@ -163,12 +178,12 @@ namespace xirang{ namespace zip{
 		m_imp.swap(rhs.m_imp);
 	}
 
-	inflate_reader::inflate_reader(io::reader& src, long_size_t uncompressed_size,dict_type dict /*= dict_type() */,heap* h /* = 0 */)
-		: m_imp(new inflate_reader_imp(src, uncompressed_size, dict, h))
+	inflate_reader::inflate_reader(io::reader& src, zip_format format, long_size_t uncompressed_size,dict_type dict /*= dict_type() */,heap* h /* = 0 */)
+		: m_imp(new inflate_reader_imp(src, format, uncompressed_size, dict, h))
 	{
 	}
-	inflate_reader::inflate_reader(io::read_map& src, long_size_t uncompressed_size,dict_type dict /*= dict_type() */,heap* h /* = 0 */)
-		: m_imp(new inflate_reader_imp(src, uncompressed_size, dict, h))
+	inflate_reader::inflate_reader(io::read_map& src, zip_format format, long_size_t uncompressed_size,dict_type dict /*= dict_type() */,heap* h /* = 0 */)
+		: m_imp(new inflate_reader_imp(src, format, uncompressed_size, dict, h))
 	{
 	}
 	bool inflate_reader::valid() const{
@@ -213,27 +228,26 @@ namespace xirang{ namespace zip{
 		return m_imp->crc;
 	}
 
-
 	class deflate_writer_imp
 	{
 		public:
-			deflate_writer_imp(io::writer& dest_, int level_, dict_type dict_, heap* h, int strategy_)
+			deflate_writer_imp(io::writer& dest_, zip_format format, int level_, dict_type dict_, heap* h, int strategy_)
 				: stream_dest(&dest_)
 			{
-				init_(level_, dict_, h, strategy_);
+				init_(format, level_, dict_, h, strategy_);
 			}
-			deflate_writer_imp(io::write_map& dest_, int level_, dict_type dict_, heap* h, int strategy_)
+			deflate_writer_imp(io::write_map& dest_, zip_format format, int level_, dict_type dict_, heap* h, int strategy_)
 				: map_dest(&dest_)
 			{
-				init_(level_, dict_, h, strategy_);
+				init_(format, level_, dict_, h, strategy_);
 			}
-			void init_(int level_, dict_type dict_, heap* h, int strategy_){
+			void init_(zip_format format, int level_, dict_type dict_, heap* h, int strategy_){
 				if (h){
 					zstream.zalloc = zip_malloc;
 					zstream.zfree = zip_free;
 					zstream.opaque = h;
 				}
-				if(deflateInit2(&zstream, level_, Z_DEFLATED, -MAX_WBITS, MAX_MEM_LEVEL, strategy_) != Z_OK)
+				if(deflateInit2(&zstream, level_, Z_DEFLATED, get_winbits(format, MAX_WBITS), MAX_MEM_LEVEL, strategy_) != Z_OK)
 					AIO_THROW(deflate_exception)("deflateInit2 failed");
 
 				if (!dict_.empty() && (deflateSetDictionary(&zstream, (const Bytef*)dict_.begin(), uInt(dict_.size())) != Z_OK))
@@ -252,8 +266,8 @@ namespace xirang{ namespace zip{
 						new_buffer_();
 
 					switch (deflate(&zstream, Z_NO_FLUSH)){
-						case Z_OK: 
-						case Z_BUF_ERROR: 
+						case Z_OK:
+						case Z_BUF_ERROR:
 							break;
 						default:
 							AIO_THROW(deflate_exception)("deflate with Z_NO_FLUSH failed");
@@ -307,7 +321,7 @@ namespace xirang{ namespace zip{
 				}
 			}
 			void sync(){
-				if (map_dest)	
+				if (map_dest)
 					map_dest->sync();
 				else{
 					stream_dest->sync();
@@ -340,13 +354,13 @@ namespace xirang{ namespace zip{
 		m_imp.swap(rhs.m_imp);
 	}
 
-	deflate_writer::deflate_writer(io::writer& dest,
+	deflate_writer::deflate_writer(io::writer& dest, zip_format format,
 			int level/* = zl_default */, dict_type dict /* = dict_type() */,heap* h /* = 0 */, int strategy_ /* = zs_default */)
-		: m_imp(new deflate_writer_imp(dest, level, dict, h, strategy_))
+		: m_imp(new deflate_writer_imp(dest, format, level, dict, h, strategy_))
 	{}
-	deflate_writer::deflate_writer(io::write_map& dest,
+	deflate_writer::deflate_writer(io::write_map& dest, zip_format format,
 			int level/* = zl_default */, dict_type dict /* = dict_type() */,heap* h /* = 0 */, int strategy_ /* = zs_default */)
-		: m_imp(new deflate_writer_imp(dest, level, dict, h, strategy_))
+		: m_imp(new deflate_writer_imp(dest, format, level, dict, h, strategy_))
 	{}
 	bool deflate_writer::valid() const{
 		return m_imp;
@@ -392,29 +406,29 @@ namespace xirang{ namespace zip{
 		m_imp->finish();
 	}
 
-	zip_result inflate(io::reader& src, io::writer& dest, dict_type dict,heap* h ){
-		inflate_reader reader(src, long_size_t(-1), dict, h);
+	zip_result inflate(io::reader& src, io::writer& dest, zip_format format, dict_type dict,heap* h ){
+		inflate_reader reader(src, format, long_size_t(-1), dict, h);
 		iref<io::reader> from(reader);
 		auto size = io::copy_data(from.get<io::reader>(), dest);
 		return zip_result{ze_ok, reader.compressed_size(), size};
 	}
-	zip_result inflate(io::read_map& src, io::write_map& dest, dict_type dict,  heap* h){
-		inflate_reader reader(src, long_size_t(-1), dict, h);
+	zip_result inflate(io::read_map& src, io::write_map& dest, zip_format format, dict_type dict,  heap* h){
+		inflate_reader reader(src, format, long_size_t(-1), dict, h);
 		iref<io::reader> from(reader);
 		io::copy_data(from.get<io::reader>(), dest);
 		return zip_result{ze_ok, src.size(), dest.size()};
 	}
 
-	zip_result deflate(io::reader& src, io::writer& dest, int level, dict_type dict, heap* h, int strategy_){
-		deflate_writer writer(dest, level, dict, h, strategy_);
+	zip_result deflate(io::reader& src, io::writer& dest, zip_format format, int level, dict_type dict, heap* h, int strategy_){
+		deflate_writer writer(dest, format, level, dict, h, strategy_);
 		iref<io::writer> to(writer);
 
 		io::copy_data(src, to.get<io::writer>());
 		writer.finish();
 		return zip_result{ze_ok, writer.uncompressed_size(), writer.size()};
 	}
-	zip_result deflate(io::read_map& src, io::write_map& dest, int level, dict_type dict,  heap* h, int strategy_){
-		deflate_writer writer(dest, level, dict, h, strategy_);
+	zip_result deflate(io::read_map& src, io::write_map& dest, zip_format format, int level, dict_type dict,  heap* h, int strategy_){
+		deflate_writer writer(dest, format, level, dict, h, strategy_);
 		iref<io::writer> to(writer);
 
 		io::copy_data(src, to.get<io::writer>());
