@@ -35,6 +35,7 @@ namespace xirang
 		typedef pointer iterator;
 		typedef const_pointer const_iterator;
 
+
 		///\post empty()
 		buffer()
 			: m_heap(&memory::get_global_heap())
@@ -122,7 +123,7 @@ namespace xirang
 				std::copy(r.begin(), r.end(), m_data);
 			}
 		}
-		
+
 		//dtor
 		~buffer() {
 			if (m_data)
@@ -153,11 +154,11 @@ namespace xirang
 			buffer(r, *m_heap).swap(*this);
 			return *this;
 		}
-	
+
 		//memory
 		size_type capacity() const	{ return m_capacity;}
 		size_type size() const	{ return m_size;}
-		void reserve(size_type n) 
+		void reserve(size_type n)
 		{
 			if (n > m_capacity)
 			{
@@ -268,7 +269,7 @@ namespace xirang
 				append(1, ch);
 			return *this;
 		}
-	
+
 		//erase
 		iterator erase(iterator p)
 		{
@@ -385,7 +386,7 @@ namespace xirang
 		}
 
 		//content access
-		pointer data() 
+		pointer data()
 		{
 			return m_data;
 		}
@@ -429,7 +430,7 @@ namespace xirang
             return !(*this < rhs);
         }
 
-	private:		
+	private:
 		pointer malloc_(size_type ncap)
 		{
 			return reinterpret_cast<pointer>(m_heap->malloc(ncap * sizeof(T), sizeof(T), 0));

@@ -79,8 +79,8 @@ void extract(const char* src, const char* dest_dir){
 		std::cerr << "Failed to create dir " << dest_path.str() << "\n";
 		exit(2);
 	}
-		
-		
+
+
 	xirang::vfs::LocalFs local_fs(dest_path);
 
 	xirang::io::file_reader file(path);
@@ -102,7 +102,7 @@ void extract(const char* src, const char* dest_dir){
 				auto crc = xirang::zip::crc32(dest.get<xirang::io::read_map>());
 				if (crc == i.crc32)
 					std::cout << "\tcrc32 OK.";
-				else 
+				else
 					std::cout << "\tcrc32 error.";
 
 				std::cout << "\tOK.\n";
@@ -114,13 +114,13 @@ void extract(const char* src, const char* dest_dir){
 					auto crc = xirang::zip::crc32(dest.get<xirang::io::read_map>());
 					if (crc == i.crc32)
 						std::cout << "\tcrc32 OK.";
-					else 
+					else
 						std::cout << "\tcrc32 error.";
 
 					std::cout << "\tOK.\n";
 				}
 				else
-					std::cout << "\nerr:" << ret.err 
+					std::cout << "\nerr:" << ret.err
 						<< "\tcompressed_size:" << ret.in_size
 						<< "\tuncompressed_size:" << ret.out_size
 						<< "\n";
@@ -147,6 +147,6 @@ int main(int argc, char** argv){
 }
 
 
-// 
+//
 // g++ -g -std=c++11 -o zip zip.cpp -I../../ -I/usr/local/include -L../../build_dir/debug/lib/ -L/usr/local/lib -lxirang -lz -lboost_system -lboost_filesystem
 //

@@ -17,11 +17,6 @@ namespace xirang{ namespace vfs{
     {
         return any();
     }
-	IRepository* IVfs::getRepository(const file_path& p, file_path* rest, file_path* repo_path){
-		return 0;
-	}
-	void IVfs::releaseRepository(const file_path& p){ }
-
     class RootFsImp
 	{
 		typedef boost::bimap<file_path, boost::bimaps::unordered_set_of<IVfs*> > mount_map;

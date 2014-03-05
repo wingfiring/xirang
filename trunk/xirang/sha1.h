@@ -34,9 +34,12 @@ struct sha1_digest{
 
 	bool operator==(const sha1_digest& rhs) const;
 	bool operator<(const sha1_digest& rhs) const;
-
 	uint32_t v[5];
 };
+inline bool is_empty(const sha1_digest& dig){
+		for (auto i : dig.v) if (i != 0) return false;
+		return true;
+}
 
 extern bool is_valid_sha1_str(const_range_string d);
 

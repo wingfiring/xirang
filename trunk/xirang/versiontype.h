@@ -14,6 +14,7 @@ namespace xirang{
 		version_type() = default;
 		explicit version_type(const_range_string s) : id(s){}
 	};
+	inline bool is_empty(const version_type& ver){ return is_empty(ver.id);}
 
 	inline bool operator==(const version_type& lhs, const version_type& rhs){
 		return lhs.id == rhs.id

@@ -40,7 +40,7 @@ namespace xirang{
 			bool is_pure_disk() const;
 			bool is_normalized() const;
 			bool empty() const;
-			
+
 			bool under(sub_file_path path) const;
 			bool contains(sub_file_path path) const;
 
@@ -261,7 +261,7 @@ namespace xirang{
 			mutable sub_simple_path m_cache;
 	};
 
-	class simple_path 
+	class simple_path
 	{
 		public:
 			typedef sub_simple_path::iterator iterator;
@@ -351,6 +351,12 @@ namespace xirang{
 			auto rp = rhs.parent();
 			return less_str(lp, rp)
 				|| (lp == rp && less_str(lhs, rhs));
+		}
+	};
+	struct hash_file_path{
+		template<typename PathType>
+		size_t operator()(const PathType& path) const{
+			return path.str().hash();
 		}
 	};
 }

@@ -219,7 +219,7 @@ namespace xirang { namespace vfs{ namespace detail{
 
         /// \pre path must not end with '/'.
 		/// \pre !absolute(path)
-        /// \return returned path in VfsNode is full path. it's different from children()
+        /// \return returned path in VfsNode is full path in this vfs. it's different from children()
 		virtual VfsState state(sub_file_path path) const = 0;
 
         /// get the option with given id and data
@@ -246,12 +246,6 @@ namespace xirang { namespace vfs{ namespace detail{
 		virtual void** do_create(unsigned long long mask,
 				void** ret, unique_ptr<void>& owner, sub_file_path path, int flag) = 0;
 
-		/// it may create the repository on demand, so this API is not const
-		/// TODO:the returned value need to be shared_ptr
-		virtual IRepository* getRepository(const file_path& p, file_path* rest, file_path* repo_path);
-
-		/// clean related IRepository instance. this call is only a notification.
-		virtual void releaseRepository(const file_path& p);
 	private:
 		// if r == null, means unmount, used by RootFs only
 		virtual void setRoot(RootFs* r) = 0;

@@ -1,6 +1,7 @@
 #ifndef XIRANG_IO_VERSION_TYPE_H
 #define XIRANG_IO_VERSION_TYPE_H
 #include <xirang/io/s11n.h>
+#include <xirang/io/sha1.h>
 #include <xirang/versiontype.h>
 namespace xirang{
 	template<typename Ar, typename =

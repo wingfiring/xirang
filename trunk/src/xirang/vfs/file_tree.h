@@ -9,13 +9,6 @@
 
 namespace xirang{ namespace vfs{ namespace private_{
 
-	struct hash_file_path{
-		size_t operator()(const file_path& path) const{
-			return path.str().hash();
-		}
-	};
-
-	
 	template<typename T> struct file_node
 	{
 		typedef file_node<T> node_type;
@@ -41,10 +34,10 @@ namespace xirang{ namespace vfs{ namespace private_{
 	};
 
 	template <typename T>
-	locate_result<T> locate(file_node<T>& root, sub_file_path path) 
+	locate_result<T> locate(file_node<T>& root, sub_file_path path)
 	{
 		file_node<T>* pos = &root;
-		
+
 		auto itr = path.begin();
 		auto end(path.end());
 		for (; itr != end; ++itr ){
@@ -124,14 +117,14 @@ namespace xirang{ namespace vfs{ namespace private_{
 		typedef file_node<T> node_type;
 		typedef typename node_type::children_type::iterator iterator;
 		FileNodeIterator()
-			: m_itr() 
+			: m_itr()
 		{
             m_node.owner_fs = 0;
         }
 
 		explicit FileNodeIterator(const iterator& itr, IVfs* vfs)
 			: m_itr(itr)
-		{ 
+		{
             m_node.owner_fs = vfs;
         }
 
@@ -148,9 +141,9 @@ namespace xirang{ namespace vfs{ namespace private_{
 		}
 
 		FileNodeIterator& operator++()	{ ++m_itr; return *this;}
-		FileNodeIterator operator++(int) { 
-			FileNodeIterator ret = *this; 
-			++*this; 
+		FileNodeIterator operator++(int) {
+			FileNodeIterator ret = *this;
+			++*this;
 			return ret;
 		}
 
