@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(type_case)
     BOOST_CHECK(first_arg == pair.arg(0));
     BOOST_CHECK(first_arg != pair.arg(1));
 
-    Type type_int = xi.root().locateType("int", '.');
+    Type type_int = xi.root().locateType("int32", '.');
     Type pair_int = TypeBuilder().name("pair_int")
         .modelFrom(pair)
         .setArg("first_type", "int", type_int)
@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(type_case)
     BOOST_CHECK(pair_int.model() == pair);
     BOOST_CHECK(pair_int.modelName() == literal("pair"));
 
-    Type type_long = xi.root().locateType("long", '.');
+    Type type_long = xi.root().locateType("int64", '.');
     Type pair_int_long = TypeBuilder().name("pair_int_long")
         .modelFrom(pair_int)
         .setArg("second_type", "long", type_long)
@@ -110,8 +110,8 @@ BOOST_AUTO_TEST_CASE(type_case)
         .adoptBy(test);
     
     struct IntLongPair_{
-        int m1;
-        long m2;
+        int32_t m1;
+        int64_t m2;
     };
 
     BOOST_CHECK(pair_int_long.isComplete());

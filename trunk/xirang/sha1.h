@@ -47,7 +47,7 @@ struct sha1_digest_compare_ : totally_ordered<sha1_digest>{};
 
 struct hash_sha1{
 	size_t operator()(const sha1_digest& d) const{
-		return sizeof(size_t) == 8 ? (std::size_t(d.v[0]) << 32) + d.v[1] : d.v[0];
+		return sizeof(size_t) == 8 ? (std::size_t(d.v[0]) << 16 << 16) + d.v[1] : d.v[0];
 	}
 };
 

@@ -177,10 +177,10 @@ namespace xirang{ namespace zip{
 		}
 
 		const file_header* get_file_(const file_path& path) const{
-			AIO_PRE_CONDITION(exist_(path));
 			file_header h;
 			h.name = path;
-			return &*std::lower_bound(items.begin(), items.end(), h, header_less());
+			auto pos = std::lower_bound(items.begin(), items.end(), h, header_less());
+			return pos != items.end() && pos->name == path ? &*pos : 0;
 		}
 		range<std::vector<file_header>::const_iterator> children_(const file_path& path) const{
 			if (path.empty()){
@@ -234,7 +234,6 @@ namespace xirang{ namespace zip{
 	}
 	const file_header* reader::get_file(const file_path& name) const{
 		AIO_PRE_CONDITION(valid());
-		AIO_PRE_CONDITION(exists(name));
 		return m_imp->get_file_(name);
 	}
 
@@ -333,7 +332,6 @@ namespace xirang{ namespace zip{
 	}
 	const file_header* reader_writer::get_file(const file_path& name) const{
 		AIO_PRE_CONDITION(valid());
-		AIO_PRE_CONDITION(exists(name));
 		m_imp->resort_();
 		return m_imp->get_file_(name);
 	}
