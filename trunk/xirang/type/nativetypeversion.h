@@ -8,28 +8,22 @@
 
 
 namespace xirang{ namespace type{
-
-	XIRANG_DEFINE_TYPE_VERSION_OF("527bec32fc5758a4d5a845ca12c7a7406f0b60df",         bool, ".sys.type.bool");
-	XIRANG_DEFINE_TYPE_VERSION_OF("b922d7de52aa647c063e25dceaded87428c992f0",        float, ".sys.type.float");
-	XIRANG_DEFINE_TYPE_VERSION_OF("5b1b6725190e0fddee3568015cee550a5c23c060",       double, ".sys.type.double");
-	XIRANG_DEFINE_TYPE_VERSION_OF("625201c858ca07636161d98716135be0266ba5f1",       int8_t, ".sys.type.int8");
-	XIRANG_DEFINE_TYPE_VERSION_OF("4cf4551ba205a9060e2b48ae07bac14c66c7611d",      uint8_t, ".sys.type.uint8");
-	XIRANG_DEFINE_TYPE_VERSION_OF("75df94e2198bdfdeeb737737f644127c68b2ae80",      int16_t, ".sys.type.int16");
-	XIRANG_DEFINE_TYPE_VERSION_OF("c4d3c4b117bbb62056e5e5fa139888715921885c",     uint16_t, ".sys.type.uint16");
-	XIRANG_DEFINE_TYPE_VERSION_OF("20f7150f2351a954d6ea2aa2ebd9835891db21e1",      int32_t, ".sys.type.int32");
-	XIRANG_DEFINE_TYPE_VERSION_OF("bc1efd808424a2c41dca1d8352bff060f6a3374b",     uint32_t, ".sys.type.uint32");
-	XIRANG_DEFINE_TYPE_VERSION_OF("ec9b3fb9fb32eaa54d0f3621f1a39a5c96ace908",      int64_t, ".sys.type.int64");
-	XIRANG_DEFINE_TYPE_VERSION_OF("071244bf252378a58d1e9839b72a5a75ec07ab0c",     uint64_t, ".sys.type.uint64");
-	XIRANG_DEFINE_TYPE_VERSION_OF("1fdee7fd082d04426d05be099521d4f0781b00bc",         byte, ".sys.type.byte");
-	XIRANG_DEFINE_TYPE_VERSION_OF("8127e7595e7d5f2660d15b945cff977720729454",        void*, ".sys.type.pointer");
-	XIRANG_DEFINE_TYPE_VERSION_OF("d0aa4cdc5e412330866bb56a1ba8fa18cbf368d4",       string, ".sys.type.string");
-	XIRANG_DEFINE_TYPE_VERSION_OF("2aa48e2e8ec84eb9541f0d10ecbaf792c6886408",  byte_buffer, ".sys.type.byte_buffer");
-	XIRANG_DEFINE_TYPE_VERSION_OF("c450ebc9dec792d8b4f9a907ba1053ac075de9b4",        Array, ".sys.type.array");
-
-	// HACK: workaround for gcc on Linux
-	XIRANG_DEFINE_TYPE_VERSION_OF("ec9b3fb9fb32eaa54d0f3621f1a39a5c96ace908",    long long, ".sys.type.int64");
-	XIRANG_DEFINE_TYPE_VERSION_OF("071244bf252378a58d1e9839b72a5a75ec07ab0c", unsigned long long, ".sys.type.uint64");
-
+	XIRANG_DEFINE_TYPE_VERSION_OF("1c7c286d46ab8f436995eeac39079025303422cd",         bool, ".sys.type.bool");
+	XIRANG_DEFINE_TYPE_VERSION_OF("c5d52b82e5d9415ce6a3e1e33e6a0741a9f9c841",        float, ".sys.type.float");
+	XIRANG_DEFINE_TYPE_VERSION_OF("86caee67a957fc84d807c9ec47e8567c78786fc9",       double, ".sys.type.double");
+	XIRANG_DEFINE_TYPE_VERSION_OF("bf2dbf73d1d93cf47c86a7f6f9a35efcba4b1601",       int8_t, ".sys.type.int8");
+	XIRANG_DEFINE_TYPE_VERSION_OF("807a3d35a50a37d28b17af1a0517a323d800c8b2",      uint8_t, ".sys.type.uint8");
+	XIRANG_DEFINE_TYPE_VERSION_OF("cf29cc8cd4e1a24b5af35537947f970c3a162d8f",      int16_t, ".sys.type.int16");
+	XIRANG_DEFINE_TYPE_VERSION_OF("ec3dd6908d495b96ca9fb03e1230044cee95ef50",     uint16_t, ".sys.type.uint16");
+	XIRANG_DEFINE_TYPE_VERSION_OF("c78ab2012e4ccfb84e39edc7be677b667ea327b2",      int32_t, ".sys.type.int32");
+	XIRANG_DEFINE_TYPE_VERSION_OF("0f5c41cd5fd82dbc353fb761740ddd3a7f5dda68",     uint32_t, ".sys.type.uint32");
+	XIRANG_DEFINE_TYPE_VERSION_OF("f026fefdd7e565daf8f835b3a6b6a2df96ea8d1c",      int64_t, ".sys.type.int64");
+	XIRANG_DEFINE_TYPE_VERSION_OF("64f3fe94a0573a5058f6b659c957b4265b1b8b01",     uint64_t, ".sys.type.uint64");
+	XIRANG_DEFINE_TYPE_VERSION_OF("74a1f3473f939fbf486e2cc661bda65fca34f8fb",         byte, ".sys.type.byte");
+	XIRANG_DEFINE_TYPE_VERSION_OF("66dc7f66bc941de38185dacd854cdd26c3d1d84d",        void*, ".sys.type.pointer");
+	XIRANG_DEFINE_TYPE_VERSION_OF("7136b6e7cc2d93724f225efbf35987ab9c7a4cf1",       string, ".sys.type.string");
+	XIRANG_DEFINE_TYPE_VERSION_OF("d4ee1246b4a8afb6befee004f110cfab950caccf",  byte_buffer, ".sys.type.byte_buffer");
+	XIRANG_DEFINE_TYPE_VERSION_OF("374dc6d00c4eec1ff0c95af9943fa55dca4990c0",        Array, ".sys.type.array");
 }}
 #endif //end XIRANG_TYPE_NATIVE_TYPE_VERSION_OF_H
 

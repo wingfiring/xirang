@@ -178,7 +178,7 @@ namespace xirang { namespace type{
 				s & i.name() & i.typeName() & i.type();
 			for (auto& i : t.members())
 				s & i.name() & i.typeName() & i.type();
-			s & internalID() & t.payload() & t.align();
+			s & internalID();
 		}
 
 		virtual const MethodsExtension* extension() const
