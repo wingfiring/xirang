@@ -16,15 +16,22 @@ namespace xirang{ namespace io{
 
 	struct read_file_view : read_view{
 			read_file_view(file_mapping& file, bi::mode_t mode, offset_t offset, std::size_t size)
-				: m_region(file, mode, offset, size), m_offset(offset)
-			{}
+				: m_offset(offset), m_size(size)
+			{
+				if (size > 0)
+					m_region = mapped_region(file, mode, offset, size);	
+			}
 			virtual range<const byte*> address() const{ 
+				if (m_size == 0)
+					return range<const byte*>();
+
 				const byte* first = reinterpret_cast<const byte*>(m_region.get_address());
-				return range<const byte*>(first, first + m_region.get_size());
+				return range<const byte*>(first, first + m_size);
 			}
 		private:
 			mapped_region m_region;
 			offset_t m_offset;
+			std::size_t m_size;
 	};
 	struct write_file_view : write_view{
 			write_file_view(file_mapping& file, bi::mode_t mode, offset_t offset, std::size_t size)
