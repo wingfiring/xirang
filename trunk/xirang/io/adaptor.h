@@ -9,7 +9,7 @@ namespace xirang{ namespace io{
 		template<typename Interface, typename Archive> typename std::enable_if<!is_iref<Archive>::value, Archive&>::type get_i_(Archive& ar){
 			return ar;
 		}
-		template<typename Interface, typename Archive> 
+		template<typename Interface, typename Archive>
 			const typename std::enable_if<!is_iref<Archive>::value, const Archive&>::type get_i_(const Archive& ar){
 			return ar;
 		}
@@ -23,7 +23,7 @@ namespace xirang{ namespace io{
 		template<typename Interface, typename Archive> typename std::enable_if<!is_iref<Archive>::value, Archive&>::type get_i_(Archive* ar){
 			return *ar;
 		}
-		template<typename Interface, typename Archive> 
+		template<typename Interface, typename Archive>
 			const typename std::enable_if<!is_iref<Archive>::value, const Archive&>::type get_i_(const Archive* ar){
 			return *ar;
 		}
@@ -36,7 +36,7 @@ namespace xirang{ namespace io{
 	}
 
 	template<typename ArchiveData, template<typename> class ... PartialInterfaces>
-		struct decorator : public ArchiveData, 
+		struct decorator : public ArchiveData,
 		public PartialInterfaces<decorator<ArchiveData, PartialInterfaces...> >...
 	{
 		typedef typename ArchiveData::archive_type archive_type;
@@ -60,13 +60,13 @@ namespace xirang{ namespace io{
 		decorator<ArchiveData<typename std::conditional<std::is_pointer<Ar&&>::value || std::is_rvalue_reference<Ar&&>::value,
 				   typename std::remove_reference<Ar>::type,
 				   typename std::add_lvalue_reference<Ar>::type
-					   >::type>, 
+					   >::type>,
 				   PartialInterfaces...>
 		decorate(Ar&& ar, T&&... args){
 			return decorator<ArchiveData<typename std::conditional<std::is_pointer<Ar&&>::value || std::is_rvalue_reference<Ar&&>::value,
 				   typename std::remove_reference<Ar>::type,
 				   typename std::add_lvalue_reference<Ar>::type
-					   >::type>, 
+					   >::type>,
 				   PartialInterfaces...>(std::forward<Ar>(ar), std::forward<T>(args)...);
 		}
 
@@ -90,11 +90,11 @@ namespace xirang{ namespace io{
 		proxy_archive(): m_underlying(){}
 		template<typename RealArchiveType>
 		explicit proxy_archive(RealArchiveType&& ar): m_underlying(std::forward<RealArchiveType>(ar)){}
-		
-		archive_type& underlying() { 
+
+		archive_type& underlying() {
 			return m_underlying;
 		}
-		const archive_type& underlying() const{ 
+		const archive_type& underlying() const{
 			return m_underlying;
 		}
 
@@ -144,7 +144,7 @@ namespace xirang{ namespace io{
 		COMMON_IO_ADAPTOR_HELPER();
 	};
 
-	template<typename Derive> struct proxy_ioinfo_p : ioinfo 
+	template<typename Derive> struct proxy_ioinfo_p : ioinfo
 	{
 		virtual long_size_t size() const{
 			return underlying_<ioinfo>().size();
@@ -153,7 +153,7 @@ namespace xirang{ namespace io{
 		COMMON_IO_ADAPTOR_HELPER();
 	};
 
-	template<typename Derive> struct proxy_sequence_p : sequence 
+	template<typename Derive> struct proxy_sequence_p : sequence
 	{
 		virtual long_size_t offset() const{
 			return underlying_<sequence>().offset();
@@ -165,7 +165,7 @@ namespace xirang{ namespace io{
 		COMMON_IO_ADAPTOR_HELPER();
 	};
 
-	template<typename Derive> struct proxy_forward_p : forward 
+	template<typename Derive> struct proxy_forward_p : forward
 	{
 		virtual long_size_t offset() const{
 			return underlying_<forward>().offset();
@@ -254,7 +254,7 @@ namespace xirang{ namespace io{
 		private:
 		COMMON_IO_ADAPTOR_HELPER();
 	};
-	
+
 	template<typename ArchiveType>
 	struct multiplex_archive : public proxy_archive<ArchiveType>
 	{
@@ -264,7 +264,7 @@ namespace xirang{ namespace io{
 		multiplex_archive(RealArchiveType&& ar, long_size_t off)
 			: base(std::forward<RealArchiveType>(ar)), current(off)
 		{}
-		
+
 		long_size_t current;
 	};
 
@@ -361,7 +361,7 @@ namespace xirang{ namespace io{
 		typedef proxy_archive<ArchiveType> base;
 		sub_archive(): first(0), last(0){}
 		template<typename RealArchiveType>
-		explicit sub_archive(RealArchiveType&& ar, ext_heap::handle h) 
+		explicit sub_archive(RealArchiveType&& ar, ext_heap::handle h)
 			: base(std::forward<RealArchiveType>(ar)),
 			first(h.begin()), last(h.end())
 		{}
@@ -436,7 +436,7 @@ namespace xirang{ namespace io{
 		}
 	};
 
-	template<typename Derive> struct sub_ioinfo_p : ioinfo 
+	template<typename Derive> struct sub_ioinfo_p : ioinfo
 	{
 		virtual long_size_t size() const{
 			return derive_().last - derive_().first;
@@ -446,7 +446,7 @@ namespace xirang{ namespace io{
 		Derive& derive_() { return static_cast<Derive&>(*this);}
 	};
 
-	template<typename Derive> struct sub_sequence_p : sequence 
+	template<typename Derive> struct sub_sequence_p : sequence
 	{
 		typedef typename Derive::archive_type archive_type;
 
@@ -459,8 +459,8 @@ namespace xirang{ namespace io{
 		private:
 		COMMON_IO_ADAPTOR_HELPER();
 	};
-	
-	template<typename Derive> struct sub_forward_p : forward 
+
+	template<typename Derive> struct sub_forward_p : forward
 	{
 		typedef typename Derive::archive_type archive_type;
 
@@ -477,7 +477,7 @@ namespace xirang{ namespace io{
 		COMMON_IO_ADAPTOR_HELPER();
 	};
 
-	template<typename Derive> struct sub_random_p : random 
+	template<typename Derive> struct sub_random_p : random
 	{
 		virtual long_size_t offset() const{
 			return underlying_<random>().offset() - derive_().first;	//it's ok if current < first, rewind
@@ -496,11 +496,9 @@ namespace xirang{ namespace io{
 	{
 		virtual iauto<read_view> view_rd(ext_heap::handle h){
 			h = ext_heap::handle(h.begin() + derive_().first, h.end() + derive_().first);
-
-			if (h.begin() > 0 && ((long_size_t)h.begin() >= derive_().last))
-				h = ext_heap::handle();
-			else if(h.end() >0 && ((long_size_t)h.end() >= derive_().last))
-				h = ext_heap::handle(h.begin(), derive_().last);
+			AIO_PRE_CONDITION(h.begin() <= h.end()
+					&& (long_size_t)h.begin() >= derive_().first
+					&& (long_size_t)h.end() <= derive_().last);
 
 			return underlying_<read_map>().view_rd(h);
 		}
@@ -510,16 +508,15 @@ namespace xirang{ namespace io{
 		private:
 		COMMON_IO_ADAPTOR_HELPER();
 	};
-	
+
 	template<typename Derive> struct sub_write_map_p : write_map
 	{
 		virtual iauto<write_view> view_wr(ext_heap::handle h){
 			h = ext_heap::handle(h.begin() + derive_().first, h.end() + derive_().first);
 
-			if (h.begin() > 0 && ((long_size_t)h.begin() >= derive_().last))
-				h = ext_heap::handle();
-			else if(h.end() >0 && ((long_size_t)h.end() >= derive_().last))
-				h = ext_heap::handle(h.begin(), derive_().last);
+			AIO_PRE_CONDITION(h.begin() <= h.end()
+					&& (long_size_t)h.begin() >= derive_().first
+					&& (long_size_t)h.end() <= derive_().last);
 
 			return underlying_<write_map>().view_wr(h);
 		}
@@ -563,7 +560,7 @@ namespace xirang{ namespace io{
 		COMMON_IO_ADAPTOR_HELPER();
 	};
 
-	template<typename Derive> struct tail_ioinfo_p : ioinfo 
+	template<typename Derive> struct tail_ioinfo_p : ioinfo
 	{
 		virtual long_size_t size() const{
 			auto real_size = underlying_<ioinfo>().size();
@@ -575,7 +572,7 @@ namespace xirang{ namespace io{
 		COMMON_IO_ADAPTOR_HELPER();
 	};
 
-	template<typename Derive> struct tail_sequence_p : sequence 
+	template<typename Derive> struct tail_sequence_p : sequence
 	{
 		virtual long_size_t offset() const{
 			return underlying_<sequence>().offset() - derive_().first;	//it's ok if current < first, rewind
@@ -589,8 +586,8 @@ namespace xirang{ namespace io{
 		private:
 		COMMON_IO_ADAPTOR_HELPER();
 	};
-	
-	template<typename Derive> struct tail_forward_p : forward 
+
+	template<typename Derive> struct tail_forward_p : forward
 	{
 		virtual long_size_t offset() const{
 			return underlying_<forward>().offset() - derive_().first;	//it's ok if current < first, rewind
@@ -608,7 +605,7 @@ namespace xirang{ namespace io{
 		COMMON_IO_ADAPTOR_HELPER();
 	};
 
-	template<typename Derive> struct tail_random_p : random 
+	template<typename Derive> struct tail_random_p : random
 	{
 		virtual long_size_t offset() const{
 			return underlying_<random>().offset() - derive_().first;	//it's ok if current < first, rewind
@@ -641,7 +638,7 @@ namespace xirang{ namespace io{
 		private:
 		COMMON_IO_ADAPTOR_HELPER();
 	};
-	
+
 	template<typename Derive> struct tail_write_map_p : write_map
 	{
 		virtual iauto<write_view> view_wr(ext_heap::handle h){
@@ -669,7 +666,7 @@ namespace xirang{ namespace io{
 
 	struct stream_to_write_view : write_view
 	{
-		range<byte*> address() const { 
+		range<byte*> address() const {
 			return to_range(cache.data());
 		}
 		~stream_to_write_view(){
@@ -712,7 +709,7 @@ namespace xirang{ namespace io{
 
 	struct stream_to_read_map_view : read_view
 	{
-		virtual range<const byte*> address() const { 
+		virtual range<const byte*> address() const {
 			return to_range(cache.data());
 		}
 		mem_archive cache;
@@ -737,21 +734,21 @@ namespace xirang{ namespace io{
 	template<typename Derive> struct read_map_to_random_p : random {
 		virtual long_size_t offset() const {
 			return derive_().current;
-		}   
+		}
 		virtual long_size_t size() const {
 			return underlying_<read_map>().size();
-		}   
+		}
 		virtual long_size_t seek(long_size_t current) {
 			auto s = size();
 			if (current < s)
 				return (derive_().current = current);
 			else
-				return (derive_().current = s); 
-		}                                                                                                                                          
+				return (derive_().current = s);
+		}
 		private:
 		COMMON_IO_ADAPTOR_HELPER();
 
-	};  
+	};
 
 	template<typename Derive> using map_to_stream_archive = multiplex_archive<Derive>;
 
