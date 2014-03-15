@@ -9,3 +9,6 @@ LINK_DIRECTORIES(${BOOST_LINK})
 
 define_tools(gentypever)
 
+define_tools(zipdoc)
+TARGET_LINK_LIBRARIES(zipdoc fcgi fcgi++)
+
