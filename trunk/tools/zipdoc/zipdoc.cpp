@@ -135,15 +135,26 @@ void response_file(std::ostream& fout, iref<io::read_map>& file){
 void response_dir(std::ostream& fout, const file_path& path, int state, long_size_t size){
 	fout << "<div><span class=\"file_type\">" << (state == fs::st_dir ? "DIR " : "FILE") << "</span>"
 		"<span class=\"file_size\">" << size << "</span>"
-		"<span class=\"file_name\"> <a href=\"" << (path.parent().filename() / path.filename()).str() << "\">" << path.filename().str() << "</a></span>";
+		"<span class=\"file_name\"> <a href=\"" << path.filename().str();
+	if (state == fs::st_dir) fout << "/";
+	fout << "\">" << path.filename().str() << "</a></span>";
 }
-void response_error(std::ostream& os, int code, const char* path = 0){
+void response_error(std::ostream& os, int code, const std::string& path){
 	os << "Status: " << code << "\r\n"
 		"Content-type: text/html\r\n"
 		"\r\n"  
 		"Request file: " 
-		<< (path ? path : "[no file path]")
+		<< path 
 		<< " not found\r\n";
+}
+bool end_with_slash(const std::string& path){
+	return !path.empty() && path[path.size() - 1] == '/';
+}
+void response_redirect(std::ostream& fout, const file_path& dir_name){
+	fout << "Status: 301\r\n"
+		"Location:" << dir_name.str() << "/\r\n"
+		"Content-type: text/html\r\n"
+		"\r\n";
 }
 
 const sub_file_path zip_ext = sub_file_path(literal("zip"));
@@ -176,18 +187,24 @@ int main(int argc, char** argv){
 		std::istream fin(&in_buf);
 		std::ostream fout(&out_buf);
 
-		auto path = FCGX_GetParam("PATH_INFO", request.envp);
-		if (!path){
-			response_error(fout, 404);
+		auto s = FCGX_GetParam("PATH_INFO", request.envp);
+		if (!s){
+			response_error(fout, 404, std::string());
 			continue;
 		}
-		file_path doc_path = file_path(path);
+
+		std::string path = s ? s : "";
+		file_path doc_path = file_path(path.c_str());
 		file_path base, rest;
 		fs::file_state state;
 		std::tie(base, rest, state) = locate(docfs, doc_path);
 		if (state == fs::st_dir) {
 			if (!rest.empty()){
 				response_error(fout, 404, path);
+				continue;
+			}
+			if (!path.empty() && !end_with_slash(path)){
+				response_redirect(fout, base.filename());
 				continue;
 			}
 			auto children = docfs.children(base);
@@ -197,7 +214,7 @@ int main(int argc, char** argv){
 			for (auto & n : children){
 				auto st = docfs.state(base / n.path);
 				bool is_zip = st.node.path.ext() == zip_ext;
-				response_dir(sstr, doc_path / st.node.path, (is_zip? fs::st_dir : st.state), st.size);
+				response_dir(sstr, st.node.path, (is_zip? fs::st_dir : st.state), st.size);
 			}
 			write_html(fout, sstr.str());
 			continue;
@@ -225,14 +242,21 @@ int main(int argc, char** argv){
 		}
 
 		auto header = info->zip.get_file(rest);
-		if (!header || header->uncompressed_size == 0){
+		if (!header || (header->external_attrs & 0x10) != 0){
+			if (!end_with_slash(path)){
+				response_redirect(fout, rest.filename());
+				continue;
+			}
 			auto items = info->zip.items(rest);
+			if (!header && items.empty()){
+				response_error(fout, 404, path);
+			}
 			fout << "Cache-Control: public, max-age=7776000\r\n"
 				"Content-type: text/html\r\n\r\n";
 
 			std::stringstream sstr;
 			for (auto &i : items){
-				response_dir(sstr, doc_path/i.name, ((i.external_attrs & 0x10) ? fs::st_dir : fs::st_regular), i.uncompressed_size);
+				response_dir(sstr, i.name, ((i.external_attrs & 0x10) ? fs::st_dir : fs::st_regular), i.uncompressed_size);
 			}
 			write_html(fout, sstr.str());
 			continue;
