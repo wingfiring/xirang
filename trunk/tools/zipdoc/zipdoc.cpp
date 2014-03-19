@@ -2,6 +2,7 @@
 #include <xirang/path.h>
 #include <xirang/io/file.h>
 #include <xirang/vfs/local.h>
+#include <xirang/string_algo/string.h>
 
 #include <unordered_map>
 #include <sstream>
@@ -114,7 +115,9 @@ void write_html(std::ostream& fout, const std::string& str){
 	fout << boost::algorithm::replace_first_copy(html_template, dir_pattern, str);
 }
 
-void write_content_type(std::ostream& fout, const std::string& ext){
+void write_content_type(std::ostream& fout, const std::string& ext_){
+	std::string ext = ext_;
+	std::transform(ext.begin(), ext.end(), ext.begin(), xirang::tolower<char> );
 	auto pos = mime.find(ext);
 	fout << "Content-type: ";
 	if (pos != mime.end())
@@ -150,14 +153,18 @@ void response_error(std::ostream& os, int code, const std::string& path){
 bool end_with_slash(const std::string& path){
 	return !path.empty() && path[path.size() - 1] == '/';
 }
-void response_redirect(std::ostream& fout, const file_path& dir_name){
+void response_redirect(std::ostream& fout, const file_path& dir_name, bool is_dir){
 	fout << "Status: 301\r\n"
-		"Location:" << dir_name.str() << "/\r\n"
+		"Location:" << dir_name.str();
+	if (is_dir) fout << "/";
+	fout << "\r\n"
 		"Content-type: text/html\r\n"
 		"\r\n";
 }
 
 const sub_file_path zip_ext = sub_file_path(literal("zip"));
+
+const file_path index_pages[] = {file_path("index.html"), file_path("index.htm")};
 
 int main(int argc, char** argv){
 	if (argc != 4){
@@ -204,7 +211,20 @@ int main(int argc, char** argv){
 				continue;
 			}
 			if (!path.empty() && !end_with_slash(path)){
-				response_redirect(fout, base.filename());
+				response_redirect(fout, base.filename(), true);
+				continue;
+			}
+
+			file_path index_page;
+			for (auto& f : index_pages){
+				auto st = docfs.state(base / f).state;
+				if (st == fs::st_regular){
+					index_page = f;
+					break;
+				}
+			}
+			if (!index_page.empty()){
+				response_redirect(fout, index_page, false);
 				continue;
 			}
 			auto children = docfs.children(base);
@@ -244,13 +264,27 @@ int main(int argc, char** argv){
 		auto header = info->zip.get_file(rest);
 		if (!header || (header->external_attrs & 0x10) != 0){
 			if (!end_with_slash(path)){
-				response_redirect(fout, rest.filename());
+				response_redirect(fout, rest.filename(), true);
 				continue;
 			}
 			auto items = info->zip.items(rest);
 			if (!header && items.empty()){
 				response_error(fout, 404, path);
 			}
+
+			file_path index_page;
+			for (auto& f : index_pages){
+				auto h = info->zip.get_file(rest/f);
+				if (h && (h->external_attrs & 0x10) == 0){
+					index_page = f;
+					break;
+				}
+			}
+			if (!index_page.empty()){
+				response_redirect(fout, index_page, false);
+				continue;
+			}
+
 			fout << "Cache-Control: public, max-age=7776000\r\n"
 				"Content-type: text/html\r\n\r\n";
 
