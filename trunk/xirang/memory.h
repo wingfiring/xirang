@@ -25,7 +25,7 @@ namespace xirang
 	{
 		/// allocate a memory blcok with specified size
 		/// \param size bytes of required block
-		/// \param alignment the alignment of allocated memory block. Default is 1, alignment must be 2^N 
+		/// \param alignment the alignment of allocated memory block. Default is 1, alignment must be 2^N
 		/// \param hint hint of allocation, it's used to improve the performance for some implementation. null means no hint.
 		/// \return head address of allocated memory blcok
 		/// \pre size >= 0
@@ -78,7 +78,7 @@ namespace xirang
 	template<typename T>
 	struct uninitialized_heap_ptr
 	{
-		explicit uninitialized_heap_ptr(heap& h) 
+		explicit uninitialized_heap_ptr(heap& h)
 			: m_p(malloc_obj<T>(h))
 			, m_heap(&h)
 		{}
@@ -115,7 +115,7 @@ namespace xirang
 		private:
 		heap* m_heap;
 	};
-    
+
     struct AIO_INTERFACE ext_heap;
 
 	namespace memory{
@@ -147,7 +147,7 @@ namespace xirang
 		global_heap_init_once() {memory::init_global_heap_once();}
 	};
 
-	namespace 
+	namespace
 	{
 		/// each compile units contains this head file will create a local object, so it'll init the global memory handler
 		global_heap_init_once g_global_heap_init_once;
@@ -162,7 +162,7 @@ namespace xirang
 
 		///\ctor save current global memory handler and set with the new_handler
 		///\param new_handler
-		explicit heap_saver(heap& new_handler) 
+		explicit heap_saver(heap& new_handler)
 			: m_saved(memory::get_global_heap())
 		{
 			memory::set_global_heap(new_handler);
@@ -174,8 +174,8 @@ namespace xirang
 		heap& m_saved;
 	};
 
-	typedef unsigned long long long_size_t;
-	typedef long long long_offset_t;
+	typedef uint64_t long_size_t;
+	typedef int64_t long_offset_t;
 	struct offset_range {
 		long_offset_t begin() const;
 		long_offset_t end() const;
@@ -229,9 +229,9 @@ namespace xirang
 		virtual int track_pin_count(handle h) const= 0;
 		virtual int view_pin_count(handle h) const= 0;
 
-		/// unmap a block. 
+		/// unmap a block.
 		virtual int track_unpin(void* h) = 0;
-		/// unmap a block. 
+		/// unmap a block.
 		virtual int unpin(void* h) = 0;
 
 		/// TODO: is it necessary?
@@ -242,21 +242,21 @@ namespace xirang
 		/// read from external block directly. if the block has been mapped, read the memory block.
 		virtual std::size_t read(handle, void* dest, std::size_t) = 0;
 
-		/// sync the memory to external, if h is invalid, sync all. 
+		/// sync the memory to external, if h is invalid, sync all.
 		virtual void sync(handle h) = 0;
 
 	protected:
 		virtual ~ext_heap();
 	};
 
-	inline bool operator ==(ext_heap::handle lhs, ext_heap::handle rhs) 
+	inline bool operator ==(ext_heap::handle lhs, ext_heap::handle rhs)
 	{
 		return lhs.begin() == rhs.begin() && lhs.end() == rhs.end();
 	}
 
-	inline bool operator <(ext_heap::handle lhs, ext_heap::handle rhs) 
+	inline bool operator <(ext_heap::handle lhs, ext_heap::handle rhs)
 	{
-		return lhs.begin() < rhs.begin() 
+		return lhs.begin() < rhs.begin()
 			|| (lhs.begin() == rhs.begin() && lhs.end() < rhs.end());
 	}
 
@@ -290,7 +290,7 @@ namespace xirang
 		explicit abi_allocator(heap& h) : m_handle(&h){}
 
 		template<class Other>
-		abi_allocator(const abi_allocator<Other>& rhs) 
+		abi_allocator(const abi_allocator<Other>& rhs)
 			: m_handle(rhs.m_handle)
 		{
 			AIO_PRE_CONDITION(rhs.m_handle != 0);
@@ -305,12 +305,12 @@ namespace xirang
 		}
 
 		void deallocate(pointer p, size_type n)
-		{				
+		{
 			get_heap().free(p, n * sizeof(value_type), 0);
 		}
 
 		pointer allocate(size_type n, const void * hint = 0)
-		{	
+		{
 			return reinterpret_cast<pointer>( get_heap().malloc(n * sizeof (value_type), alignof(T), hint));
 		}
 
@@ -320,11 +320,11 @@ namespace xirang
 		}
 
 		void destroy(pointer p)
-		{	
+		{
 			(p)->~T();
 		}
 
-		size_type max_size() const 
+		size_type max_size() const
 		{
 			size_type n = (size_type)(-1) / sizeof (value_type);
 			return (0 < n ? n: 1);
@@ -332,7 +332,7 @@ namespace xirang
 
 		/// get holded memory handler
 		/// \return holded handler
-		heap& get_heap() const { 
+		heap& get_heap() const {
 			AIO_PRE_CONDITION(m_handle != 0);
 			return *m_handle;
 		}
@@ -355,7 +355,7 @@ namespace xirang
 
 		template<class Other>
 		struct rebind
-		{	
+		{
 			typedef abi_allocator<Other> other;
 		};
 
@@ -387,13 +387,13 @@ namespace xirang
 		heap* m_handle;
 	};
 
-	template<class T,class U> 
+	template<class T,class U>
 	inline bool operator==(const abi_allocator<T>& lhs, const abi_allocator<U>& rhs)
 	{
 		return lhs.get_heap().equal_to(rhs.get_heap());
 	}
 
-	template<class T,class U> 
+	template<class T,class U>
 	inline bool operator !=(const abi_allocator<T>& lhs, const abi_allocator<U>& rhs)
 	{
 		return !(lhs == rhs);
@@ -406,7 +406,7 @@ namespace xirang
 	*/
 	class simple_destruct
 	{
-	public:		
+	public:
 		/**
 		destruct pointee object.
 		@pre pt is allocated by alloc
@@ -425,7 +425,7 @@ namespace xirang
 	};
 
 	/// this class intends to provide thread safe of array initialization.
-	/// 
+	///
 	template
 		<
 		typename T,
@@ -437,7 +437,7 @@ namespace xirang
 		DISABLE_CLONE(mem_multiple_initilizer);
 	public:
 		typedef T element_type;			///< value type
-		typedef Alloc<T> allocator_type;		///< allocator type		
+		typedef Alloc<T> allocator_type;		///< allocator type
 		typedef typename allocator_type::pointer pointer;				///< pointer to value type
 		typedef typename allocator_type::const_pointer const_pointer;	///< const pointer to value type
 		typedef typename allocator_type::reference reference;			///< reference to value type
@@ -476,7 +476,7 @@ namespace xirang
 			return m_pt;
 		}
 
-		/// if all secceeded before leaving scope, user should call this method to commit changes, 
+		/// if all secceeded before leaving scope, user should call this method to commit changes,
 		/// otherwise, all initialized elements will be destructed
 		/// \return head pointer of the holded array
 		/// \post committed() is true
@@ -492,7 +492,7 @@ namespace xirang
 
 		/// increase initialized elements counter
 		/// \pre !committed()
-		mem_multiple_initilizer& operator++() { 
+		mem_multiple_initilizer& operator++() {
 			AIO_PRE_CONDITION(m_pt != 0);
 			++m_size;
 			return *this;
@@ -500,7 +500,7 @@ namespace xirang
 
 		/// increase initialized elements counter
 		/// \pre !committed()
-		mem_multiple_initilizer& operator++(int) { 
+		mem_multiple_initilizer& operator++(int) {
 			AIO_PRE_CONDITION(m_pt != 0);
 			++m_size;
 			return *this;
@@ -508,7 +508,7 @@ namespace xirang
 
 		/// decrease initialized elements counter
 		/// \pre !committed() && size() > 0
-		mem_multiple_initilizer& operator--() { 
+		mem_multiple_initilizer& operator--() {
 			AIO_PRE_CONDITION(m_pt != 0);
 			AIO_PRE_CONDITION(m_size > 0);
 			--m_size;
@@ -517,7 +517,7 @@ namespace xirang
 
 		/// decrease initialized elements counter
 		/// \pre !committed() && size() > 0
-		mem_multiple_initilizer& operator--(int) { 
+		mem_multiple_initilizer& operator--(int) {
 			AIO_PRE_CONDITION(m_pt != 0);
 			AIO_PRE_CONDITION(m_size > 0);
 			--m_size;
@@ -557,14 +557,14 @@ namespace xirang
 		typename T,
 		template <class> class Alloc = abi_allocator
 		>
-	class uninitialized_allocator_ptr 
+	class uninitialized_allocator_ptr
 	{
 		DISABLE_CLONE(uninitialized_allocator_ptr);
 
 	public:
 
 		typedef T element_type;			///< value type
-		typedef Alloc<T> allocator_type;		///< allocator type		
+		typedef Alloc<T> allocator_type;		///< allocator type
 		typedef typename allocator_type::pointer pointer;				///< pointer to value type
 		typedef typename allocator_type::const_pointer const_pointer;	///< const pointer to value type
 		typedef typename allocator_type::reference reference;			///< reference to value type
@@ -599,7 +599,7 @@ namespace xirang
 		}
 
 		/// \pre !is_null() && size > 0
-		/// \post return != 0 
+		/// \post return != 0
 		/// \throw std::bad_alloc
 		pointer allocate(size_type size = 1, const void* hint = 0){
 			AIO_PRE_CONDITION(is_null());
@@ -668,7 +668,7 @@ namespace xirang
 		size_type	m_size;
 	};
 
-	/**	
+	/**
 	allocator_ptr is a RAII pointer, help for allocator
 	@param T value type
 	@param Alloc allocator type
@@ -676,16 +676,16 @@ namespace xirang
 	*/
 	template
 		<
-		typename T, 		
+		typename T,
 		typename DestructPolicy = simple_destruct,
 		template <class> class Alloc = abi_allocator
 		>
-	class allocator_ptr 
+	class allocator_ptr
 	{
 		DISABLE_CLONE(allocator_ptr);
 	public:
 		typedef T element_type;			///< value type
-		typedef Alloc<T> allocator_type;		///< allocator type		
+		typedef Alloc<T> allocator_type;		///< allocator type
 		typedef typename allocator_type::pointer pointer;				///< pointer to value type
 		typedef typename allocator_type::const_pointer const_pointer;	///< const pointer to value type
 		typedef typename allocator_type::reference reference;			///< reference to value type
@@ -701,7 +701,7 @@ namespace xirang
 		@param al reference of allocator object
 		@param pt pointer to object allocated by al
 		@throw any
-		*/		
+		*/
 		explicit allocator_ptr(uninitialized_allocator_ptr<T, Alloc>& init_ptr
 			, const_reference var, destruct_policy dtor = destruct_policy())
 			: m_alloc(init_ptr.get_allocator()), m_pt(init_ptr.get()), m_dtor(dtor), m_size(init_ptr.size())
@@ -724,7 +724,7 @@ namespace xirang
 		@param al reference of allocator object
 		@param pt pointer to object allocated by al
 		@throw any
-		*/		
+		*/
 		explicit allocator_ptr(uninitialized_allocator_ptr<T, Alloc>& init_ptr, destruct_policy dtor = destruct_policy())
 			: m_alloc(init_ptr.get_allocator()), m_pt(init_ptr.get()), m_dtor(dtor), m_size(init_ptr.size())
 		{
@@ -747,7 +747,7 @@ namespace xirang
 		@param al reference of allocator object
 		@param pt pointer to object allocated by al
 		@throw any
-		*/		
+		*/
 		template<typename InputIterator>
 		allocator_ptr(uninitialized_allocator_ptr<T, Alloc>& init_ptr, InputIterator itr, destruct_policy dtor = destruct_policy())
 			: m_alloc(init_ptr.get_allocator()), m_pt(init_ptr.get()), m_dtor(dtor), m_size(init_ptr.size())
@@ -926,7 +926,7 @@ namespace xirang
 
 		allocator_type		m_alloc;
 		pointer     m_pt;
-		destruct_policy  m_dtor;		
+		destruct_policy  m_dtor;
 		size_type	m_size;
 	};
 

@@ -66,7 +66,7 @@ namespace xirang{namespace io{ namespace exchange{
 		typename std::enable_if< s11n::is_deserializer<Ar>::value>::type>
 	Ar& load(Ar& ar, basic_string<char>& buf)
 	{
-		size_t size = exchange_cast<size_t>(ex2local_f(load<uint32_t>(ar)));
+		size_t size = exchange_cast<size_t>(load<uint32_t>(ar));
 		if (size > 0)
 		{
 			buffer<byte> rbuf;
@@ -88,7 +88,7 @@ namespace xirang{namespace io{ namespace exchange{
 	Ar& save(Ar& ar, const basic_string<char>& str)
 	{
 		uint32_t size = exchange_cast<uint32_t>(str.size());
-		save(ar, local2ex_f(size));
+		save(ar, size);
 		if (!str.empty())
 		{
 			const byte* first = reinterpret_cast<const byte*>(&*str.begin());
@@ -101,14 +101,14 @@ namespace xirang{namespace io{ namespace exchange{
 		typename std::enable_if< s11n::is_deserializer<Ar>::value>::type>
 	Ar& load(Ar& ar, basic_string<T>& str)
 	{
-		size_t size = exchange_cast<size_t>(ex2local_f(load<uint32_t>(ar)));
+		size_t size = exchange_cast<size_t>(load<uint32_t>(ar));
 		if (size > 0)
 		{
 			typedef typename exchange_type_of<T>::type U;
 			buffer<T> rbuf;
 			rbuf.reserve(size);
 			for (auto i = size; i > 0; --i){
-				rbuf.push_back(exchange_cast<T>(ex2local_f(load<U>(ar))));
+				rbuf.push_back(exchange_cast<T>(load<U>(ar)));
 			}
 			str = make_range(rbuf.begin(), rbuf.end());
 		}
@@ -123,12 +123,12 @@ namespace xirang{namespace io{ namespace exchange{
 	Ar& save(Ar& ar, const basic_string<T>& str)
 	{
 		uint32_t size = exchange_cast<uint32_t>(str.size());
-		save(ar, local2ex_f(size));
+		save(ar, size);
 		if (!str.empty())
 		{
 			typedef typename exchange_type_of<T>::type U;
 			for (auto i : str)
-				ar & local2ex_f(exchange_cast<U>(i));
+				ar & exchange_cast<U>(i);
 		}
 		return ar;
 	}

@@ -73,7 +73,7 @@ namespace xirang{ namespace io{ namespace exchange{
 		Ar& save(Ar& wt, const T& v)
 		{
 			typedef typename exchange_type_of<T>::type U;
-			U t = local2ex_f(exchange_cast<U>(v));
+			U t = exchange_cast<U>(v);
 
 			const byte* first = reinterpret_cast<const byte*>(&t);
 			const byte* last = reinterpret_cast<const byte*>(&t + 1);

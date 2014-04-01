@@ -8,8 +8,8 @@
 #include <sstream>
 #include <fstream>
 #include <map>
-#include <tuple>  
-#include <fcgio.h>  
+#include <tuple>
+#include <fcgio.h>
 
 #include <boost/algorithm/string/replace.hpp>
 
@@ -145,9 +145,9 @@ void response_dir(std::ostream& fout, const file_path& path, int state, long_siz
 void response_error(std::ostream& os, int code, const std::string& path){
 	os << "Status: " << code << "\r\n"
 		"Content-type: text/html\r\n"
-		"\r\n"  
-		"Request file: " 
-		<< path 
+		"\r\n"
+		"Request file: "
+		<< path
 		<< " not found\r\n";
 }
 bool end_with_slash(const std::string& path){
@@ -228,6 +228,12 @@ int main(int argc, char** argv){
 				continue;
 			}
 			auto children = docfs.children(base);
+			std::vector<vfs::VfsState> files;
+			files.reserve(children.size());
+			std::sort(files.begin(), files.end(), [](const vfs::VfsState & lhs, const vfs::VfsState& rhs){
+					return lhs.node.path.str() < rhs.node.path.str();
+					});
+
 			fout << "Cache-Control: public, max-age=86400\r\n"
 				"Content-type: text/html\r\n\r\n";
 			std::stringstream sstr;
