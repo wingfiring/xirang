@@ -6,6 +6,8 @@
 #include <xirang/io/adaptor.h>
 #include <xirang/versionhelper.h>
 #include <xirang/io/s11nbasetype.h>
+#include <xirang/vfs/inmemory.h>
+
 
 
 #include <tuple>
@@ -310,6 +312,7 @@ namespace xirang{ namespace vfs{
 	static const sub_file_path K_blob_idx = sub_file_path(literal("#blob.idx"));
 	static const sub_file_path K_path_idx = sub_file_path(literal("#path.idx"));
 	static const sub_file_path K_head = sub_file_path(literal("#head"));
+	static const sub_file_path K_data_file = sub_file_path(literal("#content"));
 	static const sub_file_path K_remote_head = sub_file_path(literal("#remote"));
 
 	static sub_file_path rest_to_end_(sub_file_path i, sub_file_path path){
@@ -397,6 +400,9 @@ namespace xirang{ namespace vfs{
 			LocalRepositoryImp(IVfs& vfs, const file_path& prefix, IVfs* host)
 				: m_underlying(vfs), m_prefix(prefix), m_host(host), m_root()
 			{
+				m_data_file = m_underlying.create<io::reader, io::writer,
+							io::random, io::read_map, io::write_map>(prefix/K_data_file, io::of_open);
+
 				auto ar_head = m_underlying.create<io::reader>(prefix/K_head, io::of_open);
 				if (!ar_head) AIO_THROW(bad_repository_exception)("failed to open #head file");
 				auto s_head = io::exchange::as_source(ar_head.get<io::reader>());
@@ -431,7 +437,7 @@ namespace xirang{ namespace vfs{
 				}
 
 				if (is_empty(file_version)) return VfsNodeRange();
-				auto tree = get_blob_<tree_blob>(file_version);
+				auto tree = get_blob_<tree_blob>(file_version, bt_tree);
 				if (tree.flag != bt_tree)	return VfsNodeRange();
 				return VfsNodeRange(iterator(LocalRepoFileIterator(tree.items.begin(), m_host))
 							, iterator(LocalRepoFileIterator(tree.items.end(), m_host)));
@@ -498,10 +504,14 @@ namespace xirang{ namespace vfs{
 
 			}
 			Submission getSubmission(const version_type& ver) const{
-				return get_blob_<Submission>(is_empty(ver)? m_head : ver);
+				auto ret = get_blob_<Submission>(is_empty(ver)? m_head : ver, bt_submission);
+				if (ret.flag == bt_submission)
+					ret.version = ver;
+
+				return ret;
 			}
 			version_type getFileVersion(const version_type& commit_id, const file_path& p) const{
-				auto cm = get_blob_<Submission>(commit_id);
+				auto cm = get_blob_<Submission>(commit_id, bt_submission);
 				if (cm.flag != bt_submission) return version_type();
 
 				return getFileVersionFromTree_(cm.tree, p);
@@ -515,22 +525,18 @@ namespace xirang{ namespace vfs{
 				path_map_type path_versions;
 			};
 			Submission commit(IWorkspace& wk, const string& description, const version_type& base){
-				auto s_pos = m_blob_infos.items.find(base);
-				if (s_pos == m_blob_infos.items.end()) return Submission();
-
-				Submission sub_base = load_submission_(s_pos->second.offset, s_pos->second.size);
+				Submission sub_base = get_blob_<Submission>(base, bt_submission);
+				if (!sub_base.flag == bt_submission) return sub_base;
 
 				auto t_pos = m_blob_infos.items.find(sub_base.tree);
 				if (t_pos == m_blob_infos.items.end())
 				  AIO_THROW(repository_coruppted_exception)("submission tree blob not found");
 
 				Context ctx;
-
 				ctx.idx_file = m_underlying.create<io::writer, io::random>(m_prefix/K_blob_idx, io::of_create_or_open);
 				if (!ctx.idx_file) AIO_THROW(bad_repository_exception)("failed to open #blob.idx file");
 				auto & seek = ctx.idx_file.get<io::random>();
 				seek.seek(seek.size());
-
 
 				Submission sub;
 				sub.flag = bt_submission;
@@ -576,7 +582,7 @@ namespace xirang{ namespace vfs{
 				// else add a folder, so need to merge the old one and new one
 				tree_blob new_tree;
 				if (parent_exist && pos->second.flag == bt_tree){
-					auto old_tree = get_blob_<tree_blob>(pos->second.version);
+					auto old_tree = get_blob_<tree_blob>(pos->second.version, bt_tree);
 					if (old_tree.flag != bt_tree)
 					  AIO_THROW(repository_coruppted_exception)("failed to get tree blob");
 					new_tree = old_tree;
@@ -654,12 +660,6 @@ namespace xirang{ namespace vfs{
 				}
 				return true;
 			}
-			Submission load_submission_(long_size_t offset, uint64_t size) const{
-				auto& seek = m_data_file.get<io::random>();
-				seek.seek(offset);
-				auto source = io::exchange::as_source(m_data_file.get<io::reader>());
-				return load<Submission>(source);
-			}
 			void append_submission_blob_(const Submission& sub, Context& ctx){
 				auto& seek = m_data_file.get<io::random>();
 				auto offset = seek.size();
@@ -677,12 +677,14 @@ namespace xirang{ namespace vfs{
 				m_head = sub.version;
 			}
 
-			template<typename T> T get_blob_(const version_type& ver) const{
+			template<typename T> T get_blob_(const version_type& ver, int type) const{
 					T blob;
 					blob.flag = bt_none;
 					auto pos = m_blob_infos.items.find(ver);
 					if (pos == m_blob_infos.items.end())
 					  return blob;
+					if (pos->second.flag != type)
+						return blob;
 
 					auto& seek = m_data_file.get<io::random>();
 					seek.seek(pos->second.offset);
@@ -704,7 +706,7 @@ namespace xirang{ namespace vfs{
 				return getFileVersion(m_head, p);
 			}
 			version_type getFileVersionFromTree_(const version_type& tree_id, const file_path& p) const{
-				auto tree= get_blob_<tree_blob>(tree_id);
+				auto tree= get_blob_<tree_blob>(tree_id, bt_tree);
 				if (tree.flag != bt_tree) return version_type();
 
 				for (auto i(p.begin()), last(p.end());  i != last;){
@@ -719,7 +721,7 @@ namespace xirang{ namespace vfs{
 					if (ipos == m_blob_infos.items.end()) return version_type();
 
 					if (ipos->second.flag == bt_tree){
-						tree = get_blob_<tree_blob>(version);
+						tree = get_blob_<tree_blob>(version, bt_tree);
 						if (tree.flag != bt_tree) return version_type();
 					}
 				}
@@ -782,6 +784,89 @@ namespace xirang{ namespace vfs{
 	const file_path& LocalRepository::prefix() const{ return m_imp->prefix();}
 	Submission LocalRepository::commit(IWorkspace& wk, const string& description, const version_type& base){
 		return m_imp->commit(wk, description, base);
+	}
+
+	struct WorkspaceImp{
+		IVfs& underlying;
+		string resource;
+		RootFs * root;
+
+		std::set<file_path, path_less> remove_list;
+		InMemory removed_fs;
+
+		WorkspaceImp(IVfs& fs, const string& res)
+			: underlying(fs)
+			  , resource(res), root()
+		{}
+	};
+
+	Workspace::Workspace(IVfs& ws, const string& res)
+		: m_imp(new WorkspaceImp(ws, res))
+	{}
+
+	// IVfs API
+	fs_error Workspace::remove(sub_file_path path){ return m_imp->underlying.remove(path); }
+	fs_error Workspace::createDir(sub_file_path path){ return m_imp->underlying.createDir(path);}
+	fs_error Workspace::copy(sub_file_path from, sub_file_path to){ return m_imp->underlying.copy(from, to);}
+	fs_error Workspace::truncate(sub_file_path path, long_size_t s){ return m_imp->underlying.truncate(path, s);}
+	void Workspace::sync(){ return m_imp->underlying.sync();}
+	const string& Workspace::resource() const{ return m_imp->resource;}
+	RootFs* Workspace::root() const{ return m_imp->root;}
+	bool Workspace::mounted() const{ return m_imp->root;}
+	file_path Workspace::mountPoint() const{ return root()? root()->mountPoint(*this) : file_path();}
+
+	/// \param path can be "~repo/a/b/#version"
+	/// FUTURE: or  "~repo/<#submission or root version>/a/b" or "~repo/a/<#tree version>/b"
+	/// FIXME: the returned vfs is underling, but it should be THIS;
+	VfsNodeRange Workspace::children(sub_file_path path) const{ return m_imp->underlying.children(path);}
+	VfsState Workspace::state(sub_file_path path) const{
+		auto ret = m_imp->underlying.state(path);
+		ret.node.owner_fs = const_cast<Workspace*>(this);
+		return ret;
+	}
+	any Workspace::getopt(int id, const any & optdata) const {
+		return m_imp->underlying.getopt(id, optdata);
+	}
+	any Workspace::setopt(int id, const any & optdata,  const any & indata){
+		return m_imp->underlying.setopt(id, optdata, indata);
+	}
+	void** Workspace::do_create(unsigned long long mask,
+			void** ret, unique_ptr<void>& owner, sub_file_path path, int flag){
+		return m_imp->underlying.do_create(mask, ret, owner, path, flag);
+	}
+
+	// the p can be regular file or directory. if it's a directory, it means all children need to be removed recursively.
+	fs_error Workspace::markRemove(const file_path& p){
+		m_imp->remove_list.insert(p);
+		recursive_create<io::writer>(m_imp->removed_fs, p, io::of_create_or_open);
+		return fs::er_ok;
+	}
+
+	// should remove the parent directory if the parent are not affected.
+	fs_error Workspace::unmarkRemove(const file_path& p){
+		m_imp->remove_list.insert(p);
+		m_imp->removed_fs.remove(p);
+		auto path = p.parent();
+		while (!path.empty()){
+			if (!m_imp->removed_fs.children(path).empty())
+				break;
+			m_imp->removed_fs.remove(path);
+			path = path.parent();
+		}
+		return fs::er_ok;
+	}
+
+	// return true if user added a same path as p exactly  via markRemove;
+	bool Workspace::isMarkedRemove(const file_path& p) const{
+		return m_imp->remove_list.count(p) != 0;
+	}
+
+	bool Workspace::isAffected(const file_path& p) const{
+		return m_imp->removed_fs.state(p).state != fs::st_not_found;
+	}
+
+	VfsNodeRange Workspace::affectedRemove(const file_path& p) const{
+		return m_imp->removed_fs.children(p);
 	}
 }}
 

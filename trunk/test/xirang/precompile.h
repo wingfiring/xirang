@@ -2,7 +2,7 @@
 $COMMON_HEAD_COMMENTS_CONTEXT$
 */
 
-/** @file 
+/** @file
 
 	@author wingfire mailto:wing.fire@gmail.com http://blog.csdn.net/wingfiring
  */
@@ -19,13 +19,13 @@ $COMMON_HEAD_COMMENTS_CONTEXT$
 #include <boost/test/test_case_template.hpp>
 
 #define AIO_KEEP_CONTRACT_ASSERT
-#include <xirang/utility.h>
+#include <xirang/utility/unused.h>
 
 namespace
 {
 	inline void disable_warning () // disable boost unused warning for gcc
 	{
-#if defined GNUC_COMPILER_	
+#if defined GNUC_COMPILER_
 		xirang::unused(boost::test_tools::check_is_close);
 		xirang::unused(boost::test_tools::check_is_small);
 #endif
