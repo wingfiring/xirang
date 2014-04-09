@@ -42,21 +42,21 @@ namespace xirang{ namespace vfs{
 
 	template<typename Ar> Ar& load(Ar& ar, blob_info_map& infos){
 		blob_info item;
-		version_type version;
 		while (ar.readable()){
-			ar & version & item;
-			infos.items.insert(std::make_pair(version, item));
+			ar & item;
+			infos.items.insert(std::make_pair(item.version, item));
 		}
 		return ar;
 	}
 
 	template<typename Ar> Ar& save(Ar& ar, const blob_info_map& infos){
 		for (auto & i: infos.items){
-			ar & i.first & i.second;
+			ar & i.second;
 		}
 		return ar;
 	}
 
+	/// \note don't include version field!!!!!
 	template<typename Ar> Ar& load(Ar& ar, Submission& sub){
 		ar & sub.flag & sub.prev & sub.tree & sub.time
 			& sub.author & sub.submitter & sub.description;
@@ -71,13 +71,12 @@ namespace xirang{ namespace vfs{
 
 	struct tree_blob {
 		uint32_t flag;
-		typedef std::unordered_map<string, version_type, hash_string> items_type;
+		typedef std::map<string, version_type> items_type;
 		items_type items;
 	};
 	template<typename Ar> Ar& load(Ar& ar, tree_blob& tb){
 		ar & tb.flag;
 		size_t s = load_size_t(ar) ;
-		tb.items.reserve(s);
 		for (size_t i = 0; i < s; ++i){
 			auto version = load<version_type>(ar);
 			auto name = load<string>(ar);
@@ -87,7 +86,8 @@ namespace xirang{ namespace vfs{
 	}
 
 	template<typename Ar> Ar& save(Ar& ar, const tree_blob& tb){
-		ar & tb.flag & tb.items.size();
+		ar & tb.flag;
+		save_size_t(ar, tb.items.size());
 		for (auto &i : tb.items)
 		  ar & i.second & i.first;
 		return ar;
@@ -121,7 +121,7 @@ namespace xirang{ namespace vfs{
 	template<typename Ar> Ar& save(Ar& ar, const path_map_type& tb){
 		for (auto& i :  tb.items){
 			ar & i.first;
-			ar & i.second.size();
+			save_size_t(ar, i.second.size());
 			for (auto& m : i.second) ar & m;
 		}
 		return ar;
@@ -405,19 +405,24 @@ namespace xirang{ namespace vfs{
 
 				auto ar_head = m_underlying.create<io::reader>(prefix/K_head, io::of_open);
 				if (!ar_head) AIO_THROW(bad_repository_exception)("failed to open #head file");
-				auto s_head = io::exchange::as_source(ar_head.get<io::reader>());
-				s_head & m_head;
+				if (ar_head.get<io::reader>().readable()){
+					auto s_head = io::exchange::as_source(ar_head.get<io::reader>());
+					s_head & m_head;
+				}
 
 				auto ar_blob_idx = m_underlying.create<io::reader>(prefix/K_blob_idx, io::of_open);
 				if (!ar_blob_idx) AIO_THROW(bad_repository_exception)("failed to open #blob.idx file");
-				auto s_blob_idx = io::exchange::as_source(ar_blob_idx.get<io::reader>());
+				if (ar_blob_idx.get<io::reader>().readable()){
+					auto s_blob_idx = io::exchange::as_source(ar_blob_idx.get<io::reader>());
+					s_blob_idx & m_blob_infos;
+				}
 
 				auto ar_path_map = m_underlying.create<io::reader>(prefix/K_path_idx, io::of_open);
 				if (!ar_path_map) AIO_THROW(bad_repository_exception)("failed to open #path.idx file");
-				auto s_path_map = io::exchange::as_source(ar_path_map.get<io::reader>());
-
-				s_blob_idx & m_blob_infos;
-				s_path_map & m_path_map;
+				if (ar_path_map.get<io::reader>().readable()){
+					auto s_path_map = io::exchange::as_source(ar_path_map.get<io::reader>());
+					s_path_map & m_path_map;
+				}
 			}
 			void sync(){ return m_underlying.sync();}
 			const string& resource() const{ return m_prefix.str();}
@@ -504,9 +509,10 @@ namespace xirang{ namespace vfs{
 
 			}
 			Submission getSubmission(const version_type& ver) const{
-				auto ret = get_blob_<Submission>(is_empty(ver)? m_head : ver, bt_submission);
+				auto version = is_empty(ver)? m_head : ver;
+				auto ret = get_blob_<Submission>(version, bt_submission);
 				if (ret.flag == bt_submission)
-					ret.version = ver;
+					ret.version = version;
 
 				return ret;
 			}
@@ -525,12 +531,17 @@ namespace xirang{ namespace vfs{
 				path_map_type path_versions;
 			};
 			Submission commit(IWorkspace& wk, const string& description, const version_type& base){
-				Submission sub_base = get_blob_<Submission>(base, bt_submission);
-				if (!sub_base.flag == bt_submission) return sub_base;
+				version_type tree;
+				if (!is_empty(base)){
+					Submission sub_base = get_blob_<Submission>(base, bt_submission);
+					if (!sub_base.flag == bt_submission) return sub_base;
 
-				auto t_pos = m_blob_infos.items.find(sub_base.tree);
-				if (t_pos == m_blob_infos.items.end())
-				  AIO_THROW(repository_coruppted_exception)("submission tree blob not found");
+					auto t_pos = m_blob_infos.items.find(sub_base.tree);
+					if (t_pos == m_blob_infos.items.end())
+						AIO_THROW(repository_coruppted_exception)("submission tree blob not found");
+
+					tree = sub_base.tree;
+				}
 
 				Context ctx;
 				ctx.idx_file = m_underlying.create<io::writer, io::random>(m_prefix/K_blob_idx, io::of_create_or_open);
@@ -544,8 +555,9 @@ namespace xirang{ namespace vfs{
 				sub.prev = base;
 				sub.time = std::time(0);
 
-				sub.tree = do_commit_(wk, sub_base.tree, file_path(), ctx);
+				sub.tree = do_commit_(wk, tree, file_path(), ctx);
 
+				sub.version = version_of_object(sub);	// Submission serialier ignore version field
 				append_submission_blob_(sub, ctx);
 
 				auto tree_map_file = m_underlying.create<io::writer, io::random>(m_prefix/K_path_idx, io::of_create_or_open);
@@ -556,13 +568,12 @@ namespace xirang{ namespace vfs{
 				auto sink = io::exchange::as_sink(tree_map_file.get<io::writer>());
 				for (auto& i : ctx.path_versions.items){
 					auto & v = m_path_map.items[i.first];
-					sink & i.first.str() & (v.size() + i.second.size());
 					for (auto& f : i.second){
-						FileHistoryItem fhi = {sub.version, f.version};
-						sink & fhi;
-						v.push_back(fhi);
+						f.submission = sub.version;
+						v.push_back(f);
 					}
 				}
+				sink & ctx.path_versions;
 
 				return sub;
 			}
@@ -581,6 +592,7 @@ namespace xirang{ namespace vfs{
 
 				// else add a folder, so need to merge the old one and new one
 				tree_blob new_tree;
+				new_tree.flag = bt_tree;
 				if (parent_exist && pos->second.flag == bt_tree){
 					auto old_tree = get_blob_<tree_blob>(pos->second.version, bt_tree);
 					if (old_tree.flag != bt_tree)
@@ -617,6 +629,14 @@ namespace xirang{ namespace vfs{
 			}
 
 			version_type save_tree_blob_(const file_path& path, const tree_blob& tree, Context& ctx){
+				version_type ret = version_of_object(tree);
+				if (m_blob_infos.items.count(ret) !=  0)
+				{
+					FileHistoryItem fhi={version_type(),ret};
+					ctx.path_versions.items[path].push_back(fhi);
+					return ret;
+				}
+
 				auto & seek = m_data_file.get<io::random>();
 				auto offset = seek.size();
 				seek.seek(offset);
@@ -624,7 +644,6 @@ namespace xirang{ namespace vfs{
 				auto sink = io::exchange::as_sink(m_data_file.get<io::writer>());
 				sink & tree;
 
-				version_type ret = version_of_object(tree);
 				save_blob_idx_(bt_tree, ret, seek.size() - offset, offset, ctx);
 
 				FileHistoryItem fhi={version_type(),ret};
@@ -637,12 +656,21 @@ namespace xirang{ namespace vfs{
 				auto src = wk.create<io::read_map>(path, io::of_open);
 				if (!src) AIO_THROW(fs::open_failed_exception)("failed to open file in workdir");
 
+				version_type ret = version_of_archive(src.get<io::read_map>());
+				if (m_blob_infos.items.count(ret) !=  0)
+				{
+					FileHistoryItem fhi={version_type(),ret};
+					ctx.path_versions.items[path].push_back(fhi);
+					return ret;
+				}
+
 				auto& seek = m_data_file.get<io::random>();
 				long_size_t offset = seek.size();
 				seek.seek(offset);
+				auto sink = io::exchange::as_sink(m_data_file.get<io::writer>());
+				sink & uint32_t(bt_file);
 				copy_data(src.get<io::read_map>(), m_data_file.get<io::writer>());
 
-				version_type ret = version_of_archive(src.get<io::read_map>());
 				save_blob_idx_(bt_file, ret, seek.size() - offset, offset, ctx);
 
 				FileHistoryItem fhi={version_type(),ret};
@@ -860,6 +888,10 @@ namespace xirang{ namespace vfs{
 	bool Workspace::isMarkedRemove(const file_path& p) const{
 		return m_imp->remove_list.count(p) != 0;
 	}
+	RemovedList Workspace::allRemoved() const{
+		typedef RemovedList::iterator iterator;
+		return RemovedList(iterator(m_imp->remove_list.begin()), iterator(m_imp->remove_list.end()));
+	}
 
 	bool Workspace::isAffected(const file_path& p) const{
 		return m_imp->removed_fs.state(p).state != fs::st_not_found;
@@ -867,6 +899,31 @@ namespace xirang{ namespace vfs{
 
 	VfsNodeRange Workspace::affectedRemove(const file_path& p) const{
 		return m_imp->removed_fs.children(p);
+	}
+	void Workspace::setRoot(RootFs* r){
+		AIO_PRE_CONDITION(!mounted() || r == 0);
+		m_imp->root = r;
+	}
+
+	static bool createEmptyFile(IVfs& vfs, const file_path& p){
+		auto f = vfs.create<io::ioctrl, io::writer>(p, io::of_create_or_open);
+		if (!f) return false;
+		f.get<io::ioctrl>().truncate(0);
+		return true;
+	}
+
+	fs_error initRepository(IVfs& vfs, sub_file_path dir){
+		if (vfs.state(dir / K_data_file).state != fs::st_not_found){
+			return fs::er_exist;
+		}
+
+		if (createEmptyFile(vfs, dir / K_data_file)
+				&& createEmptyFile(vfs, dir / K_blob_idx)
+				&& createEmptyFile(vfs, dir / K_path_idx)
+				&& createEmptyFile(vfs, dir / K_head)
+		   )
+			return fs::er_ok;
+		return fs::er_create;
 	}
 }}
 

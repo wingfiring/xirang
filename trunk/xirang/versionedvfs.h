@@ -29,7 +29,7 @@ namespace xirang{ namespace vfs{
 	};
 
 	typedef BiRangeT<const_itr_traits<FileHistoryItem> > FileHistory;
-	typedef BiRangeT<const_itr_traits<Submission> > SubmissionRange;
+	typedef BiRangeT<const_itr_traits<file_path> > RemovedList;
 
 	class IWorkspace;
 	class IRepository;
@@ -102,7 +102,7 @@ namespace xirang{ namespace vfs{
 		// if the IVfs is empty and affectedRemove(const file_path& p) is empty too, this method do nothing and just return base;
 		virtual Submission commit(IWorkspace& wk, const string& description, const version_type& base) = 0;
 		protected:
-			virtual ~IRepository();
+			virtual ~IRepository(){};
 	};
 
 	class IWorkspace : public IVfs{
@@ -113,12 +113,13 @@ namespace xirang{ namespace vfs{
 		// after this call
 		virtual fs_error markRemove(const file_path& p) = 0;
 		virtual fs_error unmarkRemove(const file_path& p) = 0;
+		virtual RemovedList allRemoved() const = 0;
 		virtual bool isMarkedRemove(const file_path& p) const = 0;
 		virtual bool isAffected(const file_path& p) const = 0;
 		virtual VfsNodeRange affectedRemove(const file_path& p) const = 0;
 
 		protected:
-		virtual ~IWorkspace();
+		virtual ~IWorkspace(){}
 
 	};
 
@@ -148,8 +149,6 @@ namespace xirang{ namespace vfs{
         virtual any setopt(int id, const any & optdata,  const any & indata= any());
 		virtual void** do_create(unsigned long long mask,
 				void** ret, unique_ptr<void>& owner, sub_file_path path, int flag);
-
-		virtual std::shared_ptr<IRepository> getRepository(const file_path& p, file_path* rest, file_path* repo_path);
 
 		virtual IVfs& underlying() const;
 
@@ -206,6 +205,8 @@ namespace xirang{ namespace vfs{
 
 	};
 
+	extern fs_error initRepository(IVfs& vfs, sub_file_path dir);
+
 
 	class WorkspaceImp;
 
@@ -238,6 +239,8 @@ namespace xirang{ namespace vfs{
 		// should remove the parent directory if the parent are not affected.
 		virtual fs_error unmarkRemove(const file_path& p);
 
+		virtual RemovedList allRemoved() const;
+
 		// return true if user added a same path as p exactly  via markRemove;
 		virtual bool isMarkedRemove(const file_path& p) const;
 
@@ -245,6 +248,7 @@ namespace xirang{ namespace vfs{
 
 		virtual VfsNodeRange affectedRemove(const file_path& p) const;
 	private:
+		virtual void setRoot(RootFs* r);
 		unique_ptr<WorkspaceImp> m_imp;
 	};
 
@@ -278,7 +282,6 @@ namespace xirang{ namespace vfs{
 		virtual void** do_create(unsigned long long mask,
 				void** ret, unique_ptr<void>& owner, sub_file_path path, int flag);
 
-		virtual std::shared_ptr<IRepository> getRepository(const file_path& p, file_path* rest, file_path* repo_path);
 		virtual IVfs& underlying() const;
 	private:
 		virtual void setRoot(RootFs* r);

@@ -5,7 +5,7 @@ namespace xirang{
 	enum class hash_algorithm{
 		ha_sha1 = 1,
 	};
-	struct version_type{
+	struct version_type : totally_ordered<version_type>{
 		uint16_t protocol_version = 1;
 		uint16_t algorithm = uint16_t(hash_algorithm::ha_sha1);
 		sha1_digest id;
@@ -35,8 +35,6 @@ namespace xirang{
 			return hash_sha1()(ver.id);
 		}
 	};
-
-	struct version_type_compare_ : totally_ordered<version_type>{ };
 
 	typedef int32_t revision_type;
 	const revision_type no_revision = -1;

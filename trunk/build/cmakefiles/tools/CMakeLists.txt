@@ -12,3 +12,4 @@ define_tools(gentypever)
 define_tools(zipdoc)
 TARGET_LINK_LIBRARIES(zipdoc fcgi fcgi++)
 
+define_tools(lvvfs)
