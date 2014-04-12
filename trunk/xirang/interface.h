@@ -18,8 +18,8 @@ namespace xirang
 	template<typename Interface> struct interface_holder
 	{
 		interface_holder() : vptr(0), this_(0){}
-		interface_holder(Interface& t, void* obj) : vptr(*(void**)&t), this_(obj){}
-		Interface& get_interface() const{ return *(Interface*)(&vptr);}
+		interface_holder(Interface* t, void* obj) : vptr(t?*(void**)t : 0), this_(obj){}
+		Interface* get_interface() const{ return (Interface*)(&vptr);}
 		void* get_this() const{ return this_;}
 		void* vptr;
 		void* this_;
@@ -28,12 +28,18 @@ namespace xirang
 	template<typename Interface> struct interface_holder<opt<Interface>>
 	{
 		interface_holder() : vptr(0), this_(0){}
-		interface_holder(Interface& t, void* obj) : vptr(*(void**)&t), this_(obj){}
 		interface_holder(Interface* t, void* obj) : vptr(t?*(void**)t : 0), this_(obj){}
 		Interface* get_interface() const{ return (Interface*)(&vptr);}
 		void* get_this() const{ return this_;}
 		void* vptr;
 		void* this_;
+	};
+	template<typename Interface> struct interface_holder<noif<Interface>>
+	{
+		interface_holder() {}
+		interface_holder(Interface*, void* ) {}
+		Interface* get_interface() const{ return 0;}
+		void* get_this() const{ return 0;}
 	};
 
 
@@ -55,6 +61,7 @@ namespace xirang
 			virtual ~null_interface(){}
 			null_interface(const null_interface&) = delete;
 		};
+		template<typename I> struct no_interface{};
 
 		template <typename Interface> struct get_interface_type{
 			typedef Interface type;
@@ -95,10 +102,9 @@ namespace xirang
 			void* this_;
 		};
 		template<typename Interface, typename CoClass> struct get_base <noif<Interface>, CoClass>
-			: public null_interface
+			: public no_interface<Interface>
 		{
-			get_base(void* obj) : this_(obj){}
-			void* this_;
+			get_base(void*) {}
 		};
 
 
@@ -165,7 +171,7 @@ namespace xirang
 		template<typename T> struct find_convertible<T> { typedef interface_not_exist type;};
 
 
-		template<typename T, typename Interface> struct get_return_type_imp{ typedef Interface& type;};
+		template<typename T, typename Interface> struct get_return_type_imp{ typedef Interface& type; };
 		template<typename T, typename Interface> struct get_return_type_imp<T, opt<Interface>>{ typedef Interface* type;};
 		template<typename T, typename Interface> struct get_return_type_imp<T, noif<Interface>>{ typedef Interface* type;};
 		template<typename T> struct get_return_type_imp<T, interface_not_exist>{ };
@@ -204,17 +210,23 @@ namespace xirang
 		template<typename... OArgs>
 			iref(iref<OArgs...>& rhs)
 			: target_holder<void>(rhs.get_target()), interface_holder<Args>(
-					rhs.get<typename private_::get_interface_type<Args>::type>(), rhs.get_target())...
+					rhs.get_ptr<typename private_::get_interface_type<Args>::type>(), rhs.get_target())...
 		{
 		}
 
 		template<typename... OArgs>
 			iref(const iref<OArgs...>& rhs)
 			: target_holder<void>(rhs.get_target()), interface_holder<Args>(
-					rhs.get<typename private_::get_interface_type<Args>::type>(), rhs.get_target())...
+					rhs.get_ptr<typename private_::get_interface_type<Args>::type>(), rhs.get_target())...
 		{
 		}
 
+		template<typename T>
+		T* get_ptr() const {
+			typedef typename private_::find_convertible<T, Args...>::type type;
+			const interface_holder<type>* this_ = this;
+			return this_->get_interface();
+		}
 		template<typename T>
 		typename private_::get_return_type<T, Args...>::type
 		get() const {
@@ -244,7 +256,7 @@ namespace xirang
 		template<typename Ret, typename Interface>
 			Ret get_helper_(Interface*) const{
 			const interface_holder<Interface>* this_ = this;
-			return this_->get_interface();
+			return *this_->get_interface();
 			}
 		template<typename Ret, typename Interface>
 			Ret get_helper_(noif<Interface>*) const{
@@ -255,10 +267,12 @@ namespace xirang
 				const interface_holder<opt<Interface>>* this_ = this;
 				return this_->get_interface();
 			}
+#if 0
 		template<typename Ret>
 			Ret get_helper_(private_::interface_not_exist*) const{
 				return Ret();
 			}
+#endif
 
 	};
 

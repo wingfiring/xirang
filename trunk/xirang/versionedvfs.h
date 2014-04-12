@@ -28,8 +28,14 @@ namespace xirang{ namespace vfs{
 		version_type version;		///< file id
 	};
 
+	struct TreeItem{
+		file_path name;
+		version_type version;
+	};
+
 	typedef BiRangeT<const_itr_traits<FileHistoryItem> > FileHistory;
 	typedef BiRangeT<const_itr_traits<file_path> > RemovedList;
+	typedef BiRangeT<const_itr_traits<TreeItem> > TreeItemList;
 
 	class IWorkspace;
 	class IRepository;
@@ -83,6 +89,8 @@ namespace xirang{ namespace vfs{
 		// history of root will get all submission;
 		virtual FileHistory history(const file_path& p) const = 0;
 		virtual Submission getSubmission(const version_type& ver) const = 0;
+		virtual BlobType blobType(const version_type& id) const = 0;
+		virtual TreeItemList treeItems(const version_type& id) const = 0;
 
 		virtual version_type getFileVersion(const version_type& commit_id, const file_path& p) = 0;
 		virtual void push() = 0;
@@ -193,6 +201,8 @@ namespace xirang{ namespace vfs{
 		// from IRepository
 		virtual FileHistory history(const file_path& p) const;
 		virtual Submission getSubmission(const version_type& ver) const;
+		virtual BlobType blobType(const version_type& id) const;
+		virtual TreeItemList treeItems(const version_type& id) const;
 		virtual version_type getFileVersion(const version_type& commit_id, const file_path& p);
 		virtual void push();
 		virtual void pull();
@@ -295,6 +305,8 @@ namespace xirang{ namespace vfs{
 		// net repository, the history() should not expect complete list?
 		virtual FileHistory history(const file_path& p) const;
 		virtual Submission getSubmission(const version_type& ver) const;
+		virtual BlobType blobType(const version_type& id) const;
+		virtual TreeItemList treeItems(const version_type& id) const;
 		virtual version_type getFileVersion(const version_type& commit_id, const file_path& p);
 		virtual void push();
 		virtual void pull();

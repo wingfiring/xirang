@@ -5,7 +5,11 @@
 #include <xirang/vfs/inmemory.h>
 #include <xirang/vfs/subvfs.h>
 
+#include <xirang/io/exchs11n.h>
+#include <xirang/io/path.h>
+
 #include <xirang/io/file.h>
+#include <xirang/io/memory.h>
 
 #include <unordered_map>
 
@@ -45,7 +49,7 @@ void log_submission(){
 	}
 
 	for(;;){
-		cout << sub.version.id << "\t" << sub.tree.id << "\t" << sub.prev.id << endl;
+		cout << sub.version.id << "\t" << sub.tree.id << endl;
 		if (!is_empty(sub.prev))
 			sub = repo->getSubmission(sub.prev);
 		else
@@ -53,7 +57,14 @@ void log_submission(){
 	}
 }
 void log_file(const file_path& p){
-	cout << "TODO: log file\n";
+	vfs::LocalFs vfs(file_path("mygit"));
+	vfs::RepoManager rpmgr;
+
+	auto repo = rpmgr.getRepo(vfs, sub_file_path());
+
+	for(auto& i : repo->history(p)){
+		cout << i.submission.id << "\t" << i.version.id << endl;
+	}
 }
 
 void cmd_log(int argc, char** argv){
@@ -97,6 +108,21 @@ void cmd_add(int argc, char** argv){
 
 }
 
+void cmd_rm(int argc, char** argv){
+	if (argc < 1){
+		cout << "usage: add files ...\n";
+		return;
+	}
+	vfs::LocalFs rpfs(file_path("mygit"));
+	auto f = rpfs.create<io::random, io::writer>(file_path("wkremove"), io::of_create_or_open);
+	auto& seek = f.get<io::random>();
+	seek.seek(seek.size());
+
+	auto sink = io::exchange::as_sink(f.get<io::writer>());
+	for (int i = 0; i < argc; ++i)
+		sink & file_path(argv[i]);
+}
+
 void show_file(vfs::IVfs& fs, const file_path& dir){
 	for (auto& i: fs.children(dir)){
 		file_path path = dir/i.path;
@@ -111,7 +137,17 @@ void show_file(vfs::IVfs& fs, const file_path& dir){
 
 void do_show_stage(){
 	vfs::LocalFs wkfs(file_path("mygit/stage"));
-	vfs::Workspace wk(wkfs, string());
+	vfs::Workspace wk(wkfs, string() );
+
+	try{
+		vfs::LocalFs rpfs(file_path("mygit"));
+		auto f = rpfs.create<io::reader>(file_path("wkremove"), io::of_open);
+		auto source = io::exchange::as_source(f.get<io::reader>());
+		while(f.get<io::reader>().readable()){
+			wk.markRemove(load<file_path>(source));
+		}
+	}
+	catch(exception&){}
 
 	cout << "Added:\n";
 	show_file(wk, file_path());
@@ -142,6 +178,14 @@ void cmd_checkin(int argc, char** argv){
 
 	vfs::LocalFs wkfs(file_path("mygit/stage"));
 	vfs::Workspace wk(wkfs, string());
+	try{
+		auto f = vfs.create<io::reader>(file_path("wkremove"), io::of_open);
+		auto source = io::exchange::as_source(f.get<io::reader>());
+		while(f.get<io::reader>().readable()){
+			wk.markRemove(load<file_path>(source));
+		}
+	}
+	catch(exception&){}
 
 	if (argc != 0){
 		base = version_type(sha1_digest(as_range_string(argv[0])));
@@ -158,13 +202,56 @@ void cmd_checkin(int argc, char** argv){
 	}
 }
 
+void cmd_cat(int argc, char** argv){
+	if (argc != 1){
+		cout << "cat <file id>\n";
+		return;
+	}
+	version_type id(sha1_digest(as_range_string(argv[0])));
+
+	vfs::LocalFs vfs(file_path("mygit"));
+	vfs::LocalRepository repo(vfs, file_path());
+
+	auto type = repo.blobType(id);
+	switch(type){
+		case vfs::bt_file:
+			{
+				auto f = repo.create<io::read_map>(file_path(string(string("#") << id.id.to_string())), io::of_open);
+				io::mem_archive mar;
+				io::copy_data<io::read_map, io::writer>(f.get<io::read_map>(), mar);
+				cout.write((const char*)mar.data().begin(), mar.data().size());
+				cout << endl;
+			}
+			break;
+		case vfs::bt_tree:
+			{
+				cout << "tree:\n";
+				for (auto& i: repo.treeItems(id)){
+					cout << i.version.id << "\t" << i.name.str() << endl;
+				}
+			}
+			break;
+		case vfs::bt_submission:
+			{
+				auto s = repo.getSubmission(id);
+				cout << "Submission:" << s.version.id << "\t" << s.description << endl;
+			}
+			break;
+		default:
+			cout << "Not found\n";
+	}
+
+}
+
 typedef std::function<void(int, char**)> command_type;
 std::unordered_map<std::string, command_type> command_table = {
 	{std::string("init"), cmd_init},
 	{std::string("log"), cmd_log},
 	{std::string("add"), cmd_add},
+	{std::string("rm"), cmd_rm},
 	{std::string("show"), cmd_show},
-	{std::string("ci"), cmd_checkin}
+	{std::string("ci"), cmd_checkin},
+	{std::string("cat"), cmd_cat}
 };
 
 void print_help(){
@@ -199,23 +286,3 @@ int main(int argc, char** argv){
 	}
 }
 
-#if 0
-	bool ret = repomgr.extractRepoPath(vfs, file_path("repo/aa/bb"), 0, 0);
-	AIO_POST_CONDITION(ret);
-
-	file_path repo_path, path_in_repo;
-	ret = repomgr.extractRepoPath(vfs, file_path("repo/aa/bb"), &repo_path, &path_in_repo);
-	AIO_POST_CONDITION(ret);
-
-	std::cout << repo_path.str() <<"\n"
-		<< path_in_repo.str() << "\n";
-
-	auto repo = repomgr.getRepo(vfs, repo_dir);
-
-	auto history = repo->history(file_path());
-
-	AIO_POST_CONDITION(history.empty());
-
-	vfs::InMemory wkfs;
-	vfs::Workspace wks(wkfs, string());
-#endif

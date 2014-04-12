@@ -259,8 +259,10 @@ namespace xirang { namespace vfs{ namespace detail{
 			interface_type ret;
 			target_holder<void>* holder = &ret;
 			void** last = vfs.do_create(mask, (void**)(holder + 1), ret.target_ptr, path, flag);
-			AIO_PRE_CONDITION(last == (void**)&ret.target_ptr);
-			holder->target = ret.target_ptr.get();
+			if (last){
+				AIO_PRE_CONDITION(last == (void**)&ret.target_ptr);
+				holder->target = ret.target_ptr.get();
+			}
 			return std::move(ret);
 		}
 

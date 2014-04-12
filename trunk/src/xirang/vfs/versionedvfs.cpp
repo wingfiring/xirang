@@ -16,6 +16,8 @@
 #include <map>
 #include <ctime>
 
+#include <iostream>
+
 namespace xirang{ namespace vfs{
 
 	struct blob_info{
@@ -351,6 +353,50 @@ namespace xirang{ namespace vfs{
 		return false;
 	}
 
+	struct TreeItemIterator{
+		public:
+			typedef tree_blob::items_type::const_iterator item_iterator;
+			TreeItemIterator() : m_itr() {
+			}
+
+			explicit TreeItemIterator(std::shared_ptr<tree_blob> tree, item_iterator itr, IVfs* vfs)
+				: m_tree(std::move(tree)), m_itr(itr)
+			{
+			}
+
+			const TreeItem& operator*() const
+			{
+				m_node.name = file_path(m_itr->first, pp_none);
+				m_node.version = m_itr->second;
+				return m_node;
+			}
+
+			const TreeItem* operator->() const
+			{
+				return &**this;
+			}
+
+
+			TreeItemIterator& operator++()  { ++m_itr; return *this;}
+			TreeItemIterator operator++(int) {
+				TreeItemIterator ret = *this;
+				++*this;
+				return ret;
+			}
+
+			TreeItemIterator& operator--(){ return *this;}
+			TreeItemIterator operator--(int){ return *this;}
+
+			bool operator==(const TreeItemIterator& rhs) const
+			{
+				return m_itr == rhs.m_itr;
+			}
+		private:
+			std::shared_ptr<tree_blob> m_tree;
+			item_iterator m_itr;
+			mutable TreeItem m_node;
+	};
+
 	struct LocalRepoFileIterator{
 		public:
 			typedef tree_blob::items_type::const_iterator item_iterator;
@@ -358,8 +404,8 @@ namespace xirang{ namespace vfs{
 				m_node.owner_fs = 0;
 			}
 
-			explicit LocalRepoFileIterator(item_iterator itr, IVfs* vfs)
-				: m_itr(itr)
+			explicit LocalRepoFileIterator(std::shared_ptr<tree_blob> tree, item_iterator itr, IVfs* vfs)
+				: m_tree(std::move(tree)), m_itr(itr)
 			{
 				m_node.owner_fs = vfs;
 			}
@@ -391,6 +437,7 @@ namespace xirang{ namespace vfs{
 				return m_itr == rhs.m_itr;
 			}
 		private:
+			std::shared_ptr<tree_blob> m_tree;
 			item_iterator m_itr;
 			mutable VfsNode m_node;
 	};
@@ -444,8 +491,10 @@ namespace xirang{ namespace vfs{
 				if (is_empty(file_version)) return VfsNodeRange();
 				auto tree = get_blob_<tree_blob>(file_version, bt_tree);
 				if (tree.flag != bt_tree)	return VfsNodeRange();
-				return VfsNodeRange(iterator(LocalRepoFileIterator(tree.items.begin(), m_host))
-							, iterator(LocalRepoFileIterator(tree.items.end(), m_host)));
+
+				std::shared_ptr<tree_blob> tree_ptr = std::make_shared<tree_blob>(std::move(tree));
+				return VfsNodeRange(iterator(LocalRepoFileIterator(tree_ptr, tree_ptr->items.begin(), m_host))
+							, iterator(LocalRepoFileIterator(tree_ptr, tree_ptr->items.end(), m_host)));
 			}
 			VfsState state(sub_file_path path) const{
 				version_type file_version = getVersionOfPath_(path);
@@ -479,10 +528,14 @@ namespace xirang{ namespace vfs{
 								|| pos->second.flag != bt_file) return 0;
 
 					if (pos->second.offset != long_size_t(-1)){
+						auto real_offset = pos->second.offset + 4 + 8; // 4: flag size, 8: real file size
+
 						auto adaptor = io::decorate<io::sub_archive
 							, io::sub_reader_p
 							, io::sub_read_map_p
-							>(m_data_file, pos->second.offset, pos->second.offset + pos->second.size);
+							>(m_data_file,
+							real_offset, real_offset + pos->second.size - 4 - 8);
+
 						iauto<io::reader, io::read_map> res (std::move(adaptor));
 						ret = copy_interface<io::reader, io::read_map>::apply(mask, base, res, res.target_ptr.get());
 						unique_ptr<void>(std::move(res.target_ptr)).swap(owner);
@@ -516,6 +569,21 @@ namespace xirang{ namespace vfs{
 
 				return ret;
 			}
+			BlobType blobType(const version_type& id) const{
+				auto pos = m_blob_infos.items.find(id);
+				if (pos == m_blob_infos.items.end())
+					return bt_none;
+				return BlobType(pos->second.flag);
+			}
+			TreeItemList treeItems(const version_type& id) const{
+				auto tree = get_blob_<tree_blob>(id, bt_tree);
+				if (tree.flag != bt_tree)	return TreeItemList();
+
+				std::shared_ptr<tree_blob> tree_ptr = std::make_shared<tree_blob>(std::move(tree));
+				typedef TreeItemList::iterator iterator;
+				return TreeItemList(iterator(TreeItemIterator(tree_ptr, tree_ptr->items.begin(), m_host))
+							, iterator(TreeItemIterator(tree_ptr, tree_ptr->items.end(), m_host)));
+			}
 			version_type getFileVersion(const version_type& commit_id, const file_path& p) const{
 				auto cm = get_blob_<Submission>(commit_id, bt_submission);
 				if (cm.flag != bt_submission) return version_type();
@@ -528,7 +596,7 @@ namespace xirang{ namespace vfs{
 
 			struct Context{
 				iauto<io::random, io::writer> idx_file;
-				path_map_type path_versions;
+				std::map<file_path, version_type> path_versions;
 			};
 			Submission commit(IWorkspace& wk, const string& description, const version_type& base){
 				version_type tree;
@@ -565,15 +633,19 @@ namespace xirang{ namespace vfs{
 				auto & seek2 = tree_map_file.get<io::random>();
 				seek2.seek(seek2.size());
 
+				path_map_type new_path_map;
 				auto sink = io::exchange::as_sink(tree_map_file.get<io::writer>());
-				for (auto& i : ctx.path_versions.items){
+				for (auto& i : ctx.path_versions){
 					auto & v = m_path_map.items[i.first];
-					for (auto& f : i.second){
-						f.submission = sub.version;
+					//just record changes
+					if (v.empty() || v.back().version != i.second){
+						FileHistoryItem f = { sub.version, i.second};
 						v.push_back(f);
+						new_path_map.items[i.first].push_back(f);
 					}
 				}
-				sink & ctx.path_versions;
+				if (!new_path_map.items.empty())
+					sink & new_path_map;
 
 				return sub;
 			}
@@ -616,12 +688,13 @@ namespace xirang{ namespace vfs{
 				for (auto& i : wk.children(path_in_repo)){
 					file_path wkpath = path_in_repo / i.path;
 					if (wk.state(wkpath).state == fs::st_regular){
-						new_tree.items.insert(std::make_pair(i.path.str(), add_file_to_repo_(wk, wkpath, ctx)));
+						auto version = add_file_to_repo_(wk, wkpath, ctx);
+						new_tree.items[i.path.str()] = version;
 					}
 					else { //recursive for dir
 						auto p = new_tree.items.find(i.path.str());
 						auto version = do_commit_(wk, p == new_tree.items.end() ? version_type() : p->second, wkpath, ctx);
-						new_tree.items.insert(std::make_pair(i.path.str(), version));
+						new_tree.items[i.path.str()] = version;
 					}
 				}
 
@@ -632,9 +705,7 @@ namespace xirang{ namespace vfs{
 				version_type ret = version_of_object(tree);
 				if (m_blob_infos.items.count(ret) !=  0)
 				{
-					FileHistoryItem fhi={version_type(),ret};
-					ctx.path_versions.items[path].push_back(fhi);
-					return ret;
+					return ctx.path_versions[path] = ret;
 				}
 
 				auto & seek = m_data_file.get<io::random>();
@@ -646,37 +717,31 @@ namespace xirang{ namespace vfs{
 
 				save_blob_idx_(bt_tree, ret, seek.size() - offset, offset, ctx);
 
-				FileHistoryItem fhi={version_type(),ret};
-				ctx.path_versions.items[path].push_back(fhi);
+				return ctx.path_versions[path] = ret;
 
-				return ret;
 			}
 
 			version_type add_file_to_repo_(IWorkspace& wk, const file_path& path, Context& ctx) {
 				auto src = wk.create<io::read_map>(path, io::of_open);
 				if (!src) AIO_THROW(fs::open_failed_exception)("failed to open file in workdir");
+				auto& src_map = src.get<io::read_map>();
 
 				version_type ret = version_of_archive(src.get<io::read_map>());
 				if (m_blob_infos.items.count(ret) !=  0)
 				{
-					FileHistoryItem fhi={version_type(),ret};
-					ctx.path_versions.items[path].push_back(fhi);
-					return ret;
+					return ctx.path_versions[path] = ret;
 				}
 
 				auto& seek = m_data_file.get<io::random>();
 				long_size_t offset = seek.size();
 				seek.seek(offset);
 				auto sink = io::exchange::as_sink(m_data_file.get<io::writer>());
-				sink & uint32_t(bt_file);
-				copy_data(src.get<io::read_map>(), m_data_file.get<io::writer>());
+				sink & uint32_t(bt_file) & uint64_t(src_map.size());
+				copy_data(src_map, m_data_file.get<io::writer>());
 
 				save_blob_idx_(bt_file, ret, seek.size() - offset, offset, ctx);
 
-				FileHistoryItem fhi={version_type(),ret};
-				ctx.path_versions.items[path].push_back(fhi);
-
-				return ret;
+				return ctx.path_versions[path] = ret;
 			}
 			// return true if any parent of the path or path itself is added or removed;
 			bool is_changed_(IWorkspace& wk, const file_path& path_in_repo){
@@ -727,9 +792,9 @@ namespace xirang{ namespace vfs{
 			}
 
 			version_type getVersionOfPath_(const file_path& p) const{
-				auto filename = p.filename();
-				if (!filename.empty() && filename.str()[0] == '#'){	// has versioning part
-					return version_type(filename.str());
+				auto filename = p.filename().str();
+				if (!filename.empty() && filename[0] == '#'){	// has versioning part
+					return version_type(const_range_string(filename.begin() + 1, filename.end()));
 				}
 				return getFileVersion(m_head, p);
 			}
@@ -802,6 +867,12 @@ namespace xirang{ namespace vfs{
 
 	FileHistory LocalRepository::history(const file_path& p) const{ return m_imp->history(p);}
 	Submission LocalRepository::getSubmission(const version_type& ver) const{ return m_imp->getSubmission(ver);}
+	BlobType LocalRepository::blobType(const version_type& id) const{
+		return m_imp->blobType(id);
+	}
+	TreeItemList LocalRepository::treeItems(const version_type& id) const{
+		return m_imp->treeItems(id);
+	}
 	version_type LocalRepository::getFileVersion(const version_type& commit_id, const file_path& p){
 		return m_imp->getFileVersion(commit_id, p);
 	}
@@ -872,7 +943,7 @@ namespace xirang{ namespace vfs{
 
 	// should remove the parent directory if the parent are not affected.
 	fs_error Workspace::unmarkRemove(const file_path& p){
-		m_imp->remove_list.insert(p);
+		m_imp->remove_list.erase(p);
 		m_imp->removed_fs.remove(p);
 		auto path = p.parent();
 		while (!path.empty()){
@@ -912,6 +983,9 @@ namespace xirang{ namespace vfs{
 		return true;
 	}
 
+	static const uint32_t K_repo_file_version = 1;
+	static const uint32_t K_repo_file_sig = 0x4f504552; //'REPO'
+
 	fs_error initRepository(IVfs& vfs, sub_file_path dir){
 		if (vfs.state(dir / K_data_file).state != fs::st_not_found){
 			return fs::er_exist;
@@ -921,8 +995,12 @@ namespace xirang{ namespace vfs{
 				&& createEmptyFile(vfs, dir / K_blob_idx)
 				&& createEmptyFile(vfs, dir / K_path_idx)
 				&& createEmptyFile(vfs, dir / K_head)
-		   )
+		   ){
+			auto f = vfs.create<io::ioctrl, io::writer>(dir / K_data_file, io::of_create_or_open);
+			auto sink = io::exchange::as_sink(f.get<io::writer>());
+			sink & K_repo_file_sig & K_repo_file_version;
 			return fs::er_ok;
+		}
 		return fs::er_create;
 	}
 }}
