@@ -269,13 +269,15 @@ int main(int argc, char** argv){
 
 		auto header = info->zip.get_file(rest);
 		if (!header || (header->external_attrs & 0x10) != 0){
-			if (!end_with_slash(path)){
-				response_redirect(fout, rest.filename(), true);
-				continue;
-			}
 			auto items = info->zip.items(rest);
 			if (!header && items.empty()){
 				response_error(fout, 404, path);
+				continue;
+			}
+
+			if (!end_with_slash(path)){
+				response_redirect(fout, rest.filename(), true);
+				continue;
 			}
 
 			file_path index_page;
