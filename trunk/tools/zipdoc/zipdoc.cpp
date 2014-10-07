@@ -119,12 +119,11 @@ void write_content_type(std::ostream& fout, const std::string& ext_){
 	std::string ext = ext_;
 	std::transform(ext.begin(), ext.end(), ext.begin(), xirang::tolower<char> );
 	auto pos = mime.find(ext);
-	fout << "Content-type: ";
-	if (pos != mime.end())
-		fout << pos->second;
-	else
-		fout << "application/octet-stream";
-	fout << "\r\n";
+	if (pos != mime.end()){
+		fout << "Content-type: "
+			<< pos->second;
+		fout << "\r\n";
+	}
 }
 
 void response_file(std::ostream& fout, iref<io::read_map>& file){
@@ -270,6 +269,7 @@ int main(int argc, char** argv){
 			auto items = info->zip.items(rest);
 			if (!header && items.empty()){
 				response_error(fout, 404, path);
+				continue;
 			}
 
 			file_path index_page;
