@@ -84,15 +84,6 @@ private:
 
 };
 
-
-template<typename Ar>
-sha1_digest calculate_sha1(Ar& ar, long_size_t max_size  = ~0){
-	sha1 sha;
-	io::copy_data(ar, sha, max_size);
-	return sha.get_digest();
-}
-
-
 } // namespace xirang
 
 #endif

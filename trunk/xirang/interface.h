@@ -18,8 +18,8 @@ namespace xirang
 	template<typename Interface> struct interface_holder
 	{
 		interface_holder() : vptr(0), this_(0){}
-		interface_holder(Interface& t, void* obj) : vptr(*(void**)&t), this_(obj){}
-		Interface& get_interface() const{ return *(Interface*)(&vptr);}
+		interface_holder(Interface* t, void* obj) : vptr(t?*(void**)t : 0), this_(obj){}
+		Interface* get_interface() const{ return (Interface*)(&vptr);}
 		void* get_this() const{ return this_;}
 		void* vptr;
 		void* this_;
@@ -28,12 +28,18 @@ namespace xirang
 	template<typename Interface> struct interface_holder<opt<Interface>>
 	{
 		interface_holder() : vptr(0), this_(0){}
-		interface_holder(Interface& t, void* obj) : vptr(*(void**)&t), this_(obj){}
 		interface_holder(Interface* t, void* obj) : vptr(t?*(void**)t : 0), this_(obj){}
 		Interface* get_interface() const{ return (Interface*)(&vptr);}
 		void* get_this() const{ return this_;}
 		void* vptr;
 		void* this_;
+	};
+	template<typename Interface> struct interface_holder<noif<Interface>>
+	{
+		interface_holder() {}
+		interface_holder(Interface*, void* ) {}
+		Interface* get_interface() const{ return 0;}
+		void* get_this() const{ return 0;}
 	};
 
 
@@ -55,6 +61,7 @@ namespace xirang
 			virtual ~null_interface(){}
 			null_interface(const null_interface&) = delete;
 		};
+		template<typename I> struct no_interface{};
 
 		template <typename Interface> struct get_interface_type{
 			typedef Interface type;
@@ -90,15 +97,14 @@ namespace xirang
 		};
 		template<typename Interface, typename CoClass> struct get_base <opt<Interface>, CoClass>
 			: public null_interface
-		{ 
+		{
 			get_base(void* obj) : this_(obj){}
 			void* this_;
 		};
 		template<typename Interface, typename CoClass> struct get_base <noif<Interface>, CoClass>
-			: public null_interface
-		{ 
-			get_base(void* obj) : this_(obj){}
-			void* this_;
+			: public no_interface<Interface>
+		{
+			get_base(void*) {}
 		};
 
 
@@ -109,10 +115,10 @@ namespace xirang
 			CoClass* get_target() const{ return ((CoClass**)this)[-1];}
 			compose_vptr0(CoClass* this_) : get_base<Interfaces, CoClass>((void*)this_)...{}
 		};
-		template<typename CoClass, typename... Interfaces> struct compose_vptr 
+		template<typename CoClass, typename... Interfaces> struct compose_vptr
 		{
 			target_holder<CoClass> m0;
-			compose_vptr0<CoClass, Interfaces...> m2; 
+			compose_vptr0<CoClass, Interfaces...> m2;
 			template<typename OtherCoClass> compose_vptr(OtherCoClass& u) : m0(&u), m2(&u){
 			}
 		};
@@ -126,9 +132,9 @@ namespace xirang
 
 		template<typename Interface1, typename Interface2> struct valid_interface<Interface1, Interface2>
 		{
-			static const bool value = 
+			static const bool value =
 				!std::is_convertible<typename get_interface_type<Interface1>::type&
-					, typename get_interface_type<Interface2>::type&>::value 
+					, typename get_interface_type<Interface2>::type&>::value
 				&& !std::is_convertible<typename get_interface_type<Interface2>::type&
 					, typename get_interface_type<Interface1>::type&>::value;
 		};
@@ -159,13 +165,13 @@ namespace xirang
 			struct find_convertible<T, U, Args...>
 			{
 				typedef typename find_convertible_helper<std::is_convertible<typename get_interface_type<U>::type&
-					, typename get_interface_type<T>::type&>::value, T, U, Args...>::type type; 
+					, typename get_interface_type<T>::type&>::value, T, U, Args...>::type type;
 			};
 
 		template<typename T> struct find_convertible<T> { typedef interface_not_exist type;};
 
 
-		template<typename T, typename Interface> struct get_return_type_imp{ typedef Interface& type;};
+		template<typename T, typename Interface> struct get_return_type_imp{ typedef Interface& type; };
 		template<typename T, typename Interface> struct get_return_type_imp<T, opt<Interface>>{ typedef Interface* type;};
 		template<typename T, typename Interface> struct get_return_type_imp<T, noif<Interface>>{ typedef Interface* type;};
 		template<typename T> struct get_return_type_imp<T, interface_not_exist>{ };
@@ -193,7 +199,7 @@ namespace xirang
 
 		iref(){}
 
-		template<typename U, typename T = typename std::enable_if<!is_iref<U>::value>::type> 
+		template<typename U, typename T = typename std::enable_if<!is_iref<U>::value>::type>
 			iref(U&& obj)
 		{
 			typedef private_::compose_vptr<typename std::remove_reference<U>::type, Args...> vptrs;
@@ -202,20 +208,26 @@ namespace xirang
 		}
 
 		template<typename... OArgs>
-			iref(iref<OArgs...>& rhs) 
+			iref(iref<OArgs...>& rhs)
 			: target_holder<void>(rhs.get_target()), interface_holder<Args>(
-					rhs.get<typename private_::get_interface_type<Args>::type>(), rhs.get_target())...
+					rhs.get_ptr<typename private_::get_interface_type<Args>::type>(), rhs.get_target())...
 		{
 		}
 
 		template<typename... OArgs>
-			iref(const iref<OArgs...>& rhs) 
+			iref(const iref<OArgs...>& rhs)
 			: target_holder<void>(rhs.get_target()), interface_holder<Args>(
-					rhs.get<typename private_::get_interface_type<Args>::type>(), rhs.get_target())...
+					rhs.get_ptr<typename private_::get_interface_type<Args>::type>(), rhs.get_target())...
 		{
 		}
 
-		template<typename T> 
+		template<typename T>
+		T* get_ptr() const {
+			typedef typename private_::find_convertible<T, Args...>::type type;
+			const interface_holder<type>* this_ = this;
+			return this_->get_interface();
+		}
+		template<typename T>
 		typename private_::get_return_type<T, Args...>::type
 		get() const {
 			AIO_PRE_CONDITION(valid());
@@ -244,7 +256,7 @@ namespace xirang
 		template<typename Ret, typename Interface>
 			Ret get_helper_(Interface*) const{
 			const interface_holder<Interface>* this_ = this;
-			return this_->get_interface();
+			return *this_->get_interface();
 			}
 		template<typename Ret, typename Interface>
 			Ret get_helper_(noif<Interface>*) const{
@@ -255,10 +267,12 @@ namespace xirang
 				const interface_holder<opt<Interface>>* this_ = this;
 				return this_->get_interface();
 			}
+#if 0
 		template<typename Ret>
 			Ret get_helper_(private_::interface_not_exist*) const{
 				return Ret();
 			}
+#endif
 
 	};
 
@@ -268,20 +282,38 @@ namespace xirang
 		typedef unique_ptr<void> owner_t;
 		iauto(){}
 
-		template<typename U> iauto(unique_ptr<U>&& ptr) 
+		template<typename U> iauto(unique_ptr<U>&& ptr)
 			: iref<Args...>(*ptr), target_ptr(std::move(ptr))
 		{
 		}
 
-		template<typename... OArgs> iauto(iauto<OArgs...>&& rhs) 
+		template<typename... OArgs> iauto(iauto<OArgs...>&& rhs)
 			: iref<Args...>(rhs), target_ptr(std::move(rhs.target_ptr))
 		{
 		}
 		template<typename U, typename = typename std::enable_if<std::is_rvalue_reference<U&&>::value>::type >
-			iauto(U&& rhs)  
+			iauto(U&& rhs)
 			: iref<Args...>(*(new U(std::forward<U>(rhs))))
 			, target_ptr((U*)this->get_target(), unify_delete<U>())
 		{
+		}
+
+		template<typename ...OArgs>
+		iauto<Args...>& operator=(iauto<OArgs...>&& rhs){
+			target_ptr = std::move(rhs.target_ptr);
+			iref<Args...>& self = *this;
+			self = rhs;
+
+			return *this;
+		}
+		iauto<Args...>& operator=(iauto<Args...>&& rhs){
+			if (this != &rhs){
+				target_ptr = std::move(rhs.target_ptr);
+				iref<Args...>& self = *this;
+				self = rhs;
+			}
+
+			return *this;
 		}
 
 		void reset(){
@@ -293,7 +325,7 @@ namespace xirang
 	};
 
 	template<typename CoClass, typename Interface>
-		CoClass& get_cobj(Interface* this_){ 
+		CoClass& get_cobj(Interface* this_){
 			return *static_cast<CoClass*>(*((void**)this_ + 1));
 		}
 

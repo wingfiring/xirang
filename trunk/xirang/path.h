@@ -4,6 +4,9 @@
 #include <xirang/string_algo/utf8.h>
 #include <xirang/string_algo/string.h>
 #include <xirang/operators.h>
+
+#include <xirang/utility/make_reverse_iterator.h> //for make_reverse_iterator
+
 namespace xirang{
 
 	enum path_process{
@@ -328,6 +331,25 @@ namespace xirang{
 	class simple_path_compare_ : totally_ordered<simple_path>{};
 
 	simple_path operator/(const sub_simple_path& lhs, const sub_simple_path& rhs);
+
+	template<typename PathType>
+		bool starts_with(PathType&& lhs, PathType&& rhs){
+			auto itr1(lhs.str().begin()), end1(lhs.str().end());
+			auto itr2(rhs.str().begin()), end2(rhs.str().end());
+			for (; itr1 != end1 && itr2 != end2; ++itr1, ++itr2){
+				if (*itr1 != *itr2) return false;
+			}
+			return itr2 == end2;
+		}
+	template<typename PathType>
+		bool ends_with(PathType&& lhs, PathType&& rhs){
+			auto itr1(make_reverse_iterator(lhs.str().end())), end1(make_reverse_iterator(lhs.str().begin()));
+			auto itr2(make_reverse_iterator(rhs.str().end())), end2(make_reverse_iterator(rhs.str().begin()));
+			for (; itr1 != end1 && itr2 != end2; ++itr1, ++itr2){
+				if (*itr1 != *itr2) return false;
+			}
+			return itr2 == end2;
+		}
 
 	struct path_less
 	{

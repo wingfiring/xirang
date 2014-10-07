@@ -7,12 +7,12 @@
 #include <xirang/buffer.h>
 #include <xirang/context_except.h>
 
-namespace xirang{ 
+namespace xirang{
   typedef ext_heap::handle handle;
 
   template<typename T>
   struct BiRangeT : public  range<bidir_iterator<T> >
-  {	
+  {
 	  typedef range<bidir_iterator<T> > base;
 	  typedef typename base::iterator iterator;
       BiRangeT() {};
