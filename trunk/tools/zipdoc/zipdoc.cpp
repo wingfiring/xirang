@@ -166,6 +166,130 @@ const sub_file_path zip_ext = sub_file_path(literal("zip"));
 
 const file_path index_pages[] = {file_path("index.html"), file_path("index.htm")};
 
+void do_main(FCGX_Request& request, vfs::IVfs& docfs, cache_manager& cache){
+	fcgi_streambuf in_buf(request.in);
+	fcgi_streambuf out_buf(request.out);
+	std::istream fin(&in_buf);
+	std::ostream fout(&out_buf);
+
+	auto s = FCGX_GetParam("PATH_INFO", request.envp);
+	if (!s){
+		response_error(fout, 404, std::string());
+		continue;
+	}
+
+	std::string path = s ? s : "";
+	file_path doc_path = file_path(path.c_str());
+	file_path base, rest;
+	fs::file_state state;
+	std::tie(base, rest, state) = locate(docfs, doc_path);
+	if (state == fs::st_dir) {
+		if (!rest.empty()){
+			response_error(fout, 404, path);
+			continue;
+		}
+		if (!path.empty() && !end_with_slash(path)){
+			response_redirect(fout, base.filename(), true);
+			continue;
+		}
+
+		file_path index_page;
+		for (auto& f : index_pages){
+			auto st = docfs.state(base / f).state;
+			if (st == fs::st_regular){
+				index_page = f;
+				break;
+			}
+		}
+		if (!index_page.empty()){
+			response_redirect(fout, index_page, false);
+			continue;
+		}
+		auto children = docfs.children(base);
+		std::vector<vfs::VfsState> files;
+		files.reserve(children.size());
+		std::sort(files.begin(), files.end(), [](const vfs::VfsState & lhs, const vfs::VfsState& rhs){
+				return lhs.node.path.str() < rhs.node.path.str();
+				});
+
+		fout << "Cache-Control: public, max-age=86400\r\n"
+			"Content-type: text/html\r\n\r\n";
+		std::stringstream sstr;
+		for (auto & n : children){
+			auto st = docfs.state(base / n.path);
+			bool is_zip = st.node.path.ext() == zip_ext;
+			response_dir(sstr, st.node.path, (is_zip? fs::st_dir : st.state), st.size);
+		}
+		write_html(fout, sstr.str());
+		continue;
+	}
+
+	// regular file
+	if (!(base.ext() == zip_ext)){
+		if (rest.empty()){
+			auto file = docfs.create<io::read_map>(base, io::of_open);
+			if (!file)
+				response_error(fout, 404, path);
+			write_content_type(fout, string(base.ext().str()).c_str());
+			response_file(fout, file);
+			continue;
+		}
+		response_error(fout, 404, path);
+		continue;
+	}
+
+	// for zip file;
+	auto info = cache.get_info(base);
+	if (!info){
+		response_error(fout, 404, path);
+		continue;
+	}
+
+	auto header = info->zip.get_file(rest);
+	if (!header || (header->external_attrs & 0x10) != 0){
+		auto items = info->zip.items(rest);
+		if (!header && items.empty()){
+			response_error(fout, 404, path);
+			continue;
+		}
+
+		if (!end_with_slash(path)){
+			response_redirect(fout, rest.filename(), true);
+			continue;
+		}
+
+		file_path index_page;
+		for (auto& f : index_pages){
+			auto h = info->zip.get_file(rest/f);
+			if (h && (h->external_attrs & 0x10) == 0){
+				index_page = f;
+				break;
+			}
+		}
+		if (!index_page.empty()){
+			response_redirect(fout, index_page, false);
+			continue;
+		}
+
+		fout << "Cache-Control: public, max-age=7776000\r\n"
+			"Content-type: text/html\r\n\r\n";
+
+		std::stringstream sstr;
+		for (auto &i : items){
+			response_dir(sstr, i.name, ((i.external_attrs & 0x10) ? fs::st_dir : fs::st_regular), i.uncompressed_size);
+		}
+		write_html(fout, sstr.str());
+		continue;
+	}
+	if (header->method == xirang::zip::cm_deflate){
+		fout << "Content-Encoding: deflate\r\n";
+	}
+
+	auto ar = open_raw(*header);
+	write_content_type(fout, string(header->name.ext().str()).c_str());
+	response_file(fout, ar);
+
+}
 int main(int argc, char** argv){
 	if (argc != 4){
 		std::cerr << "Usage: zipdoc <doc dir> <mime file> <html>\n";
@@ -189,127 +313,16 @@ int main(int argc, char** argv){
 	FCGX_InitRequest (&request, 0, 0);
 
 	while (FCGX_Accept_r (&request) == 0){
-		fcgi_streambuf in_buf(request.in);
-		fcgi_streambuf out_buf(request.out);
-		std::istream fin(&in_buf);
-		std::ostream fout(&out_buf);
-
-		auto s = FCGX_GetParam("PATH_INFO", request.envp);
-		if (!s){
-			response_error(fout, 404, std::string());
-			continue;
+		try{
+			do_main(request, docfs, cache);
+		}catch(xirang::exception& e){
+			std::ofstream ofs("/tmp/zipdoc.log", std::ios_base::app);
+			ofs << e.what() << std::endl;
 		}
-
-		std::string path = s ? s : "";
-		file_path doc_path = file_path(path.c_str());
-		file_path base, rest;
-		fs::file_state state;
-		std::tie(base, rest, state) = locate(docfs, doc_path);
-		if (state == fs::st_dir) {
-			if (!rest.empty()){
-				response_error(fout, 404, path);
-				continue;
-			}
-			if (!path.empty() && !end_with_slash(path)){
-				response_redirect(fout, base.filename(), true);
-				continue;
-			}
-
-			file_path index_page;
-			for (auto& f : index_pages){
-				auto st = docfs.state(base / f).state;
-				if (st == fs::st_regular){
-					index_page = f;
-					break;
-				}
-			}
-			if (!index_page.empty()){
-				response_redirect(fout, index_page, false);
-				continue;
-			}
-			auto children = docfs.children(base);
-			std::vector<vfs::VfsState> files;
-			files.reserve(children.size());
-			std::sort(files.begin(), files.end(), [](const vfs::VfsState & lhs, const vfs::VfsState& rhs){
-					return lhs.node.path.str() < rhs.node.path.str();
-					});
-
-			fout << "Cache-Control: public, max-age=86400\r\n"
-				"Content-type: text/html\r\n\r\n";
-			std::stringstream sstr;
-			for (auto & n : children){
-				auto st = docfs.state(base / n.path);
-				bool is_zip = st.node.path.ext() == zip_ext;
-				response_dir(sstr, st.node.path, (is_zip? fs::st_dir : st.state), st.size);
-			}
-			write_html(fout, sstr.str());
-			continue;
+		catch(...){
+			std::ofstream ofs("/tmp/zipdoc.log", std::ios_base::app);
+			ofs << "unknown error." << std::endl;
 		}
-
-		// regular file
-		if (!(base.ext() == zip_ext)){
-			if (rest.empty()){
-				auto file = docfs.create<io::read_map>(base, io::of_open);
-				if (!file)
-					response_error(fout, 404, path);
-				write_content_type(fout, string(base.ext().str()).c_str());
-				response_file(fout, file);
-				continue;
-			}
-			response_error(fout, 404, path);
-			continue;
-		}
-
-		// for zip file;
-		auto info = cache.get_info(base);
-		if (!info){
-			response_error(fout, 404, path);
-			continue;
-		}
-
-		auto header = info->zip.get_file(rest);
-		if (!header || (header->external_attrs & 0x10) != 0){
-			auto items = info->zip.items(rest);
-			if (!header && items.empty()){
-				response_error(fout, 404, path);
-				continue;
-			}
-
-			if (!end_with_slash(path)){
-				response_redirect(fout, rest.filename(), true);
-				continue;
-			}
-
-			file_path index_page;
-			for (auto& f : index_pages){
-				auto h = info->zip.get_file(rest/f);
-				if (h && (h->external_attrs & 0x10) == 0){
-					index_page = f;
-					break;
-				}
-			}
-			if (!index_page.empty()){
-				response_redirect(fout, index_page, false);
-				continue;
-			}
-
-			fout << "Cache-Control: public, max-age=7776000\r\n"
-				"Content-type: text/html\r\n\r\n";
-
-			std::stringstream sstr;
-			for (auto &i : items){
-				response_dir(sstr, i.name, ((i.external_attrs & 0x10) ? fs::st_dir : fs::st_regular), i.uncompressed_size);
-			}
-			write_html(fout, sstr.str());
-			continue;
-		}
-		if (header->method == xirang::zip::cm_deflate){
-			fout << "Content-Encoding: deflate\r\n";
-		}
-
-		auto ar = open_raw(*header);
-		write_content_type(fout, string(header->name.ext().str()).c_str());
-		response_file(fout, ar);
 	}
 	return 0;
 }
