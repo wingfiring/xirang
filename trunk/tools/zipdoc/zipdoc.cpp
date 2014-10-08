@@ -165,7 +165,7 @@ const sub_file_path zip_ext = sub_file_path(literal("zip"));
 
 const file_path index_pages[] = {file_path("index.html"), file_path("index.htm")};
 
-void do_main(FCGX_Request& request, vfs::IVfs& docfs, cache_manager& cache){
+void do_main(FCGX_Request& request, vfs::LocalFs& docfs, cache_manager& cache){
 	fcgi_streambuf in_buf(request.in);
 	fcgi_streambuf out_buf(request.out);
 	std::istream fin(&in_buf);
@@ -204,17 +204,23 @@ void do_main(FCGX_Request& request, vfs::IVfs& docfs, cache_manager& cache){
 			response_redirect(fout, index_page, false);
 			return;
 		}
+		// FIXME: children() should return a foward  range (multi-pass iteration), but the imp of boost file iterator is a single pass iterator
+		// so some behavior of the range is incorrect. for example, if the size() method is called, then the internal iterator will be end, and 
+		// user can't iterate the range again.
 		auto children = docfs.children(base);
-		std::vector<vfs::VfsState> files;
-		files.reserve(children.size());
-		std::sort(files.begin(), files.end(), [](const vfs::VfsState & lhs, const vfs::VfsState& rhs){
-				return lhs.node.path.str() < rhs.node.path.str();
+		std::vector<vfs::VfsNode> files;
+		for(auto n : children){
+			files.push_back(n);
+		}
+
+		std::sort(files.begin(), files.end(), [](const vfs::VfsNode & lhs, const vfs::VfsNode& rhs){
+				return lhs.path.str() < rhs.path.str();
 				});
 
 		fout << "Cache-Control: public, max-age=86400\r\n"
 			"Content-type: text/html\r\n\r\n";
 		std::stringstream sstr;
-		for (auto & n : children){
+		for (auto & n : files){
 			auto st = docfs.state(base / n.path);
 			bool is_zip = st.node.path.ext() == zip_ext;
 			response_dir(sstr, st.node.path, (is_zip? fs::st_dir : st.state), st.size);
@@ -311,17 +317,24 @@ int main(int argc, char** argv){
 	FCGX_Init();
 	FCGX_InitRequest (&request, 0, 0);
 
+	std::string err_msg;
 	while (FCGX_Accept_r (&request) == 0){
 		try{
 			do_main(request, docfs, cache);
+			continue;
 		}catch(xirang::exception& e){
-			std::ofstream ofs("/tmp/zipdoc.log", std::ios_base::app);
-			ofs << e.what() << std::endl;
+			err_msg = e.what();
 		}
 		catch(...){
 			std::ofstream ofs("/tmp/zipdoc.log", std::ios_base::app);
-			ofs << "unknown error." << std::endl;
+			err_msg = "unknown error.";
 		}
+		std::ofstream ofs("/tmp/zipdoc.log", std::ios_base::app);
+		ofs << err_msg << std::endl;
+
+		fcgi_streambuf out_buf(request.out);
+		std::ostream fout(&out_buf);
+		response_error(fout, 404, "");
 	}
 	return 0;
 }
