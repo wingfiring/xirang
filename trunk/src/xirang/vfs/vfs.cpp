@@ -163,6 +163,9 @@ namespace xirang{ namespace vfs{
 		{
 			AIO_PRE_CONDITION(path.is_absolute());
             mount_map::left_const_iterator pos = m_mount_map.left.lower_bound(path);
+			if (pos == m_mount_map.left.end() && pos != m_mount_map.left.begin())
+				--pos;
+
 			if (pos != m_mount_map.left.end()
 					&& path == pos->first)
 			{
