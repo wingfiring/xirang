@@ -1,6 +1,7 @@
 
 #include "precompile.h"
 #include <xirang/interface.h>
+#include <iostream>
 
 BOOST_AUTO_TEST_SUITE(interface_suite)
 	using namespace xirang;

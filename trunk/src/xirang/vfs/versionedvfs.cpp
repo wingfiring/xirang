@@ -602,7 +602,7 @@ namespace xirang{ namespace vfs{
 				version_type tree;
 				if (!is_empty(base)){
 					Submission sub_base = get_blob_<Submission>(base, bt_submission);
-					if (!sub_base.flag == bt_submission) return sub_base;
+					if (!(sub_base.flag == bt_submission)) return sub_base;
 
 					auto t_pos = m_blob_infos.items.find(sub_base.tree);
 					if (t_pos == m_blob_infos.items.end())

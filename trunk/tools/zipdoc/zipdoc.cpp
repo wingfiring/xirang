@@ -135,11 +135,14 @@ void response_file(std::ostream& fout, iref<io::read_map>& file){
 	fout.write((const char*)address.begin(), address.size());
 }
 void response_dir(std::ostream& fout, const file_path& path, int state, long_size_t size){
-	fout << "<div><span class=\"file_type\">" << (state == fs::st_dir ? "DIR " : "FILE") << "</span>"
+	std::string type = (state == fs::st_dir ? "DIR" : "FILE");
+	std::string type_str = (state == fs::st_dir ? "DIR " : "FILE");
+
+	fout << "<div class=\"" << type << "\"><span class=\"file_type\">" << type_str << "</span>"
 		"<span class=\"file_size\">" << size << "</span>"
 		"<span class=\"file_name\"> <a href=\"" << path.filename().str();
 	if (state == fs::st_dir) fout << "/";
-	fout << "\">" << path.filename().str() << "</a></span>";
+	fout << "\">" << path.filename().str() << "</a></span></div>";
 }
 void response_error(std::ostream& os, int code, const std::string& path){
 	os << "Status: " << code << "\r\n"
